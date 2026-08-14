@@ -15,49 +15,78 @@ class PermissionSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
-            'manage pages',
-            'manage users',
-            'view reports',
-            'book appointment',
-            'manage appointments',
-            'dispense drugs',
-            'conduct tests',
-            'generate bills',
+            'hospital.view',
+            'hospital.update',
+            'facilities.view',
+            'facilities.create',
+            'facilities.update',
+            'facilities.activate',
+            'departments.view',
+            'departments.manage',
+            'staff.view',
+            'staff.invite',
+            'staff.update',
+            'staff.suspend',
+            'staff.assign-facilities',
+            'roles.view',
+            'roles.assign',
+            'permissions.manage',
+            'audit.view',
+            'audit.export',
+            'settings.manage',
+            'numbering.manage',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
-        // Assign permissions to roles
         Role::where('name', 'superadmin')->first()
             ->givePermissionTo(Permission::all());
 
-        Role::where('name', 'admin')->first()
-            ?->givePermissionTo(['manage pages', 'manage appointments', 'manage users', 'view reports']);
+        $adminPermissions = [
+            'hospital.view',
+            'hospital.update',
+            'facilities.view',
+            'facilities.create',
+            'facilities.update',
+            'facilities.activate',
+            'departments.view',
+            'departments.manage',
+            'staff.view',
+            'staff.invite',
+            'staff.update',
+            'staff.suspend',
+            'staff.assign-facilities',
+            'roles.view',
+            'roles.assign',
+            'audit.view',
+            'settings.manage',
+            'numbering.manage',
+        ];
 
-        Role::where('name', 'doctor')->first()
-            ?->givePermissionTo(['book appointment', 'manage appointments', 'view reports']);
+        Role::whereIn('name', ['admin', 'hospital-admin'])
+            ->get()
+            ->each(fn (Role $role) => $role->syncPermissions($adminPermissions));
 
-        Role::where('name', 'nurse')->first()
-            ?->givePermissionTo(['book appointment']);
+        Role::whereIn('name', [
+            'receptionist',
+            'doctor',
+            'nurse',
+            'pharmacist',
+            'laboratory-scientist',
+            'radiology-staff',
+            'cashier',
+            'accountant',
+            'storekeeper',
+            'blood-bank-staff',
+            'hmo-claims-officer',
+        ])->get()->each(fn (Role $role) => $role->syncPermissions([
+            'hospital.view',
+            'facilities.view',
+            'departments.view',
+        ]));
 
-        Role::where('name', 'receptionist')->first()
-            ?->givePermissionTo(['book appointment']);
-
-        Role::where('name', 'pharmacist')->first()
-            ?->givePermissionTo(['dispense drugs']);
-
-        Role::where('name', 'laboratorist')->first()
-            ?->givePermissionTo(['conduct tests']);
-
-        Role::where('name', 'radiologist')->first()
-            ?->givePermissionTo(['conduct tests']); // maybe same as lab
-
-        Role::where('name', 'accountant')->first()
-            ?->givePermissionTo(['generate bills', 'view reports']);
-
-        Role::where('name', 'patient')->first()
-            ?->givePermissionTo(['book appointment']);
+        Role::where('name', 'patient')->first()?->syncPermissions([]);
     }
 }

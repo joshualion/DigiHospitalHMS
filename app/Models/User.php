@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Models\Role;
@@ -26,6 +28,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'access_level',
+        'status',
     ];
 
     /**
@@ -57,7 +60,36 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'suspended_at' => 'datetime',
         ];
+    }
+
+    public function staffProfile(): HasOne
+    {
+        return $this->hasOne(StaffProfile::class);
+    }
+
+    public function suspender(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'suspended_by');
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    public function hospitalId(): ?int
+    {
+        return $this->staffProfile?->hospital_id;
+    }
+
+    public function activeFacilityIds(): array
+    {
+        return $this->staffProfile?->memberships()
+            ->where('status', 'active')
+            ->pluck('facility_id')
+            ->all() ?? [];
     }
 
     protected function fullName(): Attribute

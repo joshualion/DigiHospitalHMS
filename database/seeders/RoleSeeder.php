@@ -15,18 +15,23 @@ class RoleSeeder extends Seeder
         $roles = [
             'superadmin',
             'admin',
+            'hospital-admin',
+            'receptionist',
             'doctor',
             'nurse',
             'pharmacist',
-            'laboratorist',
-            'radiologist',
+            'laboratory-scientist',
+            'radiology-staff',
+            'cashier',
             'accountant',
-            'receptionist',
+            'storekeeper',
+            'blood-bank-staff',
+            'hmo-claims-officer',
             'patient',
         ];
 
         foreach ($roles as $role) {
-            Role::firstOrCreate(['name' => $role]);
+            Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
         }
     }
 }

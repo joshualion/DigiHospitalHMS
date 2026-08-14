@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\HospitalFoundationSeeder;
+use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
-use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class RouteIntegrityTest extends TestCase
@@ -26,13 +28,17 @@ class RouteIntegrityTest extends TestCase
 
     public function test_admin_routes_resolve_for_admin_user(): void
     {
-        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $this->seed(RoleSeeder::class);
+        $this->seed(PermissionSeeder::class);
+        $this->seed(HospitalFoundationSeeder::class);
 
         $user = User::factory()->create(['access_level' => 'admin']);
         $user->assignRole('admin');
 
-        foreach (['/admin/dashboard', '/admin/users', '/admin/roles', '/admin/pages'] as $uri) {
+        foreach (['/admin/dashboard', '/admin/roles', '/admin/pages'] as $uri) {
             $this->actingAs($user)->get($uri)->assertOk();
         }
+
+        $this->actingAs($user)->get('/admin/users')->assertRedirect('/admin/staff');
     }
 }

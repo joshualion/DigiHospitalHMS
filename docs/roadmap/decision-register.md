@@ -9,11 +9,16 @@ Date: 2026-08-14
 | Inertia/Vue adoption | Approved and implemented in Phase 0; do not add Vue Router, Pinia, or API auth unless later justified | Migrates Blade/Livewire/Volt UI to Vue while keeping Laravel routes/session auth | Approved for Phase 0 | No |
 | Deployment model | Hybrid strategy, starting with isolated hospital deployments | Reduces tenant leakage risk in early releases | User | No |
 | Tenancy in initial release | Design for hospital/facility scope, but do not implement shared SaaS tenancy yet | Keeps MVP practical while avoiding dead-end schema | User | No |
+| Phase 1A hospital scope | Approved and implemented: one primary hospital record per isolated deployment, with explicit hospital and facility relationships | Supports current commercial deployment while preserving future SaaS migration path | Approved for Phase 1A | No |
+| Facility membership | Approved and implemented: staff profiles can have multiple facility memberships and one default facility | Allows branch-aware administration without granting access from membership alone | Approved for Phase 1A | No |
+| Departments | Approved and implemented: hospital-wide departments with optional facility association | Avoids branch duplication while supporting site-specific departments | Approved for Phase 1A | Hospital admin input later |
 | User name schema | Approved for Phase 0: keep `firstname`/`lastname`, add computed display name | Fixes current auth/test/admin mismatch | Approved for Phase 0 | No |
 | Role model | Approved for Phase 0: keep Spatie Permission and protect admin routes by role | Gives maintainable RBAC foundation | Approved for Phase 0 | No |
+| Phase 1A permissions | Approved and implemented: granular foundation permissions only for hospital, facilities, departments, staff, roles, audit, settings, and numbering | Prevents future clinical permissions from gaining premature operational meaning | Approved for Phase 1A | No |
 | `access_level` column | Phase 0: retain but avoid using as primary authorization source; document later deprecation | Avoids destructive schema change while roles remain source of authorization | Approved for Phase 0 | No |
 | CMS retention | Approved for Phase 0: preserve source/tables/content but defer editing | Prevents broken CMS from blocking HMS work | Approved for Phase 0 | No |
 | Public website scope | Approved for Phase 0: treat public pages as marketing/informational only | Avoids confusing UI placeholders with real modules | Approved for Phase 0 | No |
+| Phase 1B public website | Approved for planning: build Vue/Inertia sectional public website with managed sections, media, draft/preview/publish, authorization, and audit | Separates marketing-site reconstruction from hospital administration foundations | Approved for Phase 1B planning | Hospital admin/marketing input |
 | Patient numbering | Hospital/facility-scoped configurable sequences | Affects imports, labels, receipts, forms | User | Hospital admin input |
 | Patient duplicate detection | Start with configurable demographic/contact matching and manual review | Reduces duplicate records without unsafe auto-merge | User | Front desk/admin input |
 | Clinical note amendment | Append-only amendment/correction workflow | Prevents silent clinical overwrite | User | Doctors/nurses |
@@ -31,7 +36,8 @@ Date: 2026-08-14
 | Insurance/HMO | Defer until billing core is stable | Avoids premature claims complexity | User | Accountants/HMO officers |
 | Notifications | Start with internal/log/email, add SMS after consent/template policy | Privacy and cost impact | User | Admin/legal/privacy input |
 | File storage | Private disk with signed/temporary access | Protects documents/results | User | No |
-| Audit logging package vs custom | Decide during Phase 1; custom domain audit may be clearer | Affects all modules | User | No |
+| Audit logging package vs custom | Approved and implemented for Phase 1A: custom explicit domain audit service | Gives future safety-critical workflows a clear event boundary | Approved for Phase 1A | No |
+| Numbering sequence foundation | Approved and implemented for Phase 1A: hospital-scoped configurable sequences with transactional allocation | Prepares future records without implementing domain modules | Approved for Phase 1A | No |
 | PHP environment | Phase 0 documented: enable `intl` in `C:\xampp\php\php.ini` | Required for Laravel tooling and production reliability | User/system admin | No |
 | Test database | Phase 0 uses isolated SQLite in-memory fallback; dedicated MySQL test database remains preferred | Prevents tests touching development data | Approved for Phase 0 fallback | No |
 | Nigeria privacy compliance | Treat as a legal/compliance workstream, not only technical | Commercial risk | User/legal counsel | Privacy/compliance officer |

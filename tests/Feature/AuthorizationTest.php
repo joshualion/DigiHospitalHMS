@@ -3,8 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class AuthorizationTest extends TestCase
@@ -20,7 +21,8 @@ class AuthorizationTest extends TestCase
 
     public function test_admin_can_access_admin_routes(): void
     {
-        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $this->seed(RoleSeeder::class);
+        $this->seed(PermissionSeeder::class);
 
         $user = User::factory()->create(['access_level' => 'admin']);
         $user->assignRole('admin');
@@ -32,8 +34,8 @@ class AuthorizationTest extends TestCase
 
     public function test_non_admin_cannot_access_admin_routes(): void
     {
-        Role::firstOrCreate(['name' => 'patient', 'guard_name' => 'web']);
-        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $this->seed(RoleSeeder::class);
+        $this->seed(PermissionSeeder::class);
 
         $user = User::factory()->create(['access_level' => 'patient']);
 

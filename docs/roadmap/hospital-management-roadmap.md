@@ -93,6 +93,8 @@ Implementation sessions:
 
 Objective: Establish the commercial foundation for a hospital deployment.
 
+Status: Phase 1A implemented on 2026-08-14 for hospital administration foundations. Public website reconstruction and frontend content management are split into Phase 1B.
+
 Modules/workflows:
 
 - Identity and access.
@@ -164,6 +166,46 @@ Implementation sessions:
 5. Audit log foundation.
 6. Settings and numbering sequences.
 7. Admin UI and tests.
+
+## Phase 1B: Public Website And Frontend Management
+
+Objective: Implement the complete sectional public website and the administration tools needed to manage marketing content safely.
+
+Scope:
+
+- Vue/Inertia public website.
+- Section-based landing page.
+- Multiple hero slides.
+- Opening-hours or information banner beneath the hero.
+- About section.
+- Services section.
+- Departments section.
+- Featured-doctor section.
+- Testimonials.
+- Appointment CTA.
+- Other standard hospital calls to action.
+- Contact/location information.
+- Footer configuration.
+- Section enable/disable.
+- Section ordering.
+- Draft/preview/publish behaviour.
+- Media management.
+- Admin editing.
+- Authorization.
+- Audit logging.
+- Responsive visual design.
+- Preservation or faithful reconstruction of the former professional style where reference material exists.
+
+Boundaries:
+
+- CMS marketing content may use validated structured JSON where appropriate.
+- Core hospital, staff, clinical, and financial data must remain relational.
+- Services displayed for marketing must not automatically become clinical or billable service records.
+- Featured doctors should eventually reference real staff/doctor profiles rather than duplicate authentication identities.
+
+Dependencies:
+
+- Phase 1A hospital, staff, roles, audit, settings, and public-site defaults.
 
 ## Phase 2: Patient Registration, Appointments, Queues, and Encounters
 

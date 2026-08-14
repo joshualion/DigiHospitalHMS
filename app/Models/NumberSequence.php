@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\NumberSequenceService;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -40,6 +41,6 @@ class NumberSequence extends Model
 
     protected function preview(): Attribute
     {
-        return Attribute::get(fn (): string => app(\App\Services\NumberSequenceService::class)->preview($this));
+        return Attribute::get(fn (): string => app(NumberSequenceService::class)->preview($this));
     }
 }

@@ -20,9 +20,9 @@ function filter() {
 <template>
     <Head title="Facilities" />
     <AppLayout title="Facilities">
-        <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
-            <section class="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-                <div class="flex gap-3 border-b border-slate-200 p-4 dark:border-slate-800">
+        <div class="grid min-w-0 gap-6 lg:grid-cols-[1fr_360px]">
+            <section class="min-w-0 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+                <div class="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row dark:border-slate-800">
                     <input v-model="search.search" class="w-full rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" placeholder="Search facilities" @change="filter">
                     <select v-model="search.status" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" @change="filter">
                         <option value="">All</option>
@@ -44,7 +44,7 @@ function filter() {
                     </table>
                 </div>
             </section>
-            <form class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900" @submit.prevent="form.post('/admin/facilities')">
+            <form class="min-w-0 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900" @submit.prevent="form.post('/admin/facilities')">
                 <h2 class="font-semibold">Create facility</h2>
                 <div class="mt-4 space-y-4">
                     <TextInput id="facility_name" v-model="form.name" label="Name" :error="form.errors.name" />

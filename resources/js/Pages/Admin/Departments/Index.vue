@@ -21,12 +21,13 @@ function filter() {
 <template>
     <Head title="Departments" />
     <AppLayout title="Departments">
-        <div class="grid gap-6 lg:grid-cols-[1fr_360px]">
-            <section class="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-                <div class="flex gap-3 border-b border-slate-200 p-4 dark:border-slate-800">
+        <div class="grid min-w-0 gap-6 lg:grid-cols-[1fr_360px]">
+            <section class="min-w-0 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+                <div class="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row dark:border-slate-800">
                     <input v-model="search.search" class="w-full rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" placeholder="Search departments" @change="filter">
                     <select v-model="search.status" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" @change="filter"><option value="">All</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
                 </div>
+                <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <tbody>
                         <tr v-for="department in departments.data" :key="department.id" class="border-b border-slate-100 dark:border-slate-800">
@@ -37,8 +38,9 @@ function filter() {
                         <tr v-if="departments.data.length === 0"><td class="p-4 text-slate-500" colspan="3">No departments found.</td></tr>
                     </tbody>
                 </table>
+                </div>
             </section>
-            <form class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900" @submit.prevent="form.post('/admin/departments')">
+            <form class="min-w-0 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900" @submit.prevent="form.post('/admin/departments')">
                 <h2 class="font-semibold">Create department</h2>
                 <div class="mt-4 space-y-4">
                     <TextInput id="dept_name" v-model="form.name" label="Name" :error="form.errors.name" />

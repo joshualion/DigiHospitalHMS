@@ -22,12 +22,13 @@ function filter() {
 <template>
     <Head title="Staff" />
     <AppLayout title="Staff And Users">
-        <div class="grid gap-6 xl:grid-cols-[1fr_420px]">
-            <section class="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-                <div class="flex gap-3 border-b border-slate-200 p-4 dark:border-slate-800">
+        <div class="grid min-w-0 gap-6 xl:grid-cols-[1fr_420px]">
+            <section class="min-w-0 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+                <div class="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row dark:border-slate-800">
                     <input v-model="search.search" class="w-full rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" placeholder="Search staff" @change="filter">
                     <select v-model="search.status" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" @change="filter"><option value="">All</option><option value="active">Active</option><option value="suspended">Suspended</option></select>
                 </div>
+                <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <tbody>
                         <tr v-for="entry in staff.data" :key="entry.id" class="border-b border-slate-100 dark:border-slate-800">
@@ -39,8 +40,9 @@ function filter() {
                         <tr v-if="staff.data.length === 0"><td class="p-4 text-slate-500" colspan="4">No staff found.</td></tr>
                     </tbody>
                 </table>
+                </div>
             </section>
-            <form class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900" @submit.prevent="form.post('/admin/staff')">
+            <form class="min-w-0 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900" @submit.prevent="form.post('/admin/staff')">
                 <h2 class="font-semibold">Create or invite staff</h2>
                 <div class="mt-4 grid gap-4 sm:grid-cols-2">
                     <TextInput id="staff_firstname" v-model="form.firstname" label="First name" :error="form.errors.firstname" />

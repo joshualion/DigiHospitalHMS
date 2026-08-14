@@ -1,6 +1,6 @@
 # Local Development Setup
 
-Date: 2026-08-14
+Date: 2026-08-15
 
 ## Requirements
 
@@ -18,19 +18,21 @@ The active CLI configuration is:
 C:\xampp\php\php.ini
 ```
 
-If `php -m` does not list `intl`, edit that file and enable:
+Phase 1A.1 verified that CLI PHP loads `intl` after enabling it in the active XAMPP ini. Verify with:
+
+```bash
+php --ini
+php -m
+php --ri intl
+```
+
+If `php -m` does not list `intl`, edit only the active XAMPP `php.ini` and enable:
 
 ```ini
 extension=intl
 ```
 
-Then restart Apache/PHP processes and open a new terminal. Verify with:
-
-```bash
-php -m
-```
-
-Do not make unsafe system-wide PHP changes unless you know which PHP binary your web server and CLI are using.
+Then restart Apache for the web SAPI and open a new terminal for CLI verification. Do not alter unrelated PHP settings.
 
 ## Install
 
@@ -45,14 +47,47 @@ Configure `.env` for the development database. Do not commit `.env`.
 
 ## Database
 
-Create the development database, then run:
+The local Phase 1A database is expected to use `APP_ENV=local` and the configured MySQL database name from `.env`. Do not print or commit database credentials.
+
+Before applying pending local migrations to a database with material data, create a recoverable backup. For XAMPP MySQL, use the local `mysqldump.exe` with credentials read from `.env` and store the backup under ignored local storage such as `storage/app/backups/`.
+
+Run migrations and inspected seeders separately:
 
 ```bash
+php artisan migrate:status
 php artisan migrate
 php artisan db:seed
 ```
 
-The current seeders create roles, permissions, and preserved CMS marketing content. No hospital-domain migrations exist in Phase 0.
+Seeders must remain repeatable. Phase 1A.1 verified repeated `php artisan db:seed` does not duplicate roles, permissions, the primary hospital, the primary facility, public pages, sections, blocks, or numbering sequences.
+
+## First Administrator
+
+Use the local bootstrap command after migrations and seeders:
+
+```bash
+php artisan foundation:bootstrap-admin --email=admin@example.test --firstname=Local --lastname=Admin
+```
+
+The command prompts for a password when one is not supplied, refuses to run in production without `--force-production` and confirmation, refuses duplicate bootstrap when an active superadministrator already exists, creates or uses the selected user deliberately, assigns the seeded hospital and primary facility, assigns the `superadmin` role, and records an audit event.
+
+## Browser Smoke
+
+```bash
+php artisan serve --host=127.0.0.1 --port=8000
+node scripts/phase1a-smoke.mjs
+```
+
+Set these environment variables before running the smoke script:
+
+- `PHASE1A_ADMIN_EMAIL`
+- `PHASE1A_ADMIN_PASSWORD`
+- `PHASE1A_NON_ADMIN_EMAIL`
+- `PHASE1A_NON_ADMIN_PASSWORD`
+- `PHASE1A_BASE_URL` when not using `http://127.0.0.1:8000`
+- `CHROME_PATH` when Chrome is not installed at the default Windows path
+
+Do not commit local smoke credentials or screenshots.
 
 ## Queues And Scheduler
 

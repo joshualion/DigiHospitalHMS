@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: theme('colors.blood.DEFAULT');
+}
+
+.inertia-loading body::before {
+  background: var(--color-primary);
+  content: "";
+  height: 3px;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 60;
+}
+
+[data-theme-color="blood"] {
+  --color-primary: theme('colors.blood.DEFAULT');
+}
+[data-theme-color="healing"] {
+  --color-primary: theme('colors.healing');
+}
+[data-theme-color="calm"] {
+  --color-primary: theme('colors.calm');
+}
+
+[data-theme-color="alert"] {
+  --color-primary: theme('colors.alert');
+}
+[data-theme-color="Seagrass"] {
+  --color-primary: theme('colors.Seagrass');
+}
+
+/* Utility classes bound to CSS vars */
+.bg-primary {
+  background-color: var(--color-primary);
+}
+.text-primary {
+  color: var(--color-primary);
+}
+.border-primary {
+  border-color: var(--color-primary);
+}
+
+.contact-bg {
+  width: 50 !important;
+  height: 50 !important;
+}
+
+.dark .contact-bg {
+  filter: none !important;
+}

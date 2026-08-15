@@ -42,3 +42,5 @@ Date: 2026-08-14
 | Test database | Phase 0 uses isolated SQLite in-memory fallback; dedicated MySQL test database remains preferred | Prevents tests touching development data | Approved for Phase 0 fallback | No |
 | Nigeria privacy compliance | Treat as a legal/compliance workstream, not only technical | Commercial risk | User/legal counsel | Privacy/compliance officer |
 | Backup strategy | Automated database/files backup with restore drills | Required before pilot | User/system admin | No |
+| Phase 1B public-site source of truth | Approved and implemented: preserve legacy CMS tables but use additive `public_site_*` tables for managed public website publishing | Provides draft/live publishing, revisions, media controls, hospital scope, policies, and audit without destructive legacy-table removal | Approved for Phase 1B | Hospital admin/marketing input |
+| Phase 1B appointment CTA | Approved: informational appointment CTA only, no operational appointment records or booking workflow | Keeps public website honest while leaving Phase 2 integration path open | Approved for Phase 1B | Hospital admin input |

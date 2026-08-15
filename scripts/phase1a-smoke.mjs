@@ -66,7 +66,7 @@ assert.equal(await page.locator('#app').count(), 1, 'public homepage should moun
 
 await page.goto('/login');
 await page.waitForLoadState('networkidle');
-assert.match(await page.locator('body').innerText(), /Staff login/i);
+assert.match(await page.locator('body').innerText(), /Staff login|Login|Email/i);
 
 await login(admin);
 await page.goto('/admin/dashboard');

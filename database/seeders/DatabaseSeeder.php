@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
                 RoleSeeder::class,
                 PermissionSeeder::class,
                 HospitalFoundationSeeder::class,
+                PublicSiteSeeder::class,
                 PageSeeder::class,
             ]
         );

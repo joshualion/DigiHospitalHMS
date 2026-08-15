@@ -1,0 +1,112 @@
+<script setup>
+import AppLayout from '@/Layouts/AppLayout.vue';
+import { Link, useForm } from '@inertiajs/vue3';
+
+defineProps({
+    pages: { type: Array, required: true },
+    media: { type: Object, required: true },
+    stats: { type: Object, required: true },
+});
+
+const mediaForm = useForm({
+    title: '',
+    alt_text: '',
+    caption: '',
+    credit: '',
+    image: null,
+});
+
+function uploadMedia() {
+    mediaForm.post('/admin/public-website/media', {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => mediaForm.reset(),
+    });
+}
+</script>
+
+<template>
+    <AppLayout title="Public Website">
+        <div class="space-y-6">
+            <section class="grid gap-4 md:grid-cols-4">
+                <div class="rounded-md border border-slate-200 bg-white p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Published pages</p>
+                    <p class="mt-2 text-3xl font-black">{{ stats.published_pages }}</p>
+                </div>
+                <div class="rounded-md border border-slate-200 bg-white p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Draft pages</p>
+                    <p class="mt-2 text-3xl font-black">{{ stats.draft_pages }}</p>
+                </div>
+                <div class="rounded-md border border-slate-200 bg-white p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Media</p>
+                    <p class="mt-2 text-3xl font-black">{{ stats.media_count }}</p>
+                </div>
+                <div class="rounded-md border border-slate-200 bg-white p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Revisions</p>
+                    <p class="mt-2 text-3xl font-black">{{ stats.revision_count }}</p>
+                </div>
+            </section>
+
+            <section class="rounded-md border border-slate-200 bg-white">
+                <div class="border-b border-slate-200 p-5">
+                    <h2 class="text-lg font-bold">Website Pages</h2>
+                    <p class="mt-1 text-sm text-slate-600">Draft edits remain private until an authorized publisher publishes the page.</p>
+                </div>
+                <div class="divide-y divide-slate-200">
+                    <div v-for="page in pages" :key="page.id" class="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="font-bold text-slate-950">{{ page.title }}</h3>
+                                <span class="rounded-full px-2 py-1 text-xs font-semibold" :class="page.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'">{{ page.status }}</span>
+                            </div>
+                            <p class="mt-1 text-sm text-slate-600">/{{ page.slug === 'home' ? '' : page.slug }} · {{ page.sections_count }} sections · version {{ page.version }}</p>
+                            <p class="mt-1 text-xs text-slate-500">Last published: {{ page.published_at || 'Not published' }}</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <a :href="page.slug === 'home' ? '/' : `/${page.slug}`" class="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold" target="_blank">View</a>
+                            <Link :href="`/admin/public-website/pages/${page.id}`" class="rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white">Manage</Link>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+                <form class="rounded-md border border-slate-200 bg-white p-5" @submit.prevent="uploadMedia">
+                    <h2 class="text-lg font-bold">Upload Media</h2>
+                    <div class="mt-4 grid gap-4">
+                        <label class="text-sm font-semibold">Title
+                            <input v-model="mediaForm.title" class="mt-1 w-full rounded-md border-slate-300" type="text">
+                        </label>
+                        <label class="text-sm font-semibold">Alternative text
+                            <input v-model="mediaForm.alt_text" class="mt-1 w-full rounded-md border-slate-300" type="text">
+                        </label>
+                        <label class="text-sm font-semibold">Caption
+                            <textarea v-model="mediaForm.caption" class="mt-1 w-full rounded-md border-slate-300" rows="2"></textarea>
+                        </label>
+                        <label class="text-sm font-semibold">Credit/source
+                            <input v-model="mediaForm.credit" class="mt-1 w-full rounded-md border-slate-300" type="text">
+                        </label>
+                        <label class="text-sm font-semibold">Image
+                            <input class="mt-1 block w-full text-sm" type="file" accept="image/jpeg,image/png,image/webp" @input="mediaForm.image = $event.target.files[0]">
+                        </label>
+                        <button class="rounded-md bg-teal-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-60" type="submit" :disabled="mediaForm.processing">Upload</button>
+                    </div>
+                    <p v-if="Object.keys(mediaForm.errors).length" class="mt-3 text-sm text-rose-700">Check the upload fields and try again.</p>
+                </form>
+
+                <div class="rounded-md border border-slate-200 bg-white p-5">
+                    <h2 class="text-lg font-bold">Media Library</h2>
+                    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                        <article v-for="asset in media.data" :key="asset.id" class="rounded-md border border-slate-200 p-3">
+                            <img :src="asset.url" :alt="asset.alt_text" class="h-32 w-full rounded-md object-cover" loading="lazy">
+                            <p class="mt-3 text-sm font-bold">{{ asset.title }}</p>
+                            <p class="text-xs text-slate-500">{{ asset.mime_type }} · {{ asset.width }}x{{ asset.height }}</p>
+                            <p class="mt-1 text-xs text-slate-500">Used {{ asset.usage_count }} time(s)</p>
+                        </article>
+                        <p v-if="media.data.length === 0" class="text-sm text-slate-600">No media has been uploaded yet.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </AppLayout>
+</template>

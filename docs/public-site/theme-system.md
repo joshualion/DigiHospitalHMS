@@ -8,7 +8,7 @@ Phase 1B.1 adds visitor-selectable appearance and accent preferences without add
 
 - Appearance preference: `light`, `dark`, or `system`.
 - Resolved system appearance through `prefers-color-scheme`.
-- Accent preference: `calm-blue`, `healing-green`, `warm-gold`, or `vital-red`.
+- Accent preference: `calm`, `healing`, `alert`, `blood`, or `seagrass`.
 - Administrator allowed accent options.
 - Visitor preference persistence in `localStorage`.
 - Invalid stored-value fallback.
@@ -38,4 +38,4 @@ Theme updates require `website.edit` plus `website.manage_theme`. The server rec
 
 ## Contrast Notes
 
-The palettes avoid low-contrast button text. Accent foreground defaults to white on saturated accents. Warm Gold uses amber/brown token values instead of pale yellow. Vital Red does not replace error colors; danger remains semantically distinct.
+The palettes use the predefined hospital colors supplied for Phase 1B.1 follow-up customization. Alert uses dark text where the amber background requires it. Blood does not replace error colors; danger remains semantically distinct.

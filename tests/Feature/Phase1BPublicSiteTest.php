@@ -51,9 +51,9 @@ class Phase1BPublicSiteTest extends TestCase
                 ->component('Public/WebsitePage')
                 ->where('page.slug', 'home')
                 ->where('site.theme.appearance', 'system')
-                ->where('site.theme.accent', 'calm-blue')
+                ->where('site.theme.accent', 'calm')
                 ->where('site.theme.switcherVisible', true)
-                ->where('site.theme.allowedAccents', ['calm-blue', 'healing-green', 'warm-gold', 'vital-red'])
+                ->where('site.theme.allowedAccents', ['calm', 'healing', 'alert', 'blood', 'seagrass'])
                 ->has('sections.hero')
                 ->has('items.service'));
     }
@@ -65,22 +65,22 @@ class Phase1BPublicSiteTest extends TestCase
 
         $this->actingAs($editor)->patch("/admin/public-website/pages/{$page->id}/theme", [
             'appearance' => 'dark',
-            'accent' => 'warm-gold',
-            'allowed_accents' => ['calm-blue', 'warm-gold'],
+            'accent' => 'seagrass',
+            'allowed_accents' => ['calm', 'seagrass'],
             'show_switcher' => false,
         ])->assertRedirect()->assertSessionHasNoErrors();
 
         $page->refresh();
         $this->assertSame('dark', $page->draft_content['theme']['appearance']);
-        $this->assertSame('warm-gold', $page->draft_content['theme']['accent']);
-        $this->assertSame(['calm-blue', 'warm-gold'], $page->draft_content['theme']['allowed_accents']);
+        $this->assertSame('seagrass', $page->draft_content['theme']['accent']);
+        $this->assertSame(['calm', 'seagrass'], $page->draft_content['theme']['allowed_accents']);
         $this->assertFalse($page->draft_content['theme']['show_switcher']);
         $this->assertDatabaseHas('audit_events', ['action' => 'website.theme_updated']);
 
         $this->get('/')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->where('site.theme.accent', 'calm-blue')
+                ->where('site.theme.accent', 'calm')
                 ->where('site.theme.switcherVisible', true));
 
         $publisher = $this->userWithPermissions(['website.view', 'website.edit', 'website.publish']);
@@ -90,8 +90,8 @@ class Phase1BPublicSiteTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('site.theme.appearance', 'dark')
-                ->where('site.theme.accent', 'warm-gold')
-                ->where('site.theme.allowedAccents', ['calm-blue', 'warm-gold'])
+                ->where('site.theme.accent', 'seagrass')
+                ->where('site.theme.allowedAccents', ['calm', 'seagrass'])
                 ->where('site.theme.switcherVisible', false));
     }
 
@@ -104,8 +104,8 @@ class Phase1BPublicSiteTest extends TestCase
 
         $this->actingAs($editor)->patch("/admin/public-website/pages/{$page->id}/theme", [
             'appearance' => 'light',
-            'accent' => 'healing-green',
-            'allowed_accents' => ['healing-green'],
+            'accent' => 'healing',
+            'allowed_accents' => ['healing'],
             'show_switcher' => true,
         ])->assertForbidden();
 
@@ -113,7 +113,7 @@ class Phase1BPublicSiteTest extends TestCase
         $this->actingAs($manager)->patch("/admin/public-website/pages/{$page->id}/theme", [
             'appearance' => 'neon',
             'accent' => '#ff0',
-            'allowed_accents' => ['calm-blue', 'javascript:alert(1)'],
+            'allowed_accents' => ['calm', 'javascript:alert(1)'],
             'show_switcher' => true,
         ])->assertSessionHasErrors(['appearance', 'accent', 'allowed_accents.1']);
     }

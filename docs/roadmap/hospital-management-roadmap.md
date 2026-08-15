@@ -679,7 +679,7 @@ Delivered scope:
 
 - Token-driven public design system.
 - Light, dark, and system appearance preferences.
-- Calm Blue, Healing Green, Warm Gold, and Vital Red accent themes.
+- Calm, Healing, Alert, Blood, and Seagrass accent themes.
 - Visitor theme persistence and early document initialization.
 - Admin-managed draft/published public theme defaults.
 - Centered hero and major section introductions.

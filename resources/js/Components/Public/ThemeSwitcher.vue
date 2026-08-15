@@ -1,10 +1,11 @@
 <script setup>
 import { usePublicTheme } from '@/Composables/usePublicTheme';
 import { Check, Monitor, Moon, Palette, Sun } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 
 const props = defineProps({ defaults: { type: Object, default: () => ({}) } });
 const open = ref(false);
+const root = ref(null);
 const theme = usePublicTheme(props.defaults);
 const appearanceOptions = [
     { value: 'light', label: 'Light', icon: Sun },
@@ -12,19 +13,47 @@ const appearanceOptions = [
     { value: 'system', label: 'System', icon: Monitor },
 ];
 const accentLabels = {
-    'calm-blue': 'Calm Blue',
-    'healing-green': 'Healing Green',
-    'warm-gold': 'Warm Gold',
-    'vital-red': 'Vital Red',
+    calm: 'Calm',
+    healing: 'Healing',
+    alert: 'Alert',
+    blood: 'Blood',
+    seagrass: 'Seagrass',
 };
 const currentLabel = computed(() => `${appearanceOptions.find((item) => item.value === theme.appearance.value)?.label || 'System'}, ${accentLabels[theme.accent.value]}`);
+
+function close() {
+    open.value = false;
+}
+
+function toggle() {
+    open.value = !open.value;
+}
+
+function onPointerDown(event) {
+    if (open.value && root.value && !root.value.contains(event.target)) {
+        close();
+    }
+}
+
+function onKeydown(event) {
+    if (event.key === 'Escape') close();
+}
+
+if (typeof window !== 'undefined') {
+    window.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('keydown', onKeydown);
+}
+
+onBeforeUnmount(() => {
+    window.removeEventListener('pointerdown', onPointerDown);
+    window.removeEventListener('keydown', onKeydown);
+});
 </script>
 
 <template>
-    <div v-if="theme.switcherVisible.value" class="relative">
-        <button type="button" class="public-focus inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-sm font-bold transition" style="border-color: var(--public-border); background: var(--public-surface); color: var(--public-text);" :aria-expanded="open" aria-label="Open theme settings" @click="open = !open">
+    <div v-if="theme.switcherVisible.value" ref="root" class="relative">
+        <button type="button" class="public-focus grid h-11 w-11 place-items-center rounded-full border text-sm font-bold transition" style="border-color: var(--public-border); background: var(--public-surface); color: var(--public-text);" :aria-expanded="open" aria-label="Open theme settings" @click="toggle">
             <Palette class="h-4 w-4" aria-hidden="true" />
-            <span class="hidden xl:inline">Theme</span>
             <span class="sr-only">{{ currentLabel }}</span>
         </button>
         <div v-if="open" class="absolute right-0 z-50 mt-3 w-72 rounded-2xl border p-4 shadow-2xl" style="background: var(--public-surface-elevated); border-color: var(--public-border); color: var(--public-text);">

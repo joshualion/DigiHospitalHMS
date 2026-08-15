@@ -18,18 +18,29 @@ const pageForm = useForm({
     seo: props.page.seo || {},
 });
 
+const accentMap = {
+    'calm-blue': 'calm',
+    'healing-green': 'healing',
+    'warm-gold': 'alert',
+    'vital-red': 'blood',
+};
+const normalizeAccent = (value) => accentMap[value] || value;
 const themeDefaults = props.page.draft_content?.theme || {};
+const normalizedAllowedAccents = (themeDefaults.allowed_accents || ['calm', 'healing', 'alert', 'blood', 'seagrass'])
+    .map((value) => normalizeAccent(value))
+    .filter((value) => ['calm', 'healing', 'alert', 'blood', 'seagrass'].includes(value));
 const themeForm = useForm({
     appearance: themeDefaults.appearance || 'system',
-    accent: themeDefaults.accent || 'calm-blue',
-    allowed_accents: themeDefaults.allowed_accents || ['calm-blue', 'healing-green', 'warm-gold', 'vital-red'],
+    accent: normalizeAccent(themeDefaults.accent || 'calm'),
+    allowed_accents: normalizedAllowedAccents.length ? normalizedAllowedAccents : ['calm', 'healing', 'alert', 'blood', 'seagrass'],
     show_switcher: themeDefaults.show_switcher !== false,
 });
 const accentOptions = [
-    ['calm-blue', 'Calm Blue'],
-    ['healing-green', 'Healing Green'],
-    ['warm-gold', 'Warm Gold'],
-    ['vital-red', 'Vital Red'],
+    ['calm', 'Calm'],
+    ['healing', 'Healing'],
+    ['alert', 'Alert'],
+    ['blood', 'Blood'],
+    ['seagrass', 'Seagrass'],
 ];
 
 const newItem = useForm({

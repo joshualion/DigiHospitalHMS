@@ -13,7 +13,7 @@ The page editor includes `Public Theme Defaults` for the homepage/public shell. 
 Supported values are controlled enumerations:
 
 - Appearance: light, dark, or system.
-- Accent: Calm Blue, Healing Green, Warm Gold, or Vital Red.
+- Accent: Calm, Healing, Alert, Blood, or Seagrass.
 - Allowed visitor accents: one or more of the approved accents.
 - Theme switcher visibility: shown or hidden.
 

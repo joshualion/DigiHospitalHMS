@@ -70,7 +70,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
         </Head>
 
         <template v-if="page.slug === 'home'">
-            <section class="relative grid min-h-[680px] place-items-center overflow-hidden px-4 py-24 text-center text-white sm:px-6 lg:px-8" @mouseenter="paused = true" @mouseleave="paused = false">
+            <section class="relative grid min-h-[620px] place-items-center overflow-hidden px-4 py-20 text-center text-white sm:px-6 lg:px-8" @mouseenter="paused = true" @mouseleave="paused = false">
                 <img v-if="activeSlide.image" :src="activeSlide.image" :alt="activeSlide.alt || activeSlide.headline" class="absolute inset-0 h-full w-full object-cover" width="1800" height="1000" fetchpriority="high">
                 <div class="absolute inset-0" style="background: var(--public-hero-overlay);"></div>
                 <div class="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/35 to-transparent"></div>
@@ -83,7 +83,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         <PublicButton v-if="activeSlide.secondary_label" :href="activeSlide.secondary_url || '/services'" variant="secondary">{{ activeSlide.secondary_label }}</PublicButton>
                     </div>
                 </div>
-                <div v-if="slides.length > 1" class="absolute inset-x-0 bottom-24 mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+                <div v-if="slides.length > 1" class="absolute inset-x-0 bottom-28 mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     <button class="public-focus grid h-12 w-12 place-items-center rounded-full border border-white/30 bg-black/20 text-white backdrop-blur" type="button" aria-label="Previous hero slide" @click="showSlide(slideIndex - 1)"><ChevronLeft class="h-5 w-5" /></button>
                     <div class="flex gap-2 rounded-full bg-black/20 p-2 backdrop-blur">
                         <button v-for="(_, index) in slides" :key="index" class="public-focus h-3 w-3 rounded-full" :style="index === slideIndex ? 'background: var(--public-accent);' : 'background: rgba(255,255,255,0.48);'" type="button" :aria-label="`Show slide ${index + 1}`" @click="showSlide(index)"></button>

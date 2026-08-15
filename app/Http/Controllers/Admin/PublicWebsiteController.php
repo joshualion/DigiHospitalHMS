@@ -136,9 +136,9 @@ class PublicWebsiteController extends FoundationController
 
         $validated = $request->validate([
             'appearance' => ['required', Rule::in(['light', 'dark', 'system'])],
-            'accent' => ['required', Rule::in(['calm-blue', 'healing-green', 'warm-gold', 'vital-red'])],
+            'accent' => ['required', Rule::in(['calm', 'healing', 'alert', 'blood', 'seagrass'])],
             'allowed_accents' => ['required', 'array', 'min:1'],
-            'allowed_accents.*' => ['required', Rule::in(['calm-blue', 'healing-green', 'warm-gold', 'vital-red'])],
+            'allowed_accents.*' => ['required', Rule::in(['calm', 'healing', 'alert', 'blood', 'seagrass'])],
             'show_switcher' => ['required', 'boolean'],
         ]);
 

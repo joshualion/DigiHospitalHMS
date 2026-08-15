@@ -25,10 +25,11 @@ Reusable utility classes include `public-theme`, `public-container`, `public-sec
 
 ## Accent Palettes
 
-- Calm Blue: default hospital identity.
-- Healing Green: soft clinical wellness accent.
-- Warm Gold: accessible gold treatment, never pale yellow text.
-- Vital Red: controlled urgent tint. Danger/error tokens remain separate from the red accent.
+- Calm: hospital blue, `#0EA5E9`.
+- Healing: health/recovery green, `#22C55E`.
+- Alert: accessible warning amber, `#F59E0B`.
+- Blood: controlled blood red, `#B22222` with light `#DC2626` and dark `#7F1D1D`.
+- Seagrass: teal/seagrass accent, `#0697A1`.
 
 Each accent has light and dark token values. Components use semantic tokens instead of raw accent color classes.
 

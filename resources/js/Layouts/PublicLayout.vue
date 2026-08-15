@@ -1,7 +1,7 @@
 <script setup>
 import ThemeSwitcher from '@/Components/Public/ThemeSwitcher.vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { CalendarDays, Clock, LogIn, Mail, MapPin, Menu, Phone, X } from '@lucide/vue';
+import { LogIn, Menu, X } from '@lucide/vue';
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 
 const props = defineProps({
@@ -26,12 +26,10 @@ const open = ref(false);
 const closeButton = ref(null);
 const user = computed(() => page.props.auth.user);
 const shell = computed(() => props.site?.shell || props.site || {});
-const utility = computed(() => shell.value.utility || {});
 const footer = computed(() => shell.value.footer || {});
 const navigation = computed(() => shell.value.navigation || []);
-const socialLinks = computed(() => utility.value.social_links || []);
 const contact = computed(() => props.site?.contact || {});
-const themeDefaults = computed(() => shell.value.theme || { appearance: 'system', accent: 'calm-blue', allowedAccents: ['calm-blue', 'healing-green', 'warm-gold', 'vital-red'], switcherVisible: true });
+const themeDefaults = computed(() => shell.value.theme || { appearance: 'system', accent: 'calm', allowedAccents: ['calm', 'healing', 'alert', 'blood', 'seagrass'], switcherVisible: true });
 const hospitalName = computed(() => props.site.hospital?.display_name || 'Hospital');
 const footerCopyright = computed(() => (footer.value.copyright || `Copyright {year} ${hospitalName.value}. All rights reserved.`).replace('{year}', new Date().getFullYear()));
 
@@ -68,21 +66,6 @@ onBeforeUnmount(() => {
             Preview mode. Draft content is visible only to authorized users.
         </div>
 
-        <div v-if="utility.visible !== false" class="border-b text-sm" style="background: var(--public-footer); border-color: rgba(255,255,255,0.08); color: var(--public-footer-text);">
-            <div class="public-container flex flex-col gap-2 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-                <div class="flex flex-wrap justify-center gap-x-5 gap-y-2 lg:justify-start">
-                    <span v-if="utility.phone" class="inline-flex items-center gap-2"><Phone class="h-4 w-4" aria-hidden="true" />{{ utility.phone }}</span>
-                    <span v-if="utility.emergency_phone" class="inline-flex items-center gap-2 font-bold"><CalendarDays class="h-4 w-4" aria-hidden="true" />Emergency: {{ utility.emergency_phone }}</span>
-                    <span v-if="utility.email" class="inline-flex items-center gap-2"><Mail class="h-4 w-4" aria-hidden="true" />{{ utility.email }}</span>
-                    <span v-if="utility.hours" class="inline-flex items-center gap-2"><Clock class="h-4 w-4" aria-hidden="true" />{{ utility.hours }}</span>
-                </div>
-                <div class="flex flex-wrap justify-center gap-3 lg:justify-end">
-                    <a v-for="link in socialLinks" :key="link.url" :href="link.url" class="public-focus hover:underline" rel="noreferrer" target="_blank">{{ link.label }}</a>
-                    <span v-if="utility.location" class="inline-flex items-center gap-2"><MapPin class="h-4 w-4" aria-hidden="true" />{{ utility.location }}</span>
-                </div>
-            </div>
-        </div>
-
         <header class="sticky top-0 z-50 border-b backdrop-blur-xl" style="background: var(--public-header); border-color: var(--public-border);">
             <div class="public-container flex min-h-[84px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
                 <Link href="/" class="public-focus flex min-w-0 items-center gap-3 rounded-2xl">
@@ -101,7 +84,6 @@ onBeforeUnmount(() => {
 
                 <div class="hidden items-center gap-3 lg:flex">
                     <ThemeSwitcher :defaults="themeDefaults" />
-                    <Link href="/appointment" class="public-focus btn-public-primary">Appointment Info</Link>
                     <Link :href="user ? '/dashboard' : '/login'" class="public-focus btn-public-secondary"><LogIn class="h-4 w-4" aria-hidden="true" />{{ user ? 'Dashboard' : 'Login' }}</Link>
                 </div>
 
@@ -122,7 +104,6 @@ onBeforeUnmount(() => {
             </div>
             <nav class="mt-8 grid gap-2 text-base font-bold">
                 <Link v-for="item in navigation" :key="item.href" :href="item.href" class="public-focus rounded-2xl px-4 py-3" :style="isActive(item.href) ? 'background: var(--public-accent-soft); color: var(--public-accent);' : ''" @click="closeMenu">{{ item.label }}</Link>
-                <Link href="/appointment" class="public-focus btn-public-primary mt-4" @click="closeMenu">Appointment Info</Link>
                 <Link :href="user ? '/dashboard' : '/login'" class="public-focus btn-public-secondary" @click="closeMenu">{{ user ? 'Dashboard' : 'Login' }}</Link>
             </nav>
             <div class="mt-8 border-t pt-6" style="border-color: var(--public-border);">

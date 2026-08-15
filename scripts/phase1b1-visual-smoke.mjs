@@ -74,11 +74,11 @@ async function login() {
     await page.waitForLoadState('networkidle');
 }
 
-await gotoAndCapture('/', 'home-desktop-light-calm-blue', { width: 1440, height: 960 }, 'light', 'calm-blue');
-await gotoAndCapture('/', 'home-desktop-dark-calm-blue', { width: 1440, height: 960 }, 'dark', 'calm-blue');
-await gotoAndCapture('/', 'home-mobile-light-healing-green', { width: 390, height: 844 }, 'light', 'healing-green');
-await gotoAndCapture('/', 'home-mobile-dark-warm-gold', { width: 390, height: 844 }, 'dark', 'warm-gold');
-await gotoAndCapture('/', 'home-tablet-light-vital-red', { width: 768, height: 1024 }, 'light', 'vital-red');
+await gotoAndCapture('/', 'home-desktop-light-calm', { width: 1440, height: 960 }, 'light', 'calm');
+await gotoAndCapture('/', 'home-desktop-dark-calm', { width: 1440, height: 960 }, 'dark', 'calm');
+await gotoAndCapture('/', 'home-mobile-light-healing', { width: 390, height: 844 }, 'light', 'healing');
+await gotoAndCapture('/', 'home-mobile-dark-alert', { width: 390, height: 844 }, 'dark', 'alert');
+await gotoAndCapture('/', 'home-tablet-light-blood', { width: 768, height: 1024 }, 'light', 'blood');
 
 await page.setViewportSize({ width: 1440, height: 960 });
 await page.goto('/');
@@ -86,10 +86,10 @@ await page.waitForLoadState('networkidle');
 await page.getByRole('button', { name: 'Open theme settings' }).first().click();
 await page.screenshot({ path: `${screenshotDir}/theme-chooser.png`, fullPage: true });
 await page.getByRole('button', { name: /Dark/i }).first().click();
-await page.getByRole('button', { name: /Warm Gold/i }).first().click();
+await page.getByRole('button', { name: /Seagrass/i }).first().click();
 await page.reload();
 await page.waitForLoadState('networkidle');
-await assertTheme('dark', 'warm-gold', 'theme persistence');
+await assertTheme('dark', 'seagrass', 'theme persistence');
 
 await page.getByRole('button', { name: /Emergency information/i }).click();
 await page.screenshot({ path: `${screenshotDir}/services-accordion-expanded.png`, fullPage: true });

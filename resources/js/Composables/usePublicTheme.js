@@ -1,11 +1,11 @@
 import { computed, onMounted, ref, watch } from 'vue';
 
 const APPEARANCES = ['light', 'dark', 'system'];
-const ACCENTS = ['calm-blue', 'healing-green', 'warm-gold', 'vital-red'];
+const ACCENTS = ['calm', 'healing', 'alert', 'blood', 'seagrass'];
 const STORAGE_KEY = 'public-theme-preference';
 
 const appearance = ref('system');
-const accent = ref('calm-blue');
+const accent = ref('calm');
 const allowedAccents = ref([...ACCENTS]);
 const switcherVisible = ref(true);
 const systemDark = ref(false);
@@ -17,6 +17,15 @@ function readPreference() {
     } catch (error) {
         return {};
     }
+}
+
+function normalizeAccent(value) {
+    return {
+        'calm-blue': 'calm',
+        'healing-green': 'healing',
+        'warm-gold': 'alert',
+        'vital-red': 'blood',
+    }[value] || value;
 }
 
 function resolvedAppearanceValue(value = appearance.value) {
@@ -36,7 +45,7 @@ function persistTheme() {
 }
 
 export function usePublicTheme(defaults = {}) {
-    const configuredAccents = (defaults.allowedAccents || ACCENTS).filter((value) => ACCENTS.includes(value));
+    const configuredAccents = (defaults.allowedAccents || ACCENTS).map((value) => normalizeAccent(value)).filter((value) => ACCENTS.includes(value));
     allowedAccents.value = configuredAccents.length ? configuredAccents : [...ACCENTS];
     switcherVisible.value = defaults.switcherVisible !== false;
 
@@ -46,10 +55,10 @@ export function usePublicTheme(defaults = {}) {
 
         const stored = readPreference();
         const defaultAppearance = APPEARANCES.includes(defaults.appearance) ? defaults.appearance : 'system';
-        const defaultAccent = allowedAccents.value.includes(defaults.accent) ? defaults.accent : 'calm-blue';
+        const defaultAccent = allowedAccents.value.includes(normalizeAccent(defaults.accent)) ? normalizeAccent(defaults.accent) : 'calm';
 
         appearance.value = APPEARANCES.includes(stored.appearance) ? stored.appearance : defaultAppearance;
-        accent.value = allowedAccents.value.includes(stored.accent) ? stored.accent : defaultAccent;
+        accent.value = allowedAccents.value.includes(normalizeAccent(stored.accent)) ? normalizeAccent(stored.accent) : defaultAccent;
 
         mediaQuery.addEventListener('change', (event) => {
             systemDark.value = event.matches;
@@ -58,7 +67,7 @@ export function usePublicTheme(defaults = {}) {
 
         watch([appearance, accent, systemDark], () => {
             if (!allowedAccents.value.includes(accent.value)) {
-                accent.value = allowedAccents.value[0] || 'calm-blue';
+                accent.value = allowedAccents.value[0] || 'calm';
             }
             persistTheme();
             applyTheme();
@@ -78,6 +87,6 @@ export function usePublicTheme(defaults = {}) {
         accent,
         resolvedAppearance: computed(() => resolvedAppearanceValue()),
         setAppearance: (value) => { appearance.value = APPEARANCES.includes(value) ? value : 'system'; },
-        setAccent: (value) => { accent.value = allowedAccents.value.includes(value) ? value : (allowedAccents.value[0] || 'calm-blue'); },
+        setAccent: (value) => { accent.value = allowedAccents.value.includes(value) ? value : (allowedAccents.value[0] || 'calm'); },
     };
 }

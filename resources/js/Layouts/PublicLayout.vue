@@ -1,6 +1,8 @@
 <script setup>
+import ThemeSwitcher from '@/Components/Public/ThemeSwitcher.vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { CalendarDays, Clock, LogIn, Mail, MapPin, Menu, Phone, X } from '@lucide/vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 
 const props = defineProps({
     site: {
@@ -21,6 +23,7 @@ const props = defineProps({
 
 const page = usePage();
 const open = ref(false);
+const closeButton = ref(null);
 const user = computed(() => page.props.auth.user);
 const shell = computed(() => props.site?.shell || props.site || {});
 const utility = computed(() => shell.value.utility || {});
@@ -28,98 +31,132 @@ const footer = computed(() => shell.value.footer || {});
 const navigation = computed(() => shell.value.navigation || []);
 const socialLinks = computed(() => utility.value.social_links || []);
 const contact = computed(() => props.site?.contact || {});
+const themeDefaults = computed(() => shell.value.theme || { appearance: 'system', accent: 'calm-blue', allowedAccents: ['calm-blue', 'healing-green', 'warm-gold', 'vital-red'], switcherVisible: true });
+const hospitalName = computed(() => props.site.hospital?.display_name || 'Hospital');
+const footerCopyright = computed(() => (footer.value.copyright || `Copyright {year} ${hospitalName.value}. All rights reserved.`).replace('{year}', new Date().getFullYear()));
 
 function isActive(href) {
     return href === '/' ? page.url === '/' : page.url.startsWith(href);
 }
+
+function closeMenu() {
+    open.value = false;
+}
+
+function onKeydown(event) {
+    if (event.key === 'Escape') closeMenu();
+}
+
+watch(open, async (value) => {
+    document.body.style.overflow = value ? 'hidden' : '';
+    if (value) {
+        await nextTick();
+        closeButton.value?.focus();
+    }
+});
+
+onBeforeUnmount(() => {
+    document.body.style.overflow = '';
+});
 </script>
 
 <template>
-    <div class="min-h-screen bg-white text-slate-950 antialiased">
-        <div v-if="preview" class="bg-amber-100 px-4 py-2 text-center text-sm font-semibold text-amber-950">
+    <div class="public-theme min-h-screen antialiased" @keydown="onKeydown">
+        <a href="#main-content" class="public-focus sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-black focus:text-slate-950">Skip to content</a>
+
+        <div v-if="preview" class="px-4 py-2 text-center text-sm font-bold" style="background: var(--public-accent-soft); color: var(--public-text);">
             Preview mode. Draft content is visible only to authorized users.
         </div>
 
-        <div v-if="utility.visible !== false" class="border-b border-slate-200 bg-slate-950 text-white">
-            <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-2 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-                <div class="flex flex-wrap gap-x-5 gap-y-1">
-                    <span v-if="utility.phone">Phone: {{ utility.phone }}</span>
-                    <span v-if="utility.emergency_phone" class="font-semibold text-rose-200">Emergency: {{ utility.emergency_phone }}</span>
-                    <span v-if="utility.email">{{ utility.email }}</span>
-                    <span v-if="utility.hours">{{ utility.hours }}</span>
+        <div v-if="utility.visible !== false" class="border-b text-sm" style="background: var(--public-footer); border-color: rgba(255,255,255,0.08); color: var(--public-footer-text);">
+            <div class="public-container flex flex-col gap-2 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+                <div class="flex flex-wrap justify-center gap-x-5 gap-y-2 lg:justify-start">
+                    <span v-if="utility.phone" class="inline-flex items-center gap-2"><Phone class="h-4 w-4" aria-hidden="true" />{{ utility.phone }}</span>
+                    <span v-if="utility.emergency_phone" class="inline-flex items-center gap-2 font-bold"><CalendarDays class="h-4 w-4" aria-hidden="true" />Emergency: {{ utility.emergency_phone }}</span>
+                    <span v-if="utility.email" class="inline-flex items-center gap-2"><Mail class="h-4 w-4" aria-hidden="true" />{{ utility.email }}</span>
+                    <span v-if="utility.hours" class="inline-flex items-center gap-2"><Clock class="h-4 w-4" aria-hidden="true" />{{ utility.hours }}</span>
                 </div>
-                <div class="flex flex-wrap gap-3">
-                    <a v-for="link in socialLinks" :key="link.url" :href="link.url" class="hover:text-cyan-200" rel="noreferrer" target="_blank">{{ link.label }}</a>
-                    <span v-if="utility.location">{{ utility.location }}</span>
+                <div class="flex flex-wrap justify-center gap-3 lg:justify-end">
+                    <a v-for="link in socialLinks" :key="link.url" :href="link.url" class="public-focus hover:underline" rel="noreferrer" target="_blank">{{ link.label }}</a>
+                    <span v-if="utility.location" class="inline-flex items-center gap-2"><MapPin class="h-4 w-4" aria-hidden="true" />{{ utility.location }}</span>
                 </div>
             </div>
         </div>
 
-        <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
-            <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-                <Link href="/" class="flex items-center gap-3">
-                    <span class="grid h-11 w-11 place-items-center rounded-md bg-teal-700 text-lg font-black text-white">H</span>
-                    <span>
-                        <span class="block text-base font-bold leading-tight text-slate-950">{{ site.hospital?.display_name || 'Hospital' }}</span>
-                        <span class="block text-xs font-medium uppercase tracking-wide text-teal-700">Care and hospital services</span>
+        <header class="sticky top-0 z-50 border-b backdrop-blur-xl" style="background: var(--public-header); border-color: var(--public-border);">
+            <div class="public-container flex min-h-[84px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+                <Link href="/" class="public-focus flex min-w-0 items-center gap-3 rounded-2xl">
+                    <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-lg font-black" style="background: var(--public-accent); color: var(--public-accent-foreground);">H</span>
+                    <span class="min-w-0">
+                        <span class="block truncate text-lg font-black" style="color: var(--public-text);">{{ hospitalName }}</span>
+                        <span class="block text-xs font-black uppercase tracking-wide" style="color: var(--public-accent);">Care and hospital services</span>
                     </span>
                 </Link>
 
-                <nav class="hidden items-center gap-1 text-sm font-semibold lg:flex">
-                    <Link
-                        v-for="item in navigation"
-                        :key="item.href"
-                        :href="item.href"
-                        class="rounded-md px-3 py-2 transition hover:bg-slate-100 hover:text-teal-800"
-                        :class="isActive(item.href) ? 'bg-teal-50 text-teal-800' : 'text-slate-700'"
-                    >
+                <nav class="hidden items-center justify-center gap-1 text-sm font-bold lg:flex" aria-label="Primary navigation">
+                    <Link v-for="item in navigation" :key="item.href" :href="item.href" class="public-focus rounded-full px-4 py-2 transition" :style="isActive(item.href) ? 'background: var(--public-accent-soft); color: var(--public-accent);' : 'color: var(--public-text-secondary);'">
                         {{ item.label }}
                     </Link>
                 </nav>
 
                 <div class="hidden items-center gap-3 lg:flex">
-                    <Link href="/appointment" class="rounded-md bg-rose-700 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-rose-800">Appointment Info</Link>
-                    <Link :href="user ? '/dashboard' : '/login'" class="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 hover:border-teal-700 hover:text-teal-800">
-                        {{ user ? 'Dashboard' : 'Login' }}
-                    </Link>
+                    <ThemeSwitcher :defaults="themeDefaults" />
+                    <Link href="/appointment" class="public-focus btn-public-primary">Appointment Info</Link>
+                    <Link :href="user ? '/dashboard' : '/login'" class="public-focus btn-public-secondary"><LogIn class="h-4 w-4" aria-hidden="true" />{{ user ? 'Dashboard' : 'Login' }}</Link>
                 </div>
 
-                <button class="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold lg:hidden" type="button" @click="open = !open">
-                    Menu
-                </button>
+                <div class="flex items-center gap-2 lg:hidden">
+                    <ThemeSwitcher :defaults="themeDefaults" />
+                    <button class="public-focus grid h-11 w-11 place-items-center rounded-full border" style="border-color: var(--public-border); color: var(--public-text);" type="button" aria-label="Open menu" :aria-expanded="open" @click="open = true">
+                        <Menu class="h-5 w-5" aria-hidden="true" />
+                    </button>
+                </div>
             </div>
-
-            <nav v-if="open" class="border-t border-slate-200 bg-white px-4 py-3 text-sm font-semibold lg:hidden">
-                <Link v-for="item in navigation" :key="item.href" :href="item.href" class="block rounded-md px-3 py-2" @click="open = false">{{ item.label }}</Link>
-                <Link href="/appointment" class="mt-2 block rounded-md bg-rose-700 px-3 py-2 text-white" @click="open = false">Appointment Info</Link>
-                <Link :href="user ? '/dashboard' : '/login'" class="block rounded-md px-3 py-2" @click="open = false">{{ user ? 'Dashboard' : 'Login' }}</Link>
-            </nav>
         </header>
 
-        <main>
+        <div v-if="open" class="fixed inset-0 z-[70] bg-black/50 lg:hidden" @click="closeMenu"></div>
+        <aside v-if="open" class="fixed inset-y-0 right-0 z-[80] flex w-full max-w-sm flex-col border-l p-5 shadow-2xl lg:hidden" style="background: var(--public-surface-elevated); border-color: var(--public-border); color: var(--public-text);" aria-label="Mobile navigation">
+            <div class="flex items-center justify-between gap-3">
+                <span class="text-lg font-black">Menu</span>
+                <button ref="closeButton" class="public-focus grid h-11 w-11 place-items-center rounded-full border" style="border-color: var(--public-border);" type="button" aria-label="Close menu" @click="closeMenu"><X class="h-5 w-5" aria-hidden="true" /></button>
+            </div>
+            <nav class="mt-8 grid gap-2 text-base font-bold">
+                <Link v-for="item in navigation" :key="item.href" :href="item.href" class="public-focus rounded-2xl px-4 py-3" :style="isActive(item.href) ? 'background: var(--public-accent-soft); color: var(--public-accent);' : ''" @click="closeMenu">{{ item.label }}</Link>
+                <Link href="/appointment" class="public-focus btn-public-primary mt-4" @click="closeMenu">Appointment Info</Link>
+                <Link :href="user ? '/dashboard' : '/login'" class="public-focus btn-public-secondary" @click="closeMenu">{{ user ? 'Dashboard' : 'Login' }}</Link>
+            </nav>
+            <div class="mt-8 border-t pt-6" style="border-color: var(--public-border);">
+                <p class="mb-3 text-sm font-black">Theme</p>
+                <ThemeSwitcher :defaults="themeDefaults" />
+            </div>
+        </aside>
+
+        <main id="main-content">
             <slot />
         </main>
 
-        <footer class="bg-slate-950 text-white">
-            <div class="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.5fr_1fr_1fr] lg:px-8">
+        <footer class="relative overflow-hidden" style="background: var(--public-footer); color: var(--public-footer-text);">
+            <div class="absolute inset-0 opacity-20" style="background: radial-gradient(circle at 20% 0%, var(--public-accent), transparent 30%);"></div>
+            <div class="public-container relative grid gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1.4fr_0.8fr_1fr] lg:px-8">
                 <div>
                     <div class="flex items-center gap-3">
-                        <span class="grid h-11 w-11 place-items-center rounded-md bg-teal-600 text-lg font-black">H</span>
-                        <span class="text-lg font-bold">{{ site.hospital?.display_name || 'Hospital' }}</span>
+                        <span class="grid h-12 w-12 place-items-center rounded-2xl text-lg font-black" style="background: var(--public-accent); color: var(--public-accent-foreground);">H</span>
+                        <span class="text-xl font-black text-white">{{ hospitalName }}</span>
                     </div>
-                    <p class="mt-4 max-w-md text-sm leading-6 text-slate-300">
-                        {{ footer.summary || 'A configurable public hospital website managed from the administration area.' }}
-                    </p>
-                </div>
-                <div>
-                    <h2 class="text-sm font-bold uppercase tracking-wide text-cyan-200">Explore</h2>
-                    <div class="mt-4 grid gap-2 text-sm text-slate-300">
-                        <Link v-for="item in navigation" :key="`footer-${item.href}`" :href="item.href" class="hover:text-white">{{ item.label }}</Link>
+                    <p class="mt-5 max-w-md text-sm leading-7 text-white/72">{{ footer.summary || 'A configurable public hospital website managed from the administration area.' }}</p>
+                    <div class="mt-6 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-wide text-white/55">
+                        <span>Draft-controlled publishing</span><span>Secure media</span><span>Accessible themes</span>
                     </div>
                 </div>
                 <div>
-                    <h2 class="text-sm font-bold uppercase tracking-wide text-cyan-200">Contact</h2>
-                    <div class="mt-4 space-y-2 text-sm text-slate-300">
+                    <h2 class="text-sm font-black uppercase tracking-wide" style="color: var(--public-accent);">Explore</h2>
+                    <div class="mt-4 grid gap-2 text-sm text-white/72">
+                        <Link v-for="item in navigation" :key="`footer-${item.href}`" :href="item.href" class="public-focus hover:text-white">{{ item.label }}</Link>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="text-sm font-black uppercase tracking-wide" style="color: var(--public-accent);">Contact</h2>
+                    <div class="mt-4 space-y-3 text-sm leading-6 text-white/72">
                         <p v-if="contact.address">{{ contact.address }}</p>
                         <p v-if="contact.phone">{{ contact.phone }}</p>
                         <p v-if="contact.email">{{ contact.email }}</p>
@@ -127,8 +164,8 @@ function isActive(href) {
                     </div>
                 </div>
             </div>
-            <div class="border-t border-white/10 px-4 py-5 text-center text-xs text-slate-400">
-                {{ footer.copyright || `Copyright ${new Date().getFullYear()} ${site.hospital?.display_name || 'Hospital'}. All rights reserved.` }}
+            <div class="relative border-t px-4 py-5 text-center text-xs text-white/50" style="border-color: rgba(255,255,255,0.1);">
+                {{ footerCopyright }}
             </div>
         </footer>
     </div>

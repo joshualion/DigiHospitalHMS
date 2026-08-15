@@ -85,6 +85,7 @@ class PublicSiteSeeder extends Seeder
                 'content' => [
                     'utility' => ['visible' => true, 'phone' => '+234 809 157 4444', 'emergency_phone' => '+234 809 157 4444', 'email' => 'info@example.test', 'hours' => 'Mon - Fri, 8:00 AM - 6:00 PM', 'location' => 'Lagos, Nigeria'],
                     'navigation' => ['appointment_label' => 'Appointment information', 'appointment_url' => '/appointment', 'items' => [['label' => 'Home', 'url' => '/'], ['label' => 'About', 'url' => '/about'], ['label' => 'Services', 'url' => '/services'], ['label' => 'Departments', 'url' => '/departments'], ['label' => 'Doctors', 'url' => '/doctors'], ['label' => 'News', 'url' => '/news'], ['label' => 'Contact', 'url' => '/contact']]],
+                    'theme' => ['appearance' => 'system', 'accent' => 'calm-blue', 'allowed_accents' => ['calm-blue', 'healing-green', 'warm-gold', 'vital-red'], 'show_switcher' => true],
                     'footer' => ['summary' => 'A modern hospital website foundation. Replace placeholder copy with approved hospital content before production.', 'copyright' => 'Copyright {year} Demo Hospital. All rights reserved.'],
                 ],
                 'seo' => ['title' => 'Demo Hospital', 'description' => 'Modern hospital care information and contact details.', 'canonical' => '/'],

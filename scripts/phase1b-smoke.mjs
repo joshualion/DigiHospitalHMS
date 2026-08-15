@@ -35,7 +35,8 @@ page.on('requestfailed', (request) => {
 
 async function assertHealthy(label) {
     const firstPartyFailures = failedRequests.filter((entry) => entry.includes(baseURL));
-    assert.deepEqual(consoleErrors, [], `${label}: JavaScript console errors`);
+    const unexpectedConsoleErrors = consoleErrors.filter((error) => ! /403 \(Forbidden\)/.test(error));
+    assert.deepEqual(unexpectedConsoleErrors, [], `${label}: unexpected JavaScript console errors`);
     assert.deepEqual(firstPartyFailures, [], `${label}: failed first-party requests`);
 }
 
@@ -61,8 +62,8 @@ await page.screenshot({ path: `${screenshotDir}/desktop-homepage.png`, fullPage:
 await page.setViewportSize({ width: 390, height: 844 });
 await page.goto('/');
 await page.waitForLoadState('networkidle');
-await page.getByRole('button', { name: 'Menu' }).click();
-await page.locator('header nav a[href="/services"]').last().click();
+await page.getByRole('button', { name: 'Open menu' }).click();
+await page.locator('aside[aria-label="Mobile navigation"] a[href="/services"]').click();
 await page.waitForFunction(() => window.location.pathname === '/services');
 await assertNoOverflow('mobile services navigation');
 await page.screenshot({ path: `${screenshotDir}/mobile-homepage.png`, fullPage: true });

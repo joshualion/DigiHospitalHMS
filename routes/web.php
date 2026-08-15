@@ -69,6 +69,7 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin'])
         Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
         Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])->name('admin.public-website.edit');
         Route::patch('public-website/pages/{page}', [PublicWebsiteController::class, 'updatePage'])->name('admin.public-website.pages.update');
+        Route::patch('public-website/pages/{page}/theme', [PublicWebsiteController::class, 'updateTheme'])->name('admin.public-website.pages.theme');
         Route::post('public-website/pages/{page}/publish', [PublicWebsiteController::class, 'publishPage'])->name('admin.public-website.pages.publish');
         Route::post('public-website/pages/{page}/unpublish', [PublicWebsiteController::class, 'unpublishPage'])->name('admin.public-website.pages.unpublish');
         Route::patch('public-website/sections/{section}', [PublicWebsiteController::class, 'updateSection'])->name('admin.public-website.sections.update');

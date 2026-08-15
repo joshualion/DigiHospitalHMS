@@ -101,6 +101,7 @@ class PublicSiteController extends Controller
         $home = PublicSitePage::where('hospital_id', $hospital->id)->where('slug', 'home')->first();
         $content = $preview ? ($home?->draft_content ?? []) : ($home?->published_content ?? []);
 
+        $theme = $content['theme'] ?? [];
         $navigation = collect($content['navigation']['items'] ?? [])
             ->map(fn (array $item) => [
                 'label' => $item['label'] ?? 'Link',
@@ -114,6 +115,12 @@ class PublicSiteController extends Controller
             'utility' => $content['utility'] ?? [],
             'navigation' => $navigation,
             'footer' => $content['footer'] ?? [],
+            'theme' => [
+                'appearance' => in_array($theme['appearance'] ?? 'system', ['light', 'dark', 'system'], true) ? ($theme['appearance'] ?? 'system') : 'system',
+                'accent' => in_array($theme['accent'] ?? 'calm-blue', ['calm-blue', 'healing-green', 'warm-gold', 'vital-red'], true) ? ($theme['accent'] ?? 'calm-blue') : 'calm-blue',
+                'allowedAccents' => array_values(array_intersect($theme['allowed_accents'] ?? ['calm-blue', 'healing-green', 'warm-gold', 'vital-red'], ['calm-blue', 'healing-green', 'warm-gold', 'vital-red'])),
+                'switcherVisible' => ($theme['show_switcher'] ?? true) !== false,
+            ],
             'contact' => [
                 'address' => trim(collect([$hospital->address, $hospital->city, $hospital->state, $hospital->country])->filter()->implode(', ')),
                 'phone' => $hospital->phone_numbers[0] ?? null,

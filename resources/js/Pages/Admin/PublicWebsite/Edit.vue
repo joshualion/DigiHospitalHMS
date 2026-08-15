@@ -18,6 +18,31 @@ const pageForm = useForm({
     seo: props.page.seo || {},
 });
 
+const accentMap = {
+    'calm-blue': 'calm',
+    'healing-green': 'healing',
+    'warm-gold': 'alert',
+    'vital-red': 'blood',
+};
+const normalizeAccent = (value) => accentMap[value] || value;
+const themeDefaults = props.page.draft_content?.theme || {};
+const normalizedAllowedAccents = (themeDefaults.allowed_accents || ['calm', 'healing', 'alert', 'blood', 'seagrass'])
+    .map((value) => normalizeAccent(value))
+    .filter((value) => ['calm', 'healing', 'alert', 'blood', 'seagrass'].includes(value));
+const themeForm = useForm({
+    appearance: themeDefaults.appearance || 'system',
+    accent: normalizeAccent(themeDefaults.accent || 'calm'),
+    allowed_accents: normalizedAllowedAccents.length ? normalizedAllowedAccents : ['calm', 'healing', 'alert', 'blood', 'seagrass'],
+    show_switcher: themeDefaults.show_switcher !== false,
+});
+const accentOptions = [
+    ['calm', 'Calm'],
+    ['healing', 'Healing'],
+    ['alert', 'Alert'],
+    ['blood', 'Blood'],
+    ['seagrass', 'Seagrass'],
+];
+
 const newItem = useForm({
     public_site_section_id: props.page.sections[0]?.id || null,
     type: 'service',
@@ -62,6 +87,24 @@ const itemForm = computed(() => {
 
 function savePage() {
     pageForm.patch(`/admin/public-website/pages/${props.page.id}`, { preserveScroll: true });
+}
+
+function saveTheme() {
+    themeForm.patch(`/admin/public-website/pages/${props.page.id}/theme`, { preserveScroll: true });
+}
+
+function toggleAccent(value) {
+    if (themeForm.allowed_accents.includes(value)) {
+        if (themeForm.allowed_accents.length > 1) {
+            themeForm.allowed_accents = themeForm.allowed_accents.filter((accent) => accent !== value);
+        }
+    } else {
+        themeForm.allowed_accents = [...themeForm.allowed_accents, value];
+    }
+
+    if (!themeForm.allowed_accents.includes(themeForm.accent)) {
+        themeForm.accent = themeForm.allowed_accents[0];
+    }
 }
 
 function publishPage() {
@@ -131,6 +174,34 @@ function parseInto(target, field, event) {
                 </div>
             </section>
 
+            <section class="rounded-md border border-slate-200 bg-white p-5">
+                <h3 class="font-bold">Public Theme Defaults</h3>
+                <p class="mt-1 text-sm text-slate-600">Visitor preferences override these defaults on their browser. Values are saved to draft and go live when the page is published.</p>
+                <form class="mt-4 grid gap-4 md:grid-cols-4" @submit.prevent="saveTheme">
+                    <label class="text-sm font-semibold">Appearance
+                        <select v-model="themeForm.appearance" class="mt-1 w-full rounded-md border-slate-300">
+                            <option value="system">System</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </label>
+                    <label class="text-sm font-semibold">Default accent
+                        <select v-model="themeForm.accent" class="mt-1 w-full rounded-md border-slate-300">
+                            <option v-for="[value, label] in accentOptions" :key="value" :value="value" :disabled="!themeForm.allowed_accents.includes(value)">{{ label }}</option>
+                        </select>
+                    </label>
+                    <label class="flex items-center gap-2 pt-7 text-sm font-semibold">
+                        <input v-model="themeForm.show_switcher" type="checkbox"> Show visitor theme switcher
+                    </label>
+                    <div class="md:col-span-4">
+                        <p class="text-sm font-semibold">Allowed accents</p>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <button v-for="[value, label] in accentOptions" :key="value" type="button" class="rounded-md border px-3 py-2 text-sm font-semibold" :class="themeForm.allowed_accents.includes(value) ? 'border-teal-700 bg-teal-50 text-teal-800' : 'border-slate-300'" @click="toggleAccent(value)">{{ label }}</button>
+                        </div>
+                    </div>
+                    <button class="rounded-md bg-slate-950 px-4 py-2 text-sm font-bold text-white md:col-span-4" type="submit">Save theme defaults to draft</button>
+                </form>
+            </section>
             <section class="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
                 <form class="rounded-md border border-slate-200 bg-white p-5" @submit.prevent="savePage">
                     <h3 class="font-bold">Page Draft and SEO</h3>

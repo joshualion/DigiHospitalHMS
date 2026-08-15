@@ -670,3 +670,25 @@ Delivered scope:
 - Explicit deferral of patient, clinical, appointment-booking, billing, lab, pharmacy, inventory, admissions, blood bank, theatre, and insurance/HMO modules.
 
 Recommended next milestone: Phase 2 appointment/contact intake should begin by connecting the existing informational appointment CTA to a controlled, non-clinical appointment request workflow after the hospital approves required fields, consent copy, and triage boundaries.
+
+## Phase 1B.1: Public Website UI/UX And Theme-System Overhaul
+
+Status: implemented in this branch pending final verification and local commit.
+
+Delivered scope:
+
+- Token-driven public design system.
+- Light, dark, and system appearance preferences.
+- Calm, Healing, Alert, Blood, and Seagrass accent themes.
+- Visitor theme persistence and early document initialization.
+- Admin-managed draft/published public theme defaults.
+- Centered hero and major section introductions.
+- Redesigned hero-to-about information band.
+- Two-column homepage services accordion backed by published marketing-service records.
+- Upgraded public page heroes, cards, CTAs, footer, mobile navigation, and theme controls.
+- Phase 1B CMS, publishing, preview, permissions, auditing, media, and SEO architecture preserved.
+
+Deferred:
+
+- Operational appointment intake remains Phase 2.
+- Patients, clinical records, billing, lab, pharmacy, inventory, admissions, blood bank, theatre, insurance/HMO, and other Phase 2+ modules remain unimplemented.

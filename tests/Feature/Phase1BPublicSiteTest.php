@@ -50,8 +50,72 @@ class Phase1BPublicSiteTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Public/WebsitePage')
                 ->where('page.slug', 'home')
+                ->where('site.theme.appearance', 'system')
+                ->where('site.theme.accent', 'calm')
+                ->where('site.theme.switcherVisible', true)
+                ->where('site.theme.allowedAccents', ['calm', 'healing', 'alert', 'blood', 'seagrass'])
                 ->has('sections.hero')
                 ->has('items.service'));
+    }
+
+    public function test_theme_defaults_are_draft_controlled_validated_audited_and_published(): void
+    {
+        $editor = $this->userWithPermissions(['website.view', 'website.edit', 'website.manage_theme']);
+        $page = PublicSitePage::where('slug', 'home')->firstOrFail();
+
+        $this->actingAs($editor)->patch("/admin/public-website/pages/{$page->id}/theme", [
+            'appearance' => 'dark',
+            'accent' => 'seagrass',
+            'allowed_accents' => ['calm', 'seagrass'],
+            'show_switcher' => false,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $page->refresh();
+        $this->assertSame('dark', $page->draft_content['theme']['appearance']);
+        $this->assertSame('seagrass', $page->draft_content['theme']['accent']);
+        $this->assertSame(['calm', 'seagrass'], $page->draft_content['theme']['allowed_accents']);
+        $this->assertFalse($page->draft_content['theme']['show_switcher']);
+        $this->assertDatabaseHas('audit_events', ['action' => 'website.theme_updated']);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('site.theme.accent', 'calm')
+                ->where('site.theme.switcherVisible', true));
+
+        $publisher = $this->userWithPermissions(['website.view', 'website.edit', 'website.publish']);
+        $this->actingAs($publisher)->post("/admin/public-website/pages/{$page->id}/publish")->assertRedirect();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('site.theme.appearance', 'dark')
+                ->where('site.theme.accent', 'seagrass')
+                ->where('site.theme.allowedAccents', ['calm', 'seagrass'])
+                ->where('site.theme.switcherVisible', false));
+    }
+
+    public function test_theme_settings_require_permission_and_reject_uncontrolled_values(): void
+    {
+        $editor = $this->userWithPermissions(['website.view', 'website.edit']);
+        $editor->syncRoles([]);
+        $editor->syncPermissions(['website.view', 'website.edit']);
+        $page = PublicSitePage::where('slug', 'home')->firstOrFail();
+
+        $this->actingAs($editor)->patch("/admin/public-website/pages/{$page->id}/theme", [
+            'appearance' => 'light',
+            'accent' => 'healing',
+            'allowed_accents' => ['healing'],
+            'show_switcher' => true,
+        ])->assertForbidden();
+
+        $manager = $this->userWithPermissions(['website.view', 'website.edit', 'website.manage_theme']);
+        $this->actingAs($manager)->patch("/admin/public-website/pages/{$page->id}/theme", [
+            'appearance' => 'neon',
+            'accent' => '#ff0',
+            'allowed_accents' => ['calm', 'javascript:alert(1)'],
+            'show_switcher' => true,
+        ])->assertSessionHasErrors(['appearance', 'accent', 'allowed_accents.1']);
     }
 
     public function test_draft_page_content_is_hidden_publicly_but_visible_in_authorized_preview(): void
@@ -125,6 +189,21 @@ class Phase1BPublicSiteTest extends TestCase
         $this->assertNotNull($department->presentable_id);
         $this->assertArrayNotHasKey('personal_phone', $clinician->published_content ?? []);
         $this->assertStringContainsString('demonstration only', strtolower($testimonial->summary));
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('items.service', 2)
+                ->where('items.service.0.slug', 'general-consultation')
+                ->where('items.service.1.slug', 'emergency-information'));
+
+        $service->update(['status' => 'draft', 'is_enabled' => false]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('items.service', 1)
+                ->where('items.service.0.slug', 'emergency-information'));
     }
 
     public function test_unsafe_rich_text_is_sanitized_and_section_idor_is_rejected(): void

@@ -43,6 +43,7 @@ class PermissionSeeder extends Seeder
             'website.manage_media',
             'website.manage_navigation',
             'website.manage_seo',
+            'website.manage_theme',
             'website.view_revisions',
             'website.restore_revision',
         ];
@@ -80,6 +81,7 @@ class PermissionSeeder extends Seeder
             'website.manage_media',
             'website.manage_navigation',
             'website.manage_seo',
+            'website.manage_theme',
             'website.view_revisions',
             'website.restore_revision',
         ];

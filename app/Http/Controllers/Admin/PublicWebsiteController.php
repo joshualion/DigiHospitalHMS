@@ -129,6 +129,34 @@ class PublicWebsiteController extends FoundationController
         return back()->with('success', 'Draft item created.');
     }
 
+    public function updateTheme(Request $request, PublicSitePage $page, AuditService $audit): RedirectResponse
+    {
+        $this->authorize('update', $page);
+        abort_unless($request->user()->can('website.manage_theme'), 403);
+
+        $validated = $request->validate([
+            'appearance' => ['required', Rule::in(['light', 'dark', 'system'])],
+            'accent' => ['required', Rule::in(['calm', 'healing', 'alert', 'blood', 'seagrass'])],
+            'allowed_accents' => ['required', 'array', 'min:1'],
+            'allowed_accents.*' => ['required', Rule::in(['calm', 'healing', 'alert', 'blood', 'seagrass'])],
+            'show_switcher' => ['required', 'boolean'],
+        ]);
+
+        $draft = $page->draft_content ?? [];
+        $before = $draft['theme'] ?? null;
+        $draft['theme'] = [
+            'appearance' => $validated['appearance'],
+            'accent' => $validated['accent'],
+            'allowed_accents' => array_values(array_unique($validated['allowed_accents'])),
+            'show_switcher' => (bool) $validated['show_switcher'],
+        ];
+
+        $page->update(['draft_content' => $draft]);
+        $audit->record('website.theme_updated', $page, $before, $draft['theme']);
+
+        return back()->with('success', 'Theme defaults saved to draft.');
+    }
+
     public function publishPage(PublicSitePage $page, PublicSitePublisher $publisher): RedirectResponse
     {
         $this->authorize('publish', $page);

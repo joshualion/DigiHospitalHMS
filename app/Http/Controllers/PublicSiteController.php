@@ -101,6 +101,20 @@ class PublicSiteController extends Controller
         $home = PublicSitePage::where('hospital_id', $hospital->id)->where('slug', 'home')->first();
         $content = $preview ? ($home?->draft_content ?? []) : ($home?->published_content ?? []);
 
+        $theme = $content['theme'] ?? [];
+        $accentMap = [
+            'calm-blue' => 'calm',
+            'healing-green' => 'healing',
+            'warm-gold' => 'alert',
+            'vital-red' => 'blood',
+        ];
+        $accentOptions = ['calm', 'healing', 'alert', 'blood', 'seagrass'];
+        $themeAccent = $accentMap[$theme['accent'] ?? ''] ?? ($theme['accent'] ?? 'calm');
+        $allowedThemeAccents = collect($theme['allowed_accents'] ?? $accentOptions)
+            ->map(fn (string $accent) => $accentMap[$accent] ?? $accent)
+            ->intersect($accentOptions)
+            ->values()
+            ->all();
         $navigation = collect($content['navigation']['items'] ?? [])
             ->map(fn (array $item) => [
                 'label' => $item['label'] ?? 'Link',
@@ -114,6 +128,12 @@ class PublicSiteController extends Controller
             'utility' => $content['utility'] ?? [],
             'navigation' => $navigation,
             'footer' => $content['footer'] ?? [],
+            'theme' => [
+                'appearance' => in_array($theme['appearance'] ?? 'system', ['light', 'dark', 'system'], true) ? ($theme['appearance'] ?? 'system') : 'system',
+                'accent' => in_array($themeAccent, $accentOptions, true) ? $themeAccent : 'calm',
+                'allowedAccents' => $allowedThemeAccents ?: $accentOptions,
+                'switcherVisible' => ($theme['show_switcher'] ?? true) !== false,
+            ],
             'contact' => [
                 'address' => trim(collect([$hospital->address, $hospital->city, $hospital->state, $hospital->country])->filter()->implode(', ')),
                 'phone' => $hospital->phone_numbers[0] ?? null,

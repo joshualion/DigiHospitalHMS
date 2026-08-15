@@ -36,6 +36,15 @@ class PermissionSeeder extends Seeder
             'audit.export',
             'settings.manage',
             'numbering.manage',
+            'website.view',
+            'website.edit',
+            'website.publish',
+            'website.unpublish',
+            'website.manage_media',
+            'website.manage_navigation',
+            'website.manage_seo',
+            'website.view_revisions',
+            'website.restore_revision',
         ];
 
         foreach ($permissions as $permission) {
@@ -64,11 +73,24 @@ class PermissionSeeder extends Seeder
             'audit.view',
             'settings.manage',
             'numbering.manage',
+            'website.view',
+            'website.edit',
+            'website.publish',
+            'website.unpublish',
+            'website.manage_media',
+            'website.manage_navigation',
+            'website.manage_seo',
+            'website.view_revisions',
+            'website.restore_revision',
         ];
 
-        Role::whereIn('name', ['admin', 'hospital-admin'])
-            ->get()
-            ->each(fn (Role $role) => $role->syncPermissions($adminPermissions));
+        Role::where('name', 'admin')->first()?->syncPermissions(array_values(array_diff($adminPermissions, [
+            'website.publish',
+            'website.unpublish',
+            'website.restore_revision',
+        ])));
+
+        Role::where('name', 'hospital-admin')->first()?->syncPermissions($adminPermissions);
 
         Role::whereIn('name', [
             'receptionist',

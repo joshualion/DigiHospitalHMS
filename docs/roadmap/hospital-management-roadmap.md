@@ -655,3 +655,18 @@ Phase 0, Session 1-4:
 4. Align `users` schema, factory, auth views, admin views, and tests.
 
 This milestone should be completed before adding any hospital module.
+
+## Phase 1B: Sectional Public Website And Publishing Module
+
+Status: implemented in this branch pending final verification and local commit.
+
+Delivered scope:
+
+- Sectional public website managed through Laravel/Inertia/Vue.
+- Draft, preview, publish, unpublish, and revision restore workflow.
+- Public Website administration area with page, section, item, media, and revision controls.
+- Public pages for home, about, services, departments, doctors, doctor profile, news, article view, contact, appointment information, and policies.
+- Safe media upload controls and placeholder licensing documentation.
+- Explicit deferral of patient, clinical, appointment-booking, billing, lab, pharmacy, inventory, admissions, blood bank, theatre, and insurance/HMO modules.
+
+Recommended next milestone: Phase 2 appointment/contact intake should begin by connecting the existing informational appointment CTA to a controlled, non-clinical appointment request workflow after the hospital approves required fields, consent copy, and triage boundaries.

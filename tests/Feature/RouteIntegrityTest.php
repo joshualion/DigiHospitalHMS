@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use Database\Seeders\HospitalFoundationSeeder;
 use Database\Seeders\PermissionSeeder;
+use Database\Seeders\PublicSiteSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -21,6 +22,9 @@ class RouteIntegrityTest extends TestCase
 
     public function test_public_routes_resolve(): void
     {
+        $this->seed(HospitalFoundationSeeder::class);
+        $this->seed(PublicSiteSeeder::class);
+
         foreach (['/', '/about', '/doctor', '/appointment', '/blog', '/contact', '/policies'] as $uri) {
             $this->get($uri)->assertOk();
         }

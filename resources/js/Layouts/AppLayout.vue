@@ -35,7 +35,7 @@ const navItems = computed(() => [
     { label: 'Settings', href: '/admin/settings', show: can('settings.manage') },
     { label: 'Numbering', href: '/admin/numbering', show: can('numbering.manage') },
     { label: 'Audit Logs', href: '/admin/audit-logs', show: can('audit.view') },
-    { label: 'CMS Pages', href: '/admin/pages', show: can('hospital.update') },
+    { label: 'Public Website', href: '/admin/public-website', show: can('website.view') },
     { label: 'Profile', href: '/profile', show: true },
 ]);
 

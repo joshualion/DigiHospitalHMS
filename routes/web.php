@@ -6,40 +6,29 @@ use App\Http\Controllers\Admin\FacilityController;
 use App\Http\Controllers\Admin\HospitalProfileController;
 use App\Http\Controllers\Admin\HospitalSettingController;
 use App\Http\Controllers\Admin\NumberSequenceController;
+use App\Http\Controllers\Admin\PublicWebsiteController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Cms\PageController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicSiteController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Public/Home');
-})->name('home');
-
-Route::get('/about', function () {
-    return Inertia::render('Public/About');
-})->name('about');
-
-Route::get('/doctor', function () {
-    return Inertia::render('Public/Doctor');
-})->name('doctor');
-
-Route::get('/appointment', function () {
-    return Inertia::render('Public/Appointment');
-})->name('appointment');
-
-Route::get('/blog', function () {
-    return Inertia::render('Public/Blog');
-})->name('blog');
-
-Route::get('/contact', function () {
-    return Inertia::render('Public/Contact');
-})->name('contact');
-
-Route::get('/policies', function () {
-    return Inertia::render('Public/Policies');
-})->name('policies');
+Route::get('/', [PublicSiteController::class, 'home'])->name('home');
+Route::get('/about', [PublicSiteController::class, 'page'])->defaults('slug', 'about')->name('about');
+Route::get('/services', [PublicSiteController::class, 'page'])->defaults('slug', 'services')->name('services');
+Route::get('/departments', [PublicSiteController::class, 'page'])->defaults('slug', 'departments')->name('departments');
+Route::get('/doctors', [PublicSiteController::class, 'page'])->defaults('slug', 'doctors')->name('doctors');
+Route::get('/doctor', [PublicSiteController::class, 'page'])->defaults('slug', 'doctors')->name('doctor');
+Route::get('/doctors/{slug}', [PublicSiteController::class, 'doctor'])->name('doctors.show');
+Route::get('/news', [PublicSiteController::class, 'page'])->defaults('slug', 'news')->name('news');
+Route::get('/news/{slug}', [PublicSiteController::class, 'article'])->name('news.show');
+Route::get('/blog', [PublicSiteController::class, 'page'])->defaults('slug', 'news')->name('blog');
+Route::get('/contact', [PublicSiteController::class, 'page'])->defaults('slug', 'contact')->name('contact');
+Route::get('/appointment', [PublicSiteController::class, 'page'])->defaults('slug', 'appointment')->name('appointment');
+Route::get('/policies', [PublicSiteController::class, 'page'])->defaults('slug', 'policies')->name('policies');
+Route::get('/preview/public-site/{page}', [PublicSiteController::class, 'preview'])->name('public.preview');
 
 Route::middleware(['auth', 'role:superadmin|admin|hospital-admin'])
     ->prefix('admin')
@@ -76,6 +65,19 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin'])
         Route::get('numbering', [NumberSequenceController::class, 'index'])->name('admin.numbering.index');
         Route::patch('numbering/{sequence}', [NumberSequenceController::class, 'update'])->name('admin.numbering.update');
         Route::post('numbering/{sequence}/allocate', [NumberSequenceController::class, 'allocate'])->name('admin.numbering.allocate');
+
+        Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
+        Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])->name('admin.public-website.edit');
+        Route::patch('public-website/pages/{page}', [PublicWebsiteController::class, 'updatePage'])->name('admin.public-website.pages.update');
+        Route::post('public-website/pages/{page}/publish', [PublicWebsiteController::class, 'publishPage'])->name('admin.public-website.pages.publish');
+        Route::post('public-website/pages/{page}/unpublish', [PublicWebsiteController::class, 'unpublishPage'])->name('admin.public-website.pages.unpublish');
+        Route::patch('public-website/sections/{section}', [PublicWebsiteController::class, 'updateSection'])->name('admin.public-website.sections.update');
+        Route::post('public-website/pages/{page}/items', [PublicWebsiteController::class, 'storeItem'])->name('admin.public-website.items.store');
+        Route::patch('public-website/items/{item}', [PublicWebsiteController::class, 'updateItem'])->name('admin.public-website.items.update');
+        Route::post('public-website/items/{item}/publish', [PublicWebsiteController::class, 'publishItem'])->name('admin.public-website.items.publish');
+        Route::post('public-website/revisions/{revision}/restore', [PublicWebsiteController::class, 'restoreRevision'])->name('admin.public-website.revisions.restore');
+        Route::post('public-website/media', [PublicWebsiteController::class, 'uploadMedia'])->name('admin.public-website.media.store');
+        Route::delete('public-website/media/{media}', [PublicWebsiteController::class, 'deleteMedia'])->name('admin.public-website.media.destroy');
 
         Route::get('pages', [PageController::class, 'index'])->name('pages.index');
         Route::get('pages/{page}/edit', [PageController::class, 'edit'])->name('pages.edit');

@@ -98,8 +98,11 @@ class PublicSiteController extends Controller
 
     private function siteShell(Hospital $hospital, bool $preview = false): array
     {
+        $hospital->loadMissing('settings');
         $home = PublicSitePage::where('hospital_id', $hospital->id)->where('slug', 'home')->first();
         $content = $preview ? ($home?->draft_content ?? []) : ($home?->published_content ?? []);
+        $branding = $hospital->settings?->branding ?? [];
+        $tagline = $branding['tagline'] ?? $content['branding']['tagline'] ?? $content['footer']['tagline'] ?? null;
 
         $theme = $content['theme'] ?? [];
         $accentMap = [
@@ -124,7 +127,13 @@ class PublicSiteController extends Controller
             ->all();
 
         return [
-            'hospital' => $hospital->only(['display_name', 'email', 'address', 'city', 'state', 'country', 'logo_path']),
+            'hospital' => array_merge(
+                $hospital->only(['display_name', 'email', 'address', 'city', 'state', 'country', 'logo_path']),
+                ['tagline' => $tagline]
+            ),
+            'branding' => [
+                'tagline' => $tagline,
+            ],
             'utility' => $content['utility'] ?? [],
             'navigation' => $navigation,
             'footer' => $content['footer'] ?? [],

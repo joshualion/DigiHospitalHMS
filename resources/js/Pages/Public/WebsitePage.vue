@@ -6,7 +6,7 @@ import SectionHeading from '@/Components/Public/SectionHeading.vue';
 import ServicesAccordion from '@/Components/Public/ServicesAccordion.vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { Activity, ArrowRight, Building2, ChevronLeft, ChevronRight, Quote, ShieldCheck, Users } from '@lucide/vue';
+import { Activity, ArrowRight, Building2, Quote, ShieldCheck, Users } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 const props = defineProps({
@@ -70,11 +70,11 @@ onBeforeUnmount(() => window.clearInterval(timer));
         </Head>
 
         <template v-if="page.slug === 'home'">
-            <section class="relative grid min-h-[620px] place-items-center overflow-hidden px-4 py-20 text-center text-white sm:px-6 lg:px-8" @mouseenter="paused = true" @mouseleave="paused = false">
+            <section class="relative grid min-h-[31rem] md:min-h-[clamp(31rem,63svh,36rem)] xl:min-h-[clamp(33rem,60svh,38rem)] place-items-center overflow-hidden px-4 pb-24 pt-20 text-center text-white sm:px-6 sm:pb-28 sm:pt-24 lg:px-8 lg:pb-32" @mouseenter="paused = true" @mouseleave="paused = false">
                 <img v-if="activeSlide.image" :src="activeSlide.image" :alt="activeSlide.alt || activeSlide.headline" class="absolute inset-0 h-full w-full object-cover" width="1800" height="1000" fetchpriority="high">
                 <div class="absolute inset-0" style="background: var(--public-hero-overlay);"></div>
                 <div class="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/35 to-transparent"></div>
-                <div class="relative mx-auto max-w-5xl">
+                <div class="relative mx-auto max-w-5xl -translate-y-4 px-2 pb-20 sm:-translate-y-6 sm:pb-24 lg:pb-28">
                     <p v-if="activeSlide.label || activeSlide.eyebrow" class="text-sm font-black uppercase tracking-[0.22em]" style="color: var(--public-accent);">{{ activeSlide.label || activeSlide.eyebrow }}</p>
                     <h1 class="mx-auto mt-5 max-w-5xl text-4xl font-black leading-[1.03] tracking-tight sm:text-6xl lg:text-7xl">{{ activeSlide.headline || page.title }}</h1>
                     <p v-if="activeSlide.text" class="mx-auto mt-6 max-w-2xl text-lg leading-8 text-white/86 sm:text-xl">{{ activeSlide.text }}</p>
@@ -83,12 +83,19 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         <PublicButton v-if="activeSlide.secondary_label" :href="activeSlide.secondary_url || '/services'" variant="secondary">{{ activeSlide.secondary_label }}</PublicButton>
                     </div>
                 </div>
-                <div v-if="slides.length > 1" class="absolute inset-x-0 bottom-28 mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                    <button class="public-focus grid h-12 w-12 place-items-center rounded-full border border-white/30 bg-black/20 text-white backdrop-blur" type="button" aria-label="Previous hero slide" @click="showSlide(slideIndex - 1)"><ChevronLeft class="h-5 w-5" /></button>
+                <div v-if="slides.length > 1" class="absolute inset-x-0 bottom-36 mx-auto flex justify-center px-4 sm:bottom-40 sm:px-6 lg:bottom-44 lg:px-8">
                     <div class="flex gap-2 rounded-full bg-black/20 p-2 backdrop-blur">
-                        <button v-for="(_, index) in slides" :key="index" class="public-focus h-3 w-3 rounded-full" :style="index === slideIndex ? 'background: var(--public-accent);' : 'background: rgba(255,255,255,0.48);'" type="button" :aria-label="`Show slide ${index + 1}`" @click="showSlide(index)"></button>
+                        <button
+                            v-for="(_, index) in slides"
+                            :key="index"
+                            class="public-focus h-3 w-3 rounded-full transition-transform hover:scale-110"
+                            :style="index === slideIndex ? 'background: var(--public-accent);' : 'background: rgba(255,255,255,0.48);'"
+                            type="button"
+                            :aria-label="`Show slide ${index + 1}`"
+                            :aria-current="index === slideIndex ? 'true' : 'false'"
+                            @click="showSlide(index)"
+                        ></button>
                     </div>
-                    <button class="public-focus grid h-12 w-12 place-items-center rounded-full border border-white/30 bg-black/20 text-white backdrop-blur" type="button" aria-label="Next hero slide" @click="showSlide(slideIndex + 1)"><ChevronRight class="h-5 w-5" /></button>
                 </div>
             </section>
 

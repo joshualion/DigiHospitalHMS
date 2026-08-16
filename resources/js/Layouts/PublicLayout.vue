@@ -1,4 +1,5 @@
 <script setup>
+import PublicBrandMark from '@/Components/Public/PublicBrandMark.vue';
 import ThemeSwitcher from '@/Components/Public/ThemeSwitcher.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { LogIn, Menu, X } from '@lucide/vue';
@@ -30,7 +31,9 @@ const footer = computed(() => shell.value.footer || {});
 const navigation = computed(() => shell.value.navigation || []);
 const contact = computed(() => props.site?.contact || {});
 const themeDefaults = computed(() => shell.value.theme || { appearance: 'system', accent: 'calm', allowedAccents: ['calm', 'healing', 'alert', 'blood', 'seagrass'], switcherVisible: true });
-const hospitalName = computed(() => props.site.hospital?.display_name || 'Hospital');
+const hospitalName = computed(() => 'Testimony');
+const hospitalTagline = computed(() => 'Healthcare & Surgeries');
+const hospitalLogoPath = computed(() => props.site.hospital?.logo_path || '');
 const footerCopyright = computed(() => (footer.value.copyright || `Copyright {year} ${hospitalName.value}. All rights reserved.`).replace('{year}', new Date().getFullYear()));
 
 function isActive(href) {
@@ -68,12 +71,8 @@ onBeforeUnmount(() => {
 
         <header class="sticky top-0 z-50 border-b backdrop-blur-xl" style="background: var(--public-header); border-color: var(--public-border);">
             <div class="public-container flex min-h-[84px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-                <Link href="/" class="public-focus flex min-w-0 items-center gap-3 rounded-2xl">
-                    <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-lg font-black" style="background: var(--public-accent); color: var(--public-accent-foreground);">H</span>
-                    <span class="min-w-0">
-                        <span class="block truncate text-lg font-black" style="color: var(--public-text);">{{ hospitalName }}</span>
-                        <span class="block text-xs font-black uppercase tracking-wide" style="color: var(--public-accent);">Care and hospital services</span>
-                    </span>
+                <Link href="/" class="public-focus flex min-w-0 flex-1 rounded-2xl lg:max-w-[30rem] xl:max-w-[36rem]">
+                    <PublicBrandMark :name="hospitalName" :tagline="hospitalTagline" :logo-path="hospitalLogoPath" />
                 </Link>
 
                 <nav class="hidden items-center justify-center gap-1 text-sm font-bold lg:flex" aria-label="Primary navigation">
@@ -118,11 +117,10 @@ onBeforeUnmount(() => {
 
         <footer class="relative overflow-hidden" style="background: var(--public-footer); color: var(--public-footer-text);">
             <div class="absolute inset-0 opacity-20" style="background: radial-gradient(circle at 20% 0%, var(--public-accent), transparent 30%);"></div>
-            <div class="public-container relative grid gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1.4fr_0.8fr_1fr] lg:px-8">
+                <div class="public-container relative grid gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1.4fr_0.8fr_1fr] lg:px-8">
                 <div>
-                    <div class="flex items-center gap-3">
-                        <span class="grid h-12 w-12 place-items-center rounded-2xl text-lg font-black" style="background: var(--public-accent); color: var(--public-accent-foreground);">H</span>
-                        <span class="text-xl font-black text-white">{{ hospitalName }}</span>
+                    <div class="max-w-md">
+                        <PublicBrandMark :name="hospitalName" :tagline="hospitalTagline" :logo-path="hospitalLogoPath" context="footer" />
                     </div>
                     <p class="mt-5 max-w-md text-sm leading-7 text-white/72">{{ footer.summary || 'A configurable public hospital website managed from the administration area.' }}</p>
                     <div class="mt-6 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-wide text-white/55">

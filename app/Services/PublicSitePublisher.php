@@ -18,7 +18,7 @@ class PublicSitePublisher
     {
         return DB::transaction(function () use ($model, $actor, $note): PublicSiteRevision {
             $before = $model->toArray();
-            $version = (int) ($model->published_version ?? 0) + 1;
+            $version = $this->nextVersion($model);
             $payload = $this->draftPayload($model);
 
             $published = [
@@ -159,6 +159,15 @@ class PublicSitePublisher
             $model instanceof PublicSiteItem => $model->publishedSnapshot(),
             default => [],
         };
+    }
+
+    private function nextVersion(Model $model): int
+    {
+        $latestRevision = (int) PublicSiteRevision::where('revisionable_type', $model::class)
+            ->where('revisionable_id', $model->getKey())
+            ->max('version');
+
+        return max((int) ($model->published_version ?? 0), $latestRevision) + 1;
     }
 
     private function restorePayload(Model $model, array $payload): array

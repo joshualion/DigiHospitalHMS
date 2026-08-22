@@ -8,6 +8,7 @@ use App\Models\PublicSitePage;
 use App\Models\PublicSiteRevision;
 use App\Models\PublicSiteSection;
 use App\Services\AuditService;
+use App\Services\PublicSiteMediaUsage;
 use App\Services\PublicSitePublisher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,10 +21,11 @@ use Inertia\Response;
 
 class PublicWebsiteController extends FoundationController
 {
-    public function index(Request $request): Response
+    public function index(Request $request, PublicSiteMediaUsage $mediaUsage): Response
     {
         $this->authorize('viewAny', PublicSitePage::class);
         $hospital = $this->currentHospital();
+        $mediaUsage->refreshHospital($hospital->id);
 
         $pages = PublicSitePage::withCount('sections')
             ->where('hospital_id', $hospital->id)
@@ -44,9 +46,10 @@ class PublicWebsiteController extends FoundationController
         ]);
     }
 
-    public function edit(PublicSitePage $page): Response
+    public function edit(PublicSitePage $page, PublicSiteMediaUsage $mediaUsage): Response
     {
         $this->authorize('view', $page);
+        $mediaUsage->refreshHospital($page->hospital_id);
         $page->load(['sections.items', 'revisions.creator:id,firstname,lastname,email']);
 
         return Inertia::render('Admin/PublicWebsite/Edit', [
@@ -54,6 +57,8 @@ class PublicWebsiteController extends FoundationController
             'preview_url' => URL::temporarySignedRoute('public.preview', now()->addMinutes(30), ['page' => $page]),
             'media' => PublicSiteMedia::where('hospital_id', $page->hospital_id)->latest()->get(),
             'item_types' => ['service', 'department', 'clinician', 'testimonial', 'article'],
+            'can_manage_media' => request()->user()->can('website.manage_media') || request()->user()->hasRole('superadmin'),
+            'can_view_json' => request()->user()->hasRole('superadmin'),
         ]);
     }
 
@@ -306,8 +311,10 @@ class PublicWebsiteController extends FoundationController
         return back()->with('success', 'Media uploaded.');
     }
 
-    public function deleteMedia(PublicSiteMedia $media, AuditService $audit): RedirectResponse
+    public function deleteMedia(PublicSiteMedia $media, AuditService $audit, PublicSiteMediaUsage $mediaUsage): RedirectResponse
     {
+        $mediaUsage->refreshHospital($media->hospital_id);
+        $media->refresh();
         $this->authorize('delete', $media);
         $before = $media->except(['path']);
         Storage::disk($media->disk)->delete($media->path);
@@ -393,10 +400,12 @@ class PublicWebsiteController extends FoundationController
             'title' => $page->draft_title ?? $page->title,
             'draft_seo' => $page->draft_seo ?? $page->seo ?? [],
             'seo' => $page->draft_seo ?? $page->seo ?? [],
+            'is_modified' => $page->draftSnapshot() !== $page->publishedSnapshot(),
             'sections' => $page->sections->map(fn (PublicSiteSection $section) => array_merge($section->toArray(), [
                 'label' => $section->draft_label ?? $section->label,
                 'sort_order' => $section->draft_sort_order ?? $section->sort_order,
                 'is_enabled' => $section->draft_is_enabled ?? $section->is_enabled,
+                'is_modified' => $section->draftSnapshot() !== $section->publishedSnapshot(),
                 'items' => $section->items->map(fn (PublicSiteItem $item) => array_merge($item->toArray(), [
                     'public_site_section_id' => $item->draft_public_site_section_id ?? $item->public_site_section_id,
                     'type' => $item->draft_type ?? $item->type,
@@ -406,6 +415,7 @@ class PublicWebsiteController extends FoundationController
                     'is_enabled' => $item->draft_is_enabled ?? $item->is_enabled,
                     'is_featured' => $item->draft_is_featured ?? $item->is_featured,
                     'sort_order' => $item->draft_sort_order ?? $item->sort_order,
+                    'is_modified' => $item->draftSnapshot() !== $item->publishedSnapshot(),
                 ]))->values(),
             ]))->values(),
         ]);

@@ -9,7 +9,6 @@ use App\Http\Controllers\Admin\NumberSequenceController;
 use App\Http\Controllers\Admin\PublicWebsiteController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\StaffController;
-use App\Http\Controllers\Cms\PageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicSiteController;
 use Illuminate\Support\Facades\Route;
@@ -81,9 +80,9 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin'])
         Route::post('public-website/media', [PublicWebsiteController::class, 'uploadMedia'])->name('admin.public-website.media.store');
         Route::delete('public-website/media/{media}', [PublicWebsiteController::class, 'deleteMedia'])->name('admin.public-website.media.destroy');
 
-        Route::get('pages', [PageController::class, 'index'])->name('pages.index');
-        Route::get('pages/{page}/edit', [PageController::class, 'edit'])->name('pages.edit');
-        Route::put('pages/{page}', [PageController::class, 'update'])->name('pages.update');
+        Route::any('pages/{archivePath?}', function () {
+            abort(410, 'The legacy CMS is archived. Use Public Website for active public-site management.');
+        })->where('archivePath', '.*')->name('pages.archive');
 
         Route::get('/users', function () {
             return redirect()->route('admin.staff.index');

@@ -255,6 +255,47 @@ class Phase1BPublicSiteTest extends TestCase
                 ->where('items.service.0.slug', 'emergency-information'));
     }
 
+    public function test_structured_repeaters_map_to_draft_payload_and_publish_in_order(): void
+    {
+        $publisher = $this->userWithPermissions(['website.view', 'website.edit', 'website.publish']);
+        $home = PublicSitePage::where('slug', 'home')->with('sections')->firstOrFail();
+        $hero = $home->sections->firstWhere('key', 'hero');
+        $draft = $home->draft_content;
+        $draft['footer']['badges'] = ['First badge', 'Second badge'];
+
+        $this->actingAs($publisher)->patch("/admin/public-website/pages/{$home->id}", [
+            'title' => $home->draft_title,
+            'draft_content' => $draft,
+            'seo' => ['title' => 'Structured page', 'canonical_url' => '/structured'],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->actingAs($publisher)->patch("/admin/public-website/sections/{$hero->id}", [
+            'label' => 'Hero slider',
+            'sort_order' => 10,
+            'is_enabled' => true,
+            'draft_content' => [
+                'rotation_ms' => 5000,
+                'slides' => [
+                    ['label' => 'Second', 'headline' => 'Second slide', 'text' => 'Second body', 'image' => '/second.jpg', 'alt' => 'Second alt', 'active' => true],
+                    ['label' => 'First', 'headline' => 'First slide', 'text' => 'First body', 'image' => '/first.jpg', 'alt' => 'First alt', 'active' => true],
+                ],
+            ],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertSame('Second slide', $hero->refresh()->draft_content['slides'][0]['headline']);
+        $this->assertSame(['First badge', 'Second badge'], $home->refresh()->draft_content['footer']['badges']);
+
+        $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('sections.hero.content.slides.0.headline', 'Calm, coordinated care for every visit.'));
+
+        $this->actingAs($publisher)->post("/admin/public-website/pages/{$home->id}/publish")->assertRedirect();
+
+        $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->where('sections.hero.content.slides.0.headline', 'Second slide')
+            ->where('site.footer.badges', ['First badge', 'Second badge'])
+            ->where('page.seo.canonical_url', '/structured'));
+    }
+
     public function test_detail_pages_render_published_item_content_and_media(): void
     {
         $clinician = PublicSiteItem::where('type', 'clinician')->firstOrFail();
@@ -390,10 +431,16 @@ class Phase1BPublicSiteTest extends TestCase
             'image' => UploadedFile::fake()->create('unsafe.svg', 8, 'image/svg+xml'),
         ])->assertSessionHasErrors('image');
 
-        $media->update(['usage_count' => 1]);
-        $this->actingAs($manager)->delete("/admin/public-website/media/{$media->id}")->assertForbidden();
+        $home = PublicSitePage::where('slug', 'home')->firstOrFail();
+        $draft = $home->draft_content;
+        $draft['footer']['referenced_image'] = $media->url;
+        $home->update(['draft_content' => $draft]);
 
-        $media->update(['usage_count' => 0]);
+        $this->actingAs($manager)->delete("/admin/public-website/media/{$media->id}")->assertForbidden();
+        $this->assertSame(1, $media->refresh()->usage_count);
+
+        unset($draft['footer']['referenced_image']);
+        $home->update(['draft_content' => $draft]);
         $this->actingAs($manager)->delete("/admin/public-website/media/{$media->id}")->assertRedirect();
         $this->assertDatabaseMissing('public_site_media', ['id' => $media->id]);
         $this->assertDatabaseHas('audit_events', ['action' => 'website.media_deleted']);
@@ -434,7 +481,26 @@ class Phase1BPublicSiteTest extends TestCase
 
         $this->actingAs($admin)->get("/admin/public-website/pages/{$home->id}")
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('Admin/PublicWebsite/Edit')->has('page.sections'));
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/PublicWebsite/Edit')
+                ->has('page.sections')
+                ->where('can_manage_media', true)
+                ->where('can_view_json', false));
+
+        $superadmin = $this->userWithPermissions(['website.view', 'website.edit']);
+        $superadmin->syncRoles(['superadmin']);
+
+        $this->actingAs($superadmin)->get("/admin/public-website/pages/{$home->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('can_view_json', true));
+    }
+
+    public function test_legacy_cms_admin_routes_are_archived(): void
+    {
+        $admin = $this->userWithPermissions(['website.view']);
+
+        $this->actingAs($admin)->get('/admin/pages')->assertGone();
+        $this->actingAs($admin)->get('/admin/pages/1/edit')->assertGone();
     }
 
     private function userWithPermissions(array $permissions): User

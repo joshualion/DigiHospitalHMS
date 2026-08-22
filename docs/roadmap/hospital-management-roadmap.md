@@ -711,3 +711,20 @@ Deferred:
 
 - Patient, appointment, clinical, billing, laboratory, pharmacy, inventory, admissions, blood bank, theatre, and insurance/HMO modules remain unimplemented.
 - Rich field-specific public-site editors remain future work; structured JSON editing is still the primary content-entry surface for many section/item fields.
+
+## Phase 1B.3: User-Friendly Public Website Management
+
+Status: implemented on 2026-08-22.
+
+Delivered scope:
+
+- Structured Vue administration forms for public branding, header/navigation, hero slides, information banner, about, services, departments, clinicians, trust items, testimonials, CTA, news/articles, contact/location, footer, SEO, and theme defaults.
+- Repeatable content controls for adding, removing, enabling, disabling, and reordering draft content without requiring JSON knowledge.
+- Reusable media picker with preview, alternative text, and upload support.
+- Automatic media usage derivation from draft and published public-site payloads, with delete protection for referenced assets.
+- Superadmin-only read-only diagnostics view for underlying payloads.
+- Phase 1B.2 draft, preview, publish, unpublish, revision, authorization, and audit boundaries preserved.
+
+Deferred:
+
+- Patient, appointment, clinical, billing, lab, pharmacy, inventory, admissions, blood bank, theatre, insurance/HMO, and other Phase 2+ modules remain unimplemented.

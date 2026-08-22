@@ -39,10 +39,11 @@ class RouteIntegrityTest extends TestCase
         $user = User::factory()->create(['access_level' => 'admin']);
         $user->assignRole('admin');
 
-        foreach (['/admin/dashboard', '/admin/roles', '/admin/pages'] as $uri) {
+        foreach (['/admin/dashboard', '/admin/roles'] as $uri) {
             $this->actingAs($user)->get($uri)->assertOk();
         }
 
+        $this->actingAs($user)->get('/admin/pages')->assertGone();
         $this->actingAs($user)->get('/admin/users')->assertRedirect('/admin/staff');
     }
 }

@@ -1,11 +1,12 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Link, useForm } from '@inertiajs/vue3';
+import { Link, router, useForm } from '@inertiajs/vue3';
 
 defineProps({
     pages: { type: Array, required: true },
     media: { type: Object, required: true },
     stats: { type: Object, required: true },
+    can_manage_media: { type: Boolean, default: false },
 });
 
 const mediaForm = useForm({
@@ -22,6 +23,12 @@ function uploadMedia() {
         preserveScroll: true,
         onSuccess: () => mediaForm.reset(),
     });
+}
+
+function deleteMedia(asset) {
+    if (window.confirm(`Delete "${asset.title}" from the media library?`)) {
+        router.delete(`/admin/public-website/media/${asset.id}`, { preserveScroll: true });
+    }
 }
 </script>
 
@@ -59,7 +66,7 @@ function uploadMedia() {
                                 <h3 class="font-bold text-slate-950">{{ page.title }}</h3>
                                 <span class="rounded-full px-2 py-1 text-xs font-semibold" :class="page.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'">{{ page.status }}</span>
                             </div>
-                            <p class="mt-1 text-sm text-slate-600">/{{ page.slug === 'home' ? '' : page.slug }} · {{ page.sections_count }} sections · version {{ page.version }}</p>
+                            <p class="mt-1 text-sm text-slate-600">/{{ page.slug === 'home' ? '' : page.slug }} · {{ page.sections_count }} sections · version {{ page.published_version }}</p>
                             <p class="mt-1 text-xs text-slate-500">Last published: {{ page.published_at || 'Not published' }}</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
@@ -102,6 +109,7 @@ function uploadMedia() {
                             <p class="mt-3 text-sm font-bold">{{ asset.title }}</p>
                             <p class="text-xs text-slate-500">{{ asset.mime_type }} · {{ asset.width }}x{{ asset.height }}</p>
                             <p class="mt-1 text-xs text-slate-500">Used {{ asset.usage_count }} time(s)</p>
+                            <button v-if="can_manage_media" class="mt-3 rounded-md border border-rose-300 px-3 py-2 text-xs font-bold text-rose-700 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="asset.usage_count > 0" @click="deleteMedia(asset)">Delete</button>
                         </article>
                         <p v-if="media.data.length === 0" class="text-sm text-slate-600">No media has been uploaded yet.</p>
                     </div>

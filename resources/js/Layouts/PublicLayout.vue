@@ -31,10 +31,11 @@ const footer = computed(() => shell.value.footer || {});
 const navigation = computed(() => shell.value.navigation || []);
 const contact = computed(() => props.site?.contact || {});
 const themeDefaults = computed(() => shell.value.theme || { appearance: 'system', accent: 'calm', allowedAccents: ['calm', 'healing', 'alert', 'blood', 'seagrass'], switcherVisible: true });
-const hospitalName = computed(() => 'Testimony');
-const hospitalTagline = computed(() => 'Healthcare & Surgeries');
+const hospitalName = computed(() => props.site.hospital?.display_name || 'Hospital');
+const hospitalTagline = computed(() => props.site.hospital?.tagline || props.site.branding?.tagline || '');
 const hospitalLogoPath = computed(() => props.site.hospital?.logo_path || '');
 const footerCopyright = computed(() => (footer.value.copyright || `Copyright {year} ${hospitalName.value}. All rights reserved.`).replace('{year}', new Date().getFullYear()));
+const footerBadges = computed(() => footer.value.badges || []);
 
 function isActive(href) {
     return href === '/' ? page.url === '/' : page.url.startsWith(href);
@@ -123,8 +124,8 @@ onBeforeUnmount(() => {
                         <PublicBrandMark :name="hospitalName" :tagline="hospitalTagline" :logo-path="hospitalLogoPath" context="footer" />
                     </div>
                     <p class="mt-5 max-w-md text-sm leading-7 text-white/72">{{ footer.summary || 'A configurable public hospital website managed from the administration area.' }}</p>
-                    <div class="mt-6 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-wide text-white/55">
-                        <span>Draft-controlled publishing</span><span>Secure media</span><span>Accessible themes</span>
+                    <div v-if="footerBadges.length" class="mt-6 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-wide text-white/55">
+                        <span v-for="badge in footerBadges" :key="badge">{{ badge }}</span>
                     </div>
                 </div>
                 <div>

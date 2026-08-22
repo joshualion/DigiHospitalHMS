@@ -40,6 +40,7 @@ class PublicWebsiteController extends FoundationController
                 'media_count' => PublicSiteMedia::where('hospital_id', $hospital->id)->count(),
                 'revision_count' => PublicSiteRevision::where('hospital_id', $hospital->id)->count(),
             ],
+            'can_manage_media' => $request->user()->can('website.manage_media') || $request->user()->hasRole('superadmin'),
         ]);
     }
 
@@ -49,7 +50,7 @@ class PublicWebsiteController extends FoundationController
         $page->load(['sections.items', 'revisions.creator:id,firstname,lastname,email']);
 
         return Inertia::render('Admin/PublicWebsite/Edit', [
-            'page' => $page,
+            'page' => $this->editorPagePayload($page),
             'preview_url' => URL::temporarySignedRoute('public.preview', now()->addMinutes(30), ['page' => $page]),
             'media' => PublicSiteMedia::where('hospital_id', $page->hospital_id)->latest()->get(),
             'item_types' => ['service', 'department', 'clinician', 'testimonial', 'article'],
@@ -64,14 +65,19 @@ class PublicWebsiteController extends FoundationController
             'title' => ['required', 'string', 'max:255'],
             'draft_content' => ['required', 'array'],
             'seo' => ['nullable', 'array'],
+            'seo.canonical_url' => ['nullable', 'string', 'max:255'],
         ]);
 
         $validated['draft_content'] = $this->sanitizePayload($validated['draft_content']);
-        $validated['seo'] = $this->sanitizePayload($validated['seo'] ?? []);
-        $before = $page->only(['title', 'draft_content', 'seo']);
-        $page->update($validated);
+        $validated['seo'] = $this->normalizeSeo($this->sanitizePayload($validated['seo'] ?? []));
+        $before = $page->only(['draft_title', 'draft_content', 'draft_seo']);
+        $page->update([
+            'draft_title' => $validated['title'],
+            'draft_content' => $validated['draft_content'],
+            'draft_seo' => $validated['seo'],
+        ]);
 
-        $audit->record('website.page_updated', $page, $before, $page->only(['title', 'draft_content', 'seo']));
+        $audit->record('website.page_updated', $page, $before, $page->only(['draft_title', 'draft_content', 'draft_seo']));
 
         return back()->with('success', 'Draft page saved.');
     }
@@ -88,10 +94,15 @@ class PublicWebsiteController extends FoundationController
         ]);
 
         $validated['draft_content'] = $this->sanitizePayload($validated['draft_content']);
-        $before = $section->only(array_keys($validated));
-        $section->update($validated);
+        $before = $section->only(['draft_label', 'draft_sort_order', 'draft_is_enabled', 'draft_content']);
+        $section->update([
+            'draft_label' => $validated['label'],
+            'draft_sort_order' => $validated['sort_order'],
+            'draft_is_enabled' => $validated['is_enabled'],
+            'draft_content' => $validated['draft_content'],
+        ]);
 
-        $audit->record('website.section_updated', $section, $before, $section->only(array_keys($validated)));
+        $audit->record('website.section_updated', $section, $before, $section->only(['draft_label', 'draft_sort_order', 'draft_is_enabled', 'draft_content']));
 
         return back()->with('success', 'Draft section saved.');
     }
@@ -103,11 +114,44 @@ class PublicWebsiteController extends FoundationController
         $validated = $request->validate($this->itemRules($item));
         $this->ensureSectionBelongsToHospital($validated['public_site_section_id'] ?? null, $item->hospital_id);
         $validated['draft_content'] = $this->sanitizePayload($validated['draft_content']);
-        $validated['status'] = $item->status;
-        $before = $item->only(array_keys($validated));
-        $item->update($validated);
+        $validated['slug'] = $validated['slug'] ?: Str::slug($validated['title']);
+        $before = $item->only([
+            'draft_public_site_section_id',
+            'draft_type',
+            'draft_slug',
+            'draft_title',
+            'draft_summary',
+            'draft_content',
+            'draft_is_enabled',
+            'draft_is_featured',
+            'draft_sort_order',
+            'status',
+        ]);
+        $item->update([
+            'draft_public_site_section_id' => $validated['public_site_section_id'] ?? null,
+            'draft_type' => $validated['type'],
+            'draft_slug' => $validated['slug'],
+            'draft_title' => $validated['title'],
+            'draft_summary' => $validated['summary'] ?? null,
+            'draft_content' => $validated['draft_content'],
+            'draft_is_enabled' => $validated['is_enabled'],
+            'draft_is_featured' => $validated['is_featured'],
+            'draft_sort_order' => $validated['sort_order'],
+            'status' => $validated['status'],
+        ]);
 
-        $audit->record("website.{$item->type}_updated", $item, $before, $item->only(array_keys($validated)));
+        $audit->record("website.{$validated['type']}_updated", $item, $before, $item->fresh()->only([
+            'draft_public_site_section_id',
+            'draft_type',
+            'draft_slug',
+            'draft_title',
+            'draft_summary',
+            'draft_content',
+            'draft_is_enabled',
+            'draft_is_featured',
+            'draft_sort_order',
+            'status',
+        ]));
 
         return back()->with('success', 'Draft item saved.');
     }
@@ -123,7 +167,27 @@ class PublicWebsiteController extends FoundationController
         $validated['slug'] = $validated['slug'] ?: Str::slug($validated['title']);
         $validated['status'] = 'draft';
 
-        $item = PublicSiteItem::create($validated);
+        $item = PublicSiteItem::create([
+            'hospital_id' => $validated['hospital_id'],
+            'public_site_section_id' => null,
+            'draft_public_site_section_id' => $validated['public_site_section_id'] ?? null,
+            'type' => $validated['type'],
+            'draft_type' => $validated['type'],
+            'slug' => $validated['slug'],
+            'draft_slug' => $validated['slug'],
+            'title' => $validated['title'],
+            'draft_title' => $validated['title'],
+            'summary' => $validated['summary'] ?? null,
+            'draft_summary' => $validated['summary'] ?? null,
+            'draft_content' => $validated['draft_content'],
+            'status' => 'draft',
+            'is_enabled' => false,
+            'draft_is_enabled' => $validated['is_enabled'],
+            'is_featured' => false,
+            'draft_is_featured' => $validated['is_featured'],
+            'sort_order' => $validated['sort_order'],
+            'draft_sort_order' => $validated['sort_order'],
+        ]);
         $audit->record("website.{$item->type}_created", $item, null, $item->toArray());
 
         return back()->with('success', 'Draft item created.');
@@ -172,6 +236,14 @@ class PublicWebsiteController extends FoundationController
         $publisher->publish($item, request()->user());
 
         return back()->with('success', 'Item published.');
+    }
+
+    public function unpublishItem(PublicSiteItem $item, PublicSitePublisher $publisher): RedirectResponse
+    {
+        $this->authorize('unpublish', $item);
+        $publisher->unpublish($item, request()->user());
+
+        return back()->with('success', 'Item unpublished.');
     }
 
     public function unpublishPage(PublicSitePage $page, PublicSitePublisher $publisher): RedirectResponse
@@ -302,6 +374,41 @@ class PublicWebsiteController extends FoundationController
         }
 
         return $payload;
+    }
+
+    private function normalizeSeo(array $seo): array
+    {
+        if (isset($seo['canonical']) && ! isset($seo['canonical_url'])) {
+            $seo['canonical_url'] = $seo['canonical'];
+        }
+
+        unset($seo['canonical']);
+
+        return $seo;
+    }
+
+    private function editorPagePayload(PublicSitePage $page): array
+    {
+        return array_merge($page->toArray(), [
+            'title' => $page->draft_title ?? $page->title,
+            'draft_seo' => $page->draft_seo ?? $page->seo ?? [],
+            'seo' => $page->draft_seo ?? $page->seo ?? [],
+            'sections' => $page->sections->map(fn (PublicSiteSection $section) => array_merge($section->toArray(), [
+                'label' => $section->draft_label ?? $section->label,
+                'sort_order' => $section->draft_sort_order ?? $section->sort_order,
+                'is_enabled' => $section->draft_is_enabled ?? $section->is_enabled,
+                'items' => $section->items->map(fn (PublicSiteItem $item) => array_merge($item->toArray(), [
+                    'public_site_section_id' => $item->draft_public_site_section_id ?? $item->public_site_section_id,
+                    'type' => $item->draft_type ?? $item->type,
+                    'slug' => $item->draft_slug ?? $item->slug,
+                    'title' => $item->draft_title ?? $item->title,
+                    'summary' => $item->draft_summary ?? $item->summary,
+                    'is_enabled' => $item->draft_is_enabled ?? $item->is_enabled,
+                    'is_featured' => $item->draft_is_featured ?? $item->is_featured,
+                    'sort_order' => $item->draft_sort_order ?? $item->sort_order,
+                ]))->values(),
+            ]))->values(),
+        ]);
     }
 
     private function sanitizeText(string $value): string

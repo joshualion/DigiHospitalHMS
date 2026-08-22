@@ -148,7 +148,8 @@ class Phase1BPublicSiteTest extends TestCase
             'seo' => ['title' => 'Draft SEO'],
         ])->assertRedirect()->assertSessionHasNoErrors();
 
-        $this->assertSame('Draft Home', $page->refresh()->title);
+        $this->assertSame('Draft Home', $page->refresh()->draft_title);
+        $this->assertNotSame('Draft Home', $page->published_title);
         $this->assertNull($page->published_content['summary'] ?? null);
 
         $this->actingAs($editor)->post("/admin/public-website/pages/{$page->id}/publish")->assertForbidden();
@@ -173,6 +174,118 @@ class Phase1BPublicSiteTest extends TestCase
 
         $this->actingAs($publisher)->post("/admin/public-website/pages/{$page->id}/unpublish")->assertRedirect();
         $this->assertSame('draft', $page->refresh()->status);
+    }
+
+    public function test_public_visible_fields_remain_draft_until_publish(): void
+    {
+        $publisher = $this->userWithPermissions(['website.view', 'website.edit', 'website.publish']);
+        $home = PublicSitePage::where('slug', 'home')->with('sections')->firstOrFail();
+        $serviceSection = $home->sections->firstWhere('key', 'services');
+        $service = PublicSiteItem::where('type', 'service')->where('slug', 'general-consultation')->firstOrFail();
+
+        $this->actingAs($publisher)->patch("/admin/public-website/pages/{$home->id}", [
+            'title' => 'Draft-only home title',
+            'draft_content' => array_merge($home->draft_content, ['footer' => ['summary' => 'Draft-only footer']]),
+            'seo' => ['title' => 'Draft SEO', 'canonical_url' => '/draft-home'],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->actingAs($publisher)->patch("/admin/public-website/sections/{$serviceSection->id}", [
+            'label' => 'Draft services label',
+            'sort_order' => 999,
+            'is_enabled' => false,
+            'draft_content' => ['heading' => 'Draft-only services heading', 'description' => 'Draft-only service description'],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->actingAs($publisher)->patch("/admin/public-website/items/{$service->id}", [
+            'public_site_section_id' => $service->public_site_section_id,
+            'type' => 'service',
+            'slug' => 'draft-general-consultation',
+            'title' => 'Draft-only service title',
+            'summary' => 'Draft-only service summary',
+            'draft_content' => ['description' => 'Draft-only service body', 'photo' => '/draft.jpg'],
+            'status' => 'published',
+            'is_enabled' => false,
+            'is_featured' => false,
+            'sort_order' => 999,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('page.title', 'Home')
+                ->where('page.seo.canonical_url', '/')
+                ->has('sections.services')
+                ->where('items.service.0.slug', 'general-consultation')
+                ->where('items.service.0.title', 'General consultation'));
+
+        $this->actingAs($publisher)->post("/admin/public-website/pages/{$home->id}/publish")->assertRedirect();
+        $this->actingAs($publisher)->post("/admin/public-website/items/{$service->id}/publish")->assertRedirect();
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('page.title', 'Draft-only home title')
+                ->where('page.seo.canonical_url', '/draft-home')
+                ->missing('sections.services')
+                ->has('items.service', 1)
+                ->where('items.service.0.title', 'Emergency information'));
+    }
+
+    public function test_item_unpublish_removes_content_and_requires_permission(): void
+    {
+        $editor = $this->userWithPermissions(['website.view', 'website.edit']);
+        $publisher = $this->userWithPermissions(['website.view', 'website.edit', 'website.publish', 'website.unpublish']);
+        $item = PublicSiteItem::where('type', 'service')->where('slug', 'general-consultation')->firstOrFail();
+
+        $this->actingAs($editor)->post("/admin/public-website/items/{$item->id}/unpublish")->assertForbidden();
+        $this->actingAs($publisher)->post("/admin/public-website/items/{$item->id}/unpublish")->assertRedirect();
+
+        $this->assertSame('draft', $item->refresh()->status);
+        $this->assertDatabaseHas('public_site_revisions', [
+            'revisionable_type' => PublicSiteItem::class,
+            'revisionable_id' => $item->id,
+            'action' => 'unpublish',
+        ]);
+        $this->assertDatabaseHas('audit_events', ['action' => 'website.unpublished']);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('items.service', 1)
+                ->where('items.service.0.slug', 'emergency-information'));
+    }
+
+    public function test_detail_pages_render_published_item_content_and_media(): void
+    {
+        $clinician = PublicSiteItem::where('type', 'clinician')->firstOrFail();
+        $clinician->forceFill([
+            'published_title' => 'Published Clinician',
+            'published_slug' => 'published-clinician',
+            'published_summary' => 'Published clinician summary',
+            'published_content' => ['bio' => 'Published clinician biography', 'photo' => '/clinician.jpg', 'alt' => 'Clinician portrait'],
+        ])->save();
+
+        $article = PublicSiteItem::where('type', 'article')->firstOrFail();
+        $article->forceFill([
+            'published_title' => 'Published Article',
+            'published_slug' => 'published-article',
+            'published_summary' => 'Published article summary',
+            'published_content' => ['body' => 'Published article body', 'image' => '/article.jpg', 'alt' => 'Article image'],
+        ])->save();
+
+        $this->get('/doctors/published-clinician')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('page.title', 'Published Clinician')
+                ->where('page.content.bio', 'Published clinician biography')
+                ->where('page.content.photo', '/clinician.jpg'));
+
+        $this->get('/news/published-article')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('page.title', 'Published Article')
+                ->where('page.content.body', 'Published article body')
+                ->where('page.content.image', '/article.jpg'));
     }
 
     public function test_section_order_visibility_service_department_clinician_and_testimonial_rules(): void
@@ -279,6 +392,11 @@ class Phase1BPublicSiteTest extends TestCase
 
         $media->update(['usage_count' => 1]);
         $this->actingAs($manager)->delete("/admin/public-website/media/{$media->id}")->assertForbidden();
+
+        $media->update(['usage_count' => 0]);
+        $this->actingAs($manager)->delete("/admin/public-website/media/{$media->id}")->assertRedirect();
+        $this->assertDatabaseMissing('public_site_media', ['id' => $media->id]);
+        $this->assertDatabaseHas('audit_events', ['action' => 'website.media_deleted']);
     }
 
     public function test_seeders_are_idempotent_and_public_pages_are_hospital_scoped(): void

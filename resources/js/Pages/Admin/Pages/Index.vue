@@ -11,12 +11,12 @@ defineProps({
 </script>
 
 <template>
-    <Head title="CMS Pages" />
-    <AppLayout title="CMS Pages">
+    <Head title="Legacy CMS Archive" />
+    <AppLayout title="Legacy CMS Archive">
         <div class="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
             <div class="border-b border-slate-200 p-5 dark:border-slate-800">
-                <h2 class="text-lg font-semibold">CMS deferred</h2>
-                <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Existing CMS records are preserved. Editing is disabled during Phase 0.</p>
+                <h2 class="text-lg font-semibold">Legacy CMS quarantined</h2>
+                <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">These records are preserved for migration history only. Manage the live public website from Public Website.</p>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-800">

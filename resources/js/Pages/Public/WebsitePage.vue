@@ -30,6 +30,11 @@ const about = computed(() => props.sections.about?.content || {});
 const whyItems = computed(() => props.sections.why_choose_us?.content?.items || []);
 const appointment = computed(() => props.sections.appointment_cta?.content || {});
 const contact = computed(() => props.sections.contact?.content || props.site.contact || {});
+const departmentsSection = computed(() => props.sections.departments?.content || {});
+const trustSection = computed(() => props.sections.why_choose_us?.content || {});
+const cliniciansSection = computed(() => props.sections.doctors?.content || {});
+const testimonialsSection = computed(() => props.sections.testimonials?.content || {});
+const newsSection = computed(() => props.sections.news?.content || {});
 const services = computed(() => props.items.service || []);
 const departments = computed(() => props.items.department || []);
 const doctors = computed(() => props.items.clinician || []);
@@ -132,7 +137,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
 
             <section class="public-section">
                 <div class="public-container">
-                    <SectionHeading kicker="Departments" title="Care teams and public departments" description="Published department profiles reference approved public presentation fields, not internal administrative notes." />
+                    <SectionHeading kicker="Departments" :title="departmentsSection.heading || 'Departments'" :description="departmentsSection.description || 'Published department profiles reference approved public presentation fields, not internal administrative notes.'" />
                     <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                         <article v-for="department in departments.slice(0, 6)" :key="department.slug" class="public-card rounded-3xl p-6 transition hover:-translate-y-1">
                             <Building2 class="h-8 w-8 public-accent" aria-hidden="true" />
@@ -146,7 +151,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
 
             <section class="public-section" style="background: var(--public-footer); color: var(--public-footer-text);">
                 <div class="public-container">
-                    <SectionHeading kicker="Why choose us" title="Clear information, accessible care and accountable publishing." description="Every public section is governed, previewed and published deliberately." />
+                    <SectionHeading :kicker="trustSection.label || 'Why choose us'" :title="trustSection.heading || 'Why choose us'" :description="trustSection.description || 'Every public section is governed, previewed and published deliberately.'" />
                     <div class="mt-10 grid gap-5 md:grid-cols-3">
                         <article v-for="(item, index) in whyItems" :key="item.heading" class="rounded-3xl border border-white/10 p-7 text-center transition hover:-translate-y-1" style="background: rgba(255,255,255,0.045);">
                             <component :is="trustIcons[index % trustIcons.length]" class="mx-auto h-9 w-9" style="color: var(--public-accent);" aria-hidden="true" />
@@ -159,7 +164,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
 
             <section class="public-section">
                 <div class="public-container">
-                    <SectionHeading kicker="Clinicians" title="Featured public profiles" description="Clinician profiles publish only approved public information and remain separate from private staff records." />
+                    <SectionHeading kicker="Clinicians" :title="cliniciansSection.heading || 'Featured public profiles'" :description="cliniciansSection.description || 'Clinician profiles publish only approved public information and remain separate from private staff records.'" />
                     <div class="mt-10 grid gap-6 md:grid-cols-3">
                         <article v-for="doctor in doctors.slice(0, 3)" :key="doctor.slug" class="public-card overflow-hidden rounded-[2rem] transition hover:-translate-y-1">
                             <img v-if="doctor.content.photo" :src="doctor.content.photo" :alt="doctor.content.alt || doctor.title" class="h-72 w-full object-cover" width="520" height="420" loading="lazy">
@@ -177,7 +182,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
 
             <section v-if="testimonials.length" class="public-section public-muted">
                 <div class="public-container">
-                    <SectionHeading kicker="Testimonials" title="Approved public statements" description="Placeholder statements remain visibly marked until replaced with consented, approved content." />
+                    <SectionHeading kicker="Testimonials" :title="testimonialsSection.heading || 'Approved public statements'" :description="testimonialsSection.description || 'Placeholder statements remain visibly marked until replaced with consented, approved content.'" />
                     <div class="mx-auto mt-10 grid max-w-5xl gap-5 md:grid-cols-2">
                         <blockquote v-for="testimonial in testimonials.slice(0, 2)" :key="testimonial.slug" class="public-card rounded-[2rem] p-8 text-center">
                             <Quote class="mx-auto h-9 w-9 public-accent" aria-hidden="true" />
@@ -199,7 +204,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
             <section class="public-section">
                 <div class="public-container grid gap-10 lg:grid-cols-[1fr_0.9fr]">
                     <div>
-                        <SectionHeading kicker="News" title="Latest public updates" description="Approved announcements and public information from the hospital." align="left" />
+                        <SectionHeading kicker="News" :title="newsSection.heading || 'Latest public updates'" :description="newsSection.description || 'Approved announcements and public information from the hospital.'" align="left" />
                         <div class="mt-8 space-y-4">
                             <article v-for="article in articles.slice(0, 3)" :key="article.slug" class="public-card rounded-3xl p-6">
                                 <h3 class="text-lg font-black" style="color: var(--public-text);">{{ article.title }}</h3>
@@ -248,7 +253,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
                     </div>
                     <article v-else-if="page.slug === 'doctor-profile' || page.slug === 'article'" class="public-card mx-auto max-w-4xl rounded-[2rem] p-8">
                         <img v-if="page.content?.photo || page.content?.image" :src="page.content.photo || page.content.image" :alt="page.content.alt || page.title" class="mb-8 aspect-video w-full rounded-3xl object-cover" width="900" height="520">
-                        <p class="public-prose text-lg">{{ page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary }}</p>
+                        <div class="public-prose text-lg" v-html="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary"></div>
                     </article>
                     <div v-else class="public-card mx-auto max-w-4xl rounded-[2rem] p-8 text-center">
                         <p class="public-prose text-lg">{{ page.content?.body || page.content?.summary || 'This public page is ready for approved content.' }}</p>

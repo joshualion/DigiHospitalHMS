@@ -15,11 +15,15 @@ class PublicSitePage extends Model
         'hospital_id',
         'slug',
         'title',
+        'draft_title',
+        'published_title',
         'template',
         'status',
         'draft_content',
         'published_content',
         'seo',
+        'draft_seo',
+        'published_seo',
         'published_version',
         'published_at',
         'published_by',
@@ -32,6 +36,8 @@ class PublicSitePage extends Model
             'draft_content' => 'array',
             'published_content' => 'array',
             'seo' => 'array',
+            'draft_seo' => 'array',
+            'published_seo' => 'array',
             'published_at' => 'datetime',
             'unpublished_at' => 'datetime',
         ];
@@ -62,5 +68,23 @@ class PublicSitePage extends Model
     public function liveContent(): array
     {
         return $this->published_content ?? [];
+    }
+
+    public function draftSnapshot(): array
+    {
+        return [
+            'title' => $this->draft_title ?? $this->title,
+            'content' => $this->draft_content ?? [],
+            'seo' => $this->draft_seo ?? $this->seo ?? [],
+        ];
+    }
+
+    public function publishedSnapshot(): array
+    {
+        return [
+            'title' => $this->published_title ?? $this->title,
+            'content' => $this->published_content ?? [],
+            'seo' => $this->published_seo ?? $this->seo ?? [],
+        ];
     }
 }

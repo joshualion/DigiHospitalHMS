@@ -129,6 +129,12 @@ function publishItem(item) {
     router.post(`/admin/public-website/items/${item.id}/publish`, {}, { preserveScroll: true });
 }
 
+function unpublishItem(item) {
+    if (window.confirm('Unpublish this item from the public website?')) {
+        router.post(`/admin/public-website/items/${item.id}/unpublish`, {}, { preserveScroll: true });
+    }
+}
+
 function createItem() {
     newItem.post(`/admin/public-website/pages/${props.page.id}/items`, {
         preserveScroll: true,
@@ -164,7 +170,7 @@ function parseInto(target, field, event) {
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">/{{ page.slug === 'home' ? '' : page.slug }}</p>
                         <h2 class="mt-1 text-2xl font-black">{{ page.title }}</h2>
-                        <p class="mt-2 text-sm text-slate-600">Status: {{ page.status }} · published version {{ page.version }} · last published {{ page.published_at || 'never' }}</p>
+                        <p class="mt-2 text-sm text-slate-600">Status: {{ page.status }} · published version {{ page.published_version }} · last published {{ page.published_at || 'never' }}</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <a :href="preview_url" class="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold" target="_blank">Preview draft</a>
@@ -260,7 +266,10 @@ function parseInto(target, field, event) {
                 <form v-if="activeItem && itemForm" class="rounded-md border border-slate-200 bg-white p-5" @submit.prevent="saveItem(itemForm, activeItem)">
                     <div class="flex items-start justify-between gap-3">
                         <h3 class="font-bold">Edit Item</h3>
-                        <button class="rounded-md bg-teal-700 px-3 py-2 text-sm font-bold text-white" type="button" @click="publishItem(activeItem)">Publish item</button>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="rounded-md bg-teal-700 px-3 py-2 text-sm font-bold text-white" type="button" @click="publishItem(activeItem)">Publish item</button>
+                            <button class="rounded-md border border-rose-300 px-3 py-2 text-sm font-bold text-rose-700" type="button" @click="unpublishItem(activeItem)">Unpublish item</button>
+                        </div>
                     </div>
                     <div class="mt-4 grid gap-4">
                         <div class="grid gap-4 sm:grid-cols-2">
@@ -324,7 +333,7 @@ function parseInto(target, field, event) {
                 <div class="mt-4 divide-y divide-slate-200">
                     <div v-for="revision in page.revisions" :key="revision.id" class="flex flex-col gap-3 py-3 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <p class="font-semibold">Version {{ revision.version }} · {{ revision.event }}</p>
+                            <p class="font-semibold">Version {{ revision.version }} · {{ revision.action }}</p>
                             <p class="text-sm text-slate-600">{{ revision.created_at }} · {{ revision.creator?.firstname }} {{ revision.creator?.lastname }}</p>
                         </div>
                         <button class="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold" type="button" @click="restoreRevision(revision)">Restore to draft</button>

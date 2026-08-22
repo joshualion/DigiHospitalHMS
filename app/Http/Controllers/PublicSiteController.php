@@ -28,14 +28,19 @@ class PublicSiteController extends Controller
 
         $item = PublicSiteItem::published()
             ->where('hospital_id', $hospital->id)
-            ->where('type', 'clinician')
-            ->where('slug', $slug)
+            ->where('published_type', 'clinician')
+            ->where('published_slug', $slug)
             ->firstOrFail();
 
         return Inertia::render('Public/WebsitePage', [
             'mode' => 'published',
             'site' => $this->siteShell($hospital),
-            'page' => ['slug' => 'doctor-profile', 'title' => $item->title, 'seo' => ['title' => $item->title, 'description' => $item->summary]],
+            'page' => [
+                'slug' => 'doctor-profile',
+                'title' => $item->published_title ?? $item->title,
+                'content' => $item->published_content ?? [],
+                'seo' => ['title' => $item->published_title ?? $item->title, 'description' => $item->published_summary ?? $item->summary],
+            ],
             'sections' => [],
             'items' => ['clinician' => [$this->itemPayload($item)]],
         ]);
@@ -48,14 +53,19 @@ class PublicSiteController extends Controller
 
         $item = PublicSiteItem::published()
             ->where('hospital_id', $hospital->id)
-            ->where('type', 'article')
-            ->where('slug', $slug)
+            ->where('published_type', 'article')
+            ->where('published_slug', $slug)
             ->firstOrFail();
 
         return Inertia::render('Public/WebsitePage', [
             'mode' => 'published',
             'site' => $this->siteShell($hospital),
-            'page' => ['slug' => 'article', 'title' => $item->title, 'seo' => ['title' => $item->title, 'description' => $item->summary]],
+            'page' => [
+                'slug' => 'article',
+                'title' => $item->published_title ?? $item->title,
+                'content' => $item->published_content ?? [],
+                'seo' => ['title' => $item->published_title ?? $item->title, 'description' => $item->published_summary ?? $item->summary],
+            ],
             'sections' => [],
             'items' => ['article' => [$this->itemPayload($item)]],
         ]);
@@ -157,10 +167,10 @@ class PublicSiteController extends Controller
         return [
             'id' => $page->id,
             'slug' => $page->slug,
-            'title' => $page->title,
+            'title' => $draft ? ($page->draft_title ?? $page->title) : ($page->published_title ?? $page->title),
             'template' => $page->template,
             'content' => $draft ? ($page->draft_content ?? []) : ($page->published_content ?? []),
-            'seo' => $page->seo ?? [],
+            'seo' => $draft ? ($page->draft_seo ?? $page->seo ?? []) : ($page->published_seo ?? $page->seo ?? []),
             'published_at' => $page->published_at?->toISOString(),
         ];
     }
@@ -168,14 +178,15 @@ class PublicSiteController extends Controller
     private function sectionPayloads(PublicSitePage $page, bool $draft = false): array
     {
         return $page->sections
-            ->filter(fn ($section) => $draft || ($section->is_enabled && $section->published_content))
+            ->filter(fn ($section) => $draft || ($section->published_is_enabled && $section->published_content))
+            ->sortBy(fn ($section) => $draft ? ($section->draft_sort_order ?? $section->sort_order) : ($section->published_sort_order ?? $section->sort_order))
             ->mapWithKeys(fn ($section) => [$section->key => [
                 'id' => $section->id,
                 'key' => $section->key,
                 'type' => $section->type,
-                'label' => $section->label,
-                'sort_order' => $section->sort_order,
-                'is_enabled' => $section->is_enabled,
+                'label' => $draft ? ($section->draft_label ?? $section->label) : ($section->published_label ?? $section->label),
+                'sort_order' => $draft ? ($section->draft_sort_order ?? $section->sort_order) : ($section->published_sort_order ?? $section->sort_order),
+                'is_enabled' => $draft ? ($section->draft_is_enabled ?? $section->is_enabled) : ($section->published_is_enabled ?? $section->is_enabled),
                 'content' => $draft ? ($section->draft_content ?? []) : ($section->published_content ?? []),
             ]])
             ->all();
@@ -186,7 +197,7 @@ class PublicSiteController extends Controller
         $items = PublicSiteItem::query()
             ->where('hospital_id', $page->hospital_id)
             ->when(! $draft, fn ($query) => $query->published())
-            ->orderBy('sort_order')
+            ->orderBy($draft ? 'draft_sort_order' : 'published_sort_order')
             ->get()
             ->map(fn (PublicSiteItem $item) => $this->itemPayload($item, $draft))
             ->groupBy('type');
@@ -198,11 +209,11 @@ class PublicSiteController extends Controller
     {
         return [
             'id' => $item->id,
-            'type' => $item->type,
-            'slug' => $item->slug,
-            'title' => $item->title,
-            'summary' => $item->summary,
-            'is_featured' => $item->is_featured,
+            'type' => $draft ? ($item->draft_type ?? $item->type) : ($item->published_type ?? $item->type),
+            'slug' => $draft ? ($item->draft_slug ?? $item->slug) : ($item->published_slug ?? $item->slug),
+            'title' => $draft ? ($item->draft_title ?? $item->title) : ($item->published_title ?? $item->title),
+            'summary' => $draft ? ($item->draft_summary ?? $item->summary) : ($item->published_summary ?? $item->summary),
+            'is_featured' => $draft ? ($item->draft_is_featured ?? $item->is_featured) : ($item->published_is_featured ?? $item->is_featured),
             'content' => $draft ? ($item->draft_content ?? []) : ($item->published_content ?? []),
         ];
     }

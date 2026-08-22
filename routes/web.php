@@ -76,6 +76,7 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin'])
         Route::post('public-website/pages/{page}/items', [PublicWebsiteController::class, 'storeItem'])->name('admin.public-website.items.store');
         Route::patch('public-website/items/{item}', [PublicWebsiteController::class, 'updateItem'])->name('admin.public-website.items.update');
         Route::post('public-website/items/{item}/publish', [PublicWebsiteController::class, 'publishItem'])->name('admin.public-website.items.publish');
+        Route::post('public-website/items/{item}/unpublish', [PublicWebsiteController::class, 'unpublishItem'])->name('admin.public-website.items.unpublish');
         Route::post('public-website/revisions/{revision}/restore', [PublicWebsiteController::class, 'restoreRevision'])->name('admin.public-website.revisions.restore');
         Route::post('public-website/media', [PublicWebsiteController::class, 'uploadMedia'])->name('admin.public-website.media.store');
         Route::delete('public-website/media/{media}', [PublicWebsiteController::class, 'deleteMedia'])->name('admin.public-website.media.destroy');

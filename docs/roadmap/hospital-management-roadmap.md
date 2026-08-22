@@ -692,3 +692,22 @@ Deferred:
 
 - Operational appointment intake remains Phase 2.
 - Patients, clinical records, billing, lab, pharmacy, inventory, admissions, blood bank, theatre, insurance/HMO, and other Phase 2+ modules remain unimplemented.
+
+## Phase 1B.2: Public Website Publishing Correctness
+
+Status: implemented on 2026-08-22.
+
+Delivered scope:
+
+- Additive draft/published fields for public page titles and SEO, section labels/order/visibility, and item section placement/type/slug/title/summary/visibility/feature/order.
+- Public rendering reads published snapshots only; draft editing no longer changes public-visible content until publish.
+- Item publish and unpublish workflow with authorization, revision records, and audit logging.
+- Published doctor and article detail pages render item body and media.
+- Public brand, tagline, footer badges, and major homepage headings use hospital settings or CMS-managed content instead of hardcoded copy.
+- SEO canonical metadata normalized to `canonical_url`.
+- Legacy CMS `/admin/pages` remains preserved as a quarantined archive; active public-site management is `/admin/public-website`.
+
+Deferred:
+
+- Patient, appointment, clinical, billing, laboratory, pharmacy, inventory, admissions, blood bank, theatre, and insurance/HMO modules remain unimplemented.
+- Rich field-specific public-site editors remain future work; structured JSON editing is still the primary content-entry surface for many section/item fields.

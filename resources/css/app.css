@@ -210,6 +210,91 @@
 .public-prose { color: var(--public-text-secondary); line-height: 1.8; }
 .public-kicker { color: var(--public-accent); font-size: 0.78rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; }
 
+.admin-theme {
+  --admin-bg: color-mix(in srgb, var(--public-bg) 86%, var(--public-accent-soft));
+  --admin-sidebar: color-mix(in srgb, var(--public-surface-elevated) 88%, var(--public-accent-soft));
+  --admin-sidebar-border: color-mix(in srgb, var(--public-border) 76%, var(--public-accent));
+  --admin-surface: var(--public-surface-elevated);
+  --admin-surface-muted: var(--public-bg-muted);
+  --admin-text: var(--public-text);
+  --admin-text-muted: var(--public-text-muted);
+  --admin-border: var(--public-border);
+  --admin-shadow: 0 24px 70px rgba(15, 23, 42, 0.10);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--public-accent) 13%, transparent), transparent 34rem),
+    var(--admin-bg);
+  color: var(--admin-text);
+}
+
+[data-public-appearance="dark"] .admin-theme {
+  --admin-bg: #07111f;
+  --admin-sidebar: color-mix(in srgb, var(--public-surface-elevated) 78%, #020817);
+  --admin-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+.admin-theme .bg-white,
+.admin-theme .dark\:bg-slate-900 {
+  background-color: var(--admin-surface) !important;
+}
+.admin-theme .bg-slate-100,
+.admin-theme .dark\:bg-slate-950 {
+  background-color: var(--admin-bg) !important;
+}
+.admin-theme .text-slate-900,
+.admin-theme .text-slate-800,
+.admin-theme .text-slate-700,
+.admin-theme .dark\:text-slate-100,
+.admin-theme .dark\:text-slate-200 {
+  color: var(--admin-text) !important;
+}
+.admin-theme .text-slate-600,
+.admin-theme .text-slate-500 {
+  color: var(--admin-text-muted) !important;
+}
+.admin-theme .border-slate-100,
+.admin-theme .border-slate-200,
+.admin-theme .border-slate-300,
+.admin-theme .dark\:border-slate-700,
+.admin-theme .dark\:border-slate-800 {
+  border-color: var(--admin-border) !important;
+}
+.admin-theme input,
+.admin-theme select,
+.admin-theme textarea {
+  background: var(--public-input) !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+.admin-theme input:focus,
+.admin-theme select:focus,
+.admin-theme textarea:focus {
+  border-color: var(--public-accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--public-accent) 24%, transparent) !important;
+}
+.admin-shell-card {
+  background: color-mix(in srgb, var(--admin-surface) 94%, transparent);
+  border: 1px solid var(--admin-border);
+  box-shadow: var(--admin-shadow);
+}
+.admin-nav-link {
+  align-items: center;
+  border: 1px solid transparent;
+  color: var(--admin-text-muted);
+  display: flex;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.admin-nav-link:hover,
+.admin-nav-link-active {
+  background: var(--public-accent-soft);
+  border-color: color-mix(in srgb, var(--public-accent) 26%, transparent);
+  color: var(--public-accent);
+}
+.admin-nav-link:hover {
+  transform: translateX(2px);
+}
+
 .public-brand {
   align-items: center;
   display: inline-flex;

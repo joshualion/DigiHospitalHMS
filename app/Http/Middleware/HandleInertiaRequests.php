@@ -40,6 +40,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
                 'success' => fn () => $request->session()->get('success'),
+                'duplicate_warnings' => fn () => $request->session()->get('duplicate_warnings') ?? [],
             ],
         ]);
     }

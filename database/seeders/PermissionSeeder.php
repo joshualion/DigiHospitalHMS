@@ -46,6 +46,12 @@ class PermissionSeeder extends Seeder
             'website.manage_theme',
             'website.view_revisions',
             'website.restore_revision',
+            'patients.view',
+            'patients.register',
+            'patients.update',
+            'patients.archive',
+            'patients.record-alerts',
+            'patients.view-sensitive',
         ];
 
         foreach ($permissions as $permission) {
@@ -84,6 +90,12 @@ class PermissionSeeder extends Seeder
             'website.manage_theme',
             'website.view_revisions',
             'website.restore_revision',
+            'patients.view',
+            'patients.register',
+            'patients.update',
+            'patients.archive',
+            'patients.record-alerts',
+            'patients.view-sensitive',
         ];
 
         Role::where('name', 'admin')->first()?->syncPermissions(array_values(array_diff($adminPermissions, [
@@ -95,9 +107,6 @@ class PermissionSeeder extends Seeder
         Role::where('name', 'hospital-admin')->first()?->syncPermissions($adminPermissions);
 
         Role::whereIn('name', [
-            'receptionist',
-            'doctor',
-            'nurse',
             'pharmacist',
             'laboratory-scientist',
             'radiology-staff',
@@ -110,6 +119,27 @@ class PermissionSeeder extends Seeder
             'hospital.view',
             'facilities.view',
             'departments.view',
+        ]));
+
+        Role::where('name', 'receptionist')->first()?->syncPermissions([
+            'hospital.view',
+            'facilities.view',
+            'departments.view',
+            'patients.view',
+            'patients.register',
+            'patients.update',
+            'patients.record-alerts',
+            'patients.view-sensitive',
+        ]);
+
+        Role::whereIn('name', ['doctor', 'nurse'])->get()->each(fn (Role $role) => $role->syncPermissions([
+            'hospital.view',
+            'facilities.view',
+            'departments.view',
+            'patients.view',
+            'patients.update',
+            'patients.record-alerts',
+            'patients.view-sensitive',
         ]));
 
         Role::where('name', 'patient')->first()?->syncPermissions([]);

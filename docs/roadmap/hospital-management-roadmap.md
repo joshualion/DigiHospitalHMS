@@ -728,3 +728,22 @@ Delivered scope:
 Deferred:
 
 - Patient, appointment, clinical, billing, lab, pharmacy, inventory, admissions, blood bank, theatre, insurance/HMO, and other Phase 2+ modules remain unimplemented.
+
+## Phase 2A: Patient Registration And Identity Foundation
+
+Status: implemented on 2026-08-23.
+
+Delivered scope:
+
+- Hospital-scoped patient registration with concurrency-safe hospital number allocation through the existing numbering sequence service.
+- Demographics, optional identifiers, contacts, next of kin, allergies and important alerts.
+- Protected exact lookup for phone, email and identifiers using encrypted display values plus deterministic hashes.
+- Duplicate warnings based on configurable demographic, phone and identifier signals with no auto-merge.
+- Active, archived and deceased patient states with controlled, audited transitions and no hard deletion.
+- Patient list, registration form and profile pages using Inertia/Vue.
+- Patient search, facility/hospital scoping, policies, permissions, audit events and activity-timeline foundation.
+
+Deferred:
+
+- Patient photographs and documents until private storage, scanning and access logging are designed.
+- Patient merging, appointments, queues, encounters, billing, laboratory, pharmacy and admissions.

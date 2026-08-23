@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\FacilityController;
 use App\Http\Controllers\Admin\HospitalProfileController;
 use App\Http\Controllers\Admin\HospitalSettingController;
 use App\Http\Controllers\Admin\NumberSequenceController;
+use App\Http\Controllers\Admin\PatientController;
 use App\Http\Controllers\Admin\PublicWebsiteController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\StaffController;
@@ -29,7 +30,7 @@ Route::get('/appointment', [PublicSiteController::class, 'page'])->defaults('slu
 Route::get('/policies', [PublicSiteController::class, 'page'])->defaults('slug', 'policies')->name('policies');
 Route::get('/preview/public-site/{page}', [PublicSiteController::class, 'preview'])->name('public.preview');
 
-Route::middleware(['auth', 'role:superadmin|admin|hospital-admin'])
+Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', function () {
@@ -64,6 +65,14 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin'])
         Route::get('numbering', [NumberSequenceController::class, 'index'])->name('admin.numbering.index');
         Route::patch('numbering/{sequence}', [NumberSequenceController::class, 'update'])->name('admin.numbering.update');
         Route::post('numbering/{sequence}/allocate', [NumberSequenceController::class, 'allocate'])->name('admin.numbering.allocate');
+
+        Route::get('patients', [PatientController::class, 'index'])->name('admin.patients.index');
+        Route::post('patients', [PatientController::class, 'store'])->name('admin.patients.store');
+        Route::get('patients/{patient}', [PatientController::class, 'show'])->name('admin.patients.show');
+        Route::patch('patients/{patient}', [PatientController::class, 'update'])->name('admin.patients.update');
+        Route::patch('patients/{patient}/status', [PatientController::class, 'status'])->name('admin.patients.status');
+        Route::post('patients/{patient}/allergies', [PatientController::class, 'storeAllergy'])->name('admin.patients.allergies.store');
+        Route::post('patients/{patient}/alerts', [PatientController::class, 'storeAlert'])->name('admin.patients.alerts.store');
 
         Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
         Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])->name('admin.public-website.edit');

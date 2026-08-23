@@ -31,6 +31,7 @@ const navItems = computed(() => [
     { label: 'Facilities', href: '/admin/facilities', show: can('facilities.view') },
     { label: 'Departments', href: '/admin/departments', show: can('departments.view') },
     { label: 'Staff', href: '/admin/staff', show: can('staff.view') },
+    { label: 'Patients', href: '/admin/patients', show: can('patients.view') },
     { label: 'Roles', href: '/admin/roles', show: can('roles.view') },
     { label: 'Settings', href: '/admin/settings', show: can('settings.manage') },
     { label: 'Numbering', href: '/admin/numbering', show: can('numbering.manage') },

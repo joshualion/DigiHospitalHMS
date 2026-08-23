@@ -416,6 +416,29 @@ Implementation sessions:
 6. Imaging reports/attachments.
 7. Diagnostic turnaround reports.
 
+## Phase 4A: Laboratory Catalogue, Requests, Specimens, Results And Approval
+
+Status: implemented on 2026-08-23.
+
+Delivered scope:
+
+- Hospital/facility-scoped laboratory catalogue with specimen types, units, tests, components/analytes and panels.
+- Configurable reference ranges and critical thresholds, with seeded structural examples only.
+- Optional mapping from lab tests to Phase 3A billable services.
+- Lab requests linked to patient, visit, encounter and ordering clinician.
+- Request, accession and specimen numbers through `NumberSequenceService`.
+- Specimen collection, receipt, rejection, recollection and chain-of-custody events.
+- Lab worklist, request-processing screen and printable approved report.
+- Numeric, text, qualitative and comment result entry with reference-range snapshots.
+- Draft, verification, approval, release, critical acknowledgement and append-only amendment workflows.
+- Approved-result visibility in patient/encounter timeline foundation.
+- Billing integration through the server-side invoice workflow.
+- Permissions, policies, hospital scoping, IDOR protection, lab events and audits.
+
+Deferred:
+
+- Radiology, pharmacy, inventory, admissions, device integration, stock consumption and fabricated medical catalogues.
+
 ## Phase 5: Pharmacy, Inventory, and Procurement
 
 Objective: Support prescribing, dispensing, stock control, and procurement.

@@ -90,6 +90,11 @@ class Patient extends Model
         return $this->hasMany(PatientActivityEvent::class)->latest('occurred_at');
     }
 
+    public function labRequests(): HasMany
+    {
+        return $this->hasMany(LabRequest::class);
+    }
+
     public function scopeForHospital($query, int $hospitalId)
     {
         return $query->where('hospital_id', $hospitalId);

@@ -8,6 +8,11 @@ use App\Models\BillableServiceCategory;
 use App\Models\Facility;
 use App\Models\Hospital;
 use App\Models\HospitalSetting;
+use App\Models\LabSpecimenType;
+use App\Models\LabTest;
+use App\Models\LabTestComponent;
+use App\Models\LabTestProfile;
+use App\Models\LabUnit;
 use App\Models\NumberSequence;
 use App\Models\PaymentMethod;
 use Illuminate\Database\Seeder;
@@ -122,6 +127,28 @@ class HospitalFoundationSeeder extends Seeder
                 $method + ['hospital_id' => $hospital->id]
             );
         }
+
+        $blood = LabSpecimenType::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'code' => 'BLOOD'],
+            ['name' => 'Blood specimen - configure professionally', 'collection_notes' => 'Structural example only. Validate collection requirements with laboratory professionals.', 'is_active' => true]
+        );
+        $unit = LabUnit::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'code' => 'CONFIG'],
+            ['name' => 'Configure unit', 'is_active' => true]
+        );
+        $labTest = LabTest::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'code' => 'LAB-CONFIG'],
+            ['default_specimen_type_id' => $blood->id, 'name' => 'Example lab test - configure professionally', 'description' => 'Structural example only. Do not use clinically until validated.', 'requires_approval' => true, 'is_active' => true]
+        );
+        LabTestComponent::firstOrCreate(
+            ['lab_test_id' => $labTest->id, 'code' => 'RESULT'],
+            ['hospital_id' => $hospital->id, 'lab_unit_id' => $unit->id, 'name' => 'Configurable result', 'result_type' => 'text', 'sort_order' => 1, 'is_required' => true, 'is_active' => true]
+        );
+        $profile = LabTestProfile::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'code' => 'LAB-PANEL-CONFIG'],
+            ['name' => 'Example lab panel - configure professionally', 'description' => 'Structural example only.', 'is_active' => true]
+        );
+        $profile->tests()->syncWithoutDetaching([$labTest->id]);
     }
 
     private function sequences(): array
@@ -132,6 +159,8 @@ class HospitalFoundationSeeder extends Seeder
             ['key' => 'invoice_number', 'label' => 'Invoice number', 'prefix' => 'INV', 'date_format' => 'Y', 'padding_length' => 6],
             ['key' => 'receipt_number', 'label' => 'Receipt number', 'prefix' => 'RCT', 'date_format' => 'Y', 'padding_length' => 6],
             ['key' => 'lab_request_number', 'label' => 'Laboratory request number', 'prefix' => 'LAB', 'date_format' => 'Ymd', 'padding_length' => 5],
+            ['key' => 'lab_accession_number', 'label' => 'Laboratory accession number', 'prefix' => 'ACC', 'date_format' => 'Ymd', 'padding_length' => 5],
+            ['key' => 'lab_specimen_number', 'label' => 'Laboratory specimen label', 'prefix' => 'SPC', 'date_format' => 'Ymd', 'padding_length' => 5],
             ['key' => 'prescription_number', 'label' => 'Prescription number', 'prefix' => 'RX', 'date_format' => 'Y', 'padding_length' => 6],
             ['key' => 'admission_number', 'label' => 'Admission number', 'prefix' => 'ADM', 'date_format' => 'Y', 'padding_length' => 6],
         ];

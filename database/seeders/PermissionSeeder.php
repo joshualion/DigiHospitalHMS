@@ -78,6 +78,15 @@ class PermissionSeeder extends Seeder
             'cashier-shifts.open',
             'cashier-shifts.close',
             'cashier-shifts.review',
+            'lab.catalogue.view',
+            'lab.catalogue.manage',
+            'lab.requests.view',
+            'lab.requests.order',
+            'lab.specimens.manage',
+            'lab.results.enter',
+            'lab.results.verify',
+            'lab.results.approve',
+            'lab.results.amend',
         ];
 
         foreach ($permissions as $permission) {
@@ -148,6 +157,15 @@ class PermissionSeeder extends Seeder
             'cashier-shifts.open',
             'cashier-shifts.close',
             'cashier-shifts.review',
+            'lab.catalogue.view',
+            'lab.catalogue.manage',
+            'lab.requests.view',
+            'lab.requests.order',
+            'lab.specimens.manage',
+            'lab.results.enter',
+            'lab.results.verify',
+            'lab.results.approve',
+            'lab.results.amend',
         ];
 
         Role::where('name', 'admin')->first()?->syncPermissions(array_values(array_diff($adminPermissions, [
@@ -218,6 +236,8 @@ class PermissionSeeder extends Seeder
             'billing.catalogue.view',
             'invoices.view',
             'invoices.create',
+            'lab.requests.view',
+            'lab.requests.order',
         ]);
 
         Role::whereIn('name', ['doctor', 'nurse'])->get()->each(fn (Role $role) => $role->syncPermissions([
@@ -237,7 +257,29 @@ class PermissionSeeder extends Seeder
             ...($role->name === 'doctor' ? ['encounters.manage', 'encounters.sign'] : []),
             'billing.catalogue.view',
             'invoices.view',
+            'lab.catalogue.view',
+            'lab.requests.view',
+            ...($role->name === 'doctor' ? ['lab.requests.order'] : []),
         ]));
+
+        Role::where('name', 'laboratory-scientist')->first()?->syncPermissions([
+            'hospital.view',
+            'facilities.view',
+            'departments.view',
+            'patients.view',
+            'encounters.view',
+            'billing.catalogue.view',
+            'invoices.view',
+            'lab.catalogue.view',
+            'lab.catalogue.manage',
+            'lab.requests.view',
+            'lab.requests.order',
+            'lab.specimens.manage',
+            'lab.results.enter',
+            'lab.results.verify',
+            'lab.results.approve',
+            'lab.results.amend',
+        ]);
 
         Role::where('name', 'patient')->first()?->syncPermissions([]);
     }

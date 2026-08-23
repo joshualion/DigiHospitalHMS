@@ -101,6 +101,11 @@ class ClinicalEncounter extends Model
         return $this->hasMany(EncounterAmendment::class);
     }
 
+    public function labRequests(): HasMany
+    {
+        return $this->hasMany(LabRequest::class);
+    }
+
     public function isSigned(): bool
     {
         return $this->status === 'signed';

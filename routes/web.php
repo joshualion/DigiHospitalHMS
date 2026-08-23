@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\FacilityController;
 use App\Http\Controllers\Admin\HospitalProfileController;
 use App\Http\Controllers\Admin\HospitalSettingController;
+use App\Http\Controllers\Admin\LaboratoryController;
 use App\Http\Controllers\Admin\NumberSequenceController;
 use App\Http\Controllers\Admin\PatientController;
 use App\Http\Controllers\Admin\PaymentController;
@@ -37,7 +38,7 @@ Route::post('/appointment/request', [PublicAppointmentRequestController::class, 
 Route::get('/policies', [PublicSiteController::class, 'page'])->defaults('slug', 'policies')->name('policies');
 Route::get('/preview/public-site/{page}', [PublicSiteController::class, 'preview'])->name('public.preview');
 
-Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse|cashier|accountant'])
+Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse|cashier|accountant|laboratory-scientist'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', function () {
@@ -128,6 +129,25 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('payments/{payment}/refunds', [PaymentController::class, 'requestRefund'])->name('admin.payments.refunds.request');
         Route::patch('refunds/{refund}/decision', [PaymentController::class, 'decideRefund'])->name('admin.refunds.decision');
         Route::patch('refunds/{refund}/process', [PaymentController::class, 'processRefund'])->name('admin.refunds.process');
+
+        Route::get('laboratory/catalogue', [LaboratoryController::class, 'catalogue'])->name('admin.lab.catalogue');
+        Route::post('laboratory/specimen-types', [LaboratoryController::class, 'storeSpecimenType'])->name('admin.lab.specimen-types.store');
+        Route::post('laboratory/units', [LaboratoryController::class, 'storeUnit'])->name('admin.lab.units.store');
+        Route::post('laboratory/tests', [LaboratoryController::class, 'storeTest'])->name('admin.lab.tests.store');
+        Route::post('laboratory/tests/{test}/components', [LaboratoryController::class, 'storeComponent'])->name('admin.lab.components.store');
+        Route::post('laboratory/components/{component}/reference-ranges', [LaboratoryController::class, 'storeReferenceRange'])->name('admin.lab.reference-ranges.store');
+        Route::post('laboratory/profiles', [LaboratoryController::class, 'storeProfile'])->name('admin.lab.profiles.store');
+        Route::get('laboratory/requests', [LaboratoryController::class, 'requests'])->name('admin.lab.requests.index');
+        Route::post('laboratory/requests', [LaboratoryController::class, 'storeRequest'])->name('admin.lab.requests.store');
+        Route::get('laboratory/requests/{labRequest}', [LaboratoryController::class, 'show'])->name('admin.lab.requests.show');
+        Route::post('laboratory/requests/{labRequest}/specimens', [LaboratoryController::class, 'collect'])->name('admin.lab.specimens.collect');
+        Route::patch('laboratory/specimens/{specimen}/transition', [LaboratoryController::class, 'specimenTransition'])->name('admin.lab.specimens.transition');
+        Route::post('laboratory/request-tests/{requestTest}/results', [LaboratoryController::class, 'result'])->name('admin.lab.results.store');
+        Route::patch('laboratory/results/{result}/transition', [LaboratoryController::class, 'resultTransition'])->name('admin.lab.results.transition');
+        Route::post('laboratory/results/{result}/critical-acknowledgement', [LaboratoryController::class, 'acknowledgeCritical'])->name('admin.lab.results.critical');
+        Route::post('laboratory/requests/{labRequest}/release', [LaboratoryController::class, 'release'])->name('admin.lab.requests.release');
+        Route::post('laboratory/requests/{labRequest}/amendments', [LaboratoryController::class, 'amend'])->name('admin.lab.requests.amendments.store');
+        Route::get('laboratory/requests/{labRequest}/report', [LaboratoryController::class, 'report'])->name('admin.lab.requests.report');
 
         Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
         Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])->name('admin.public-website.edit');

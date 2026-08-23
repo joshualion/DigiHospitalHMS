@@ -87,6 +87,17 @@ class PermissionSeeder extends Seeder
             'lab.results.verify',
             'lab.results.approve',
             'lab.results.amend',
+            'radiology.catalogue.view',
+            'radiology.catalogue.manage',
+            'radiology.requests.view',
+            'radiology.requests.order',
+            'radiology.schedule.manage',
+            'radiology.perform',
+            'radiology.reports.write',
+            'radiology.reports.verify',
+            'radiology.reports.approve',
+            'radiology.reports.amend',
+            'radiology.attachments.manage',
         ];
 
         foreach ($permissions as $permission) {
@@ -166,6 +177,17 @@ class PermissionSeeder extends Seeder
             'lab.results.verify',
             'lab.results.approve',
             'lab.results.amend',
+            'radiology.catalogue.view',
+            'radiology.catalogue.manage',
+            'radiology.requests.view',
+            'radiology.requests.order',
+            'radiology.schedule.manage',
+            'radiology.perform',
+            'radiology.reports.write',
+            'radiology.reports.verify',
+            'radiology.reports.approve',
+            'radiology.reports.amend',
+            'radiology.attachments.manage',
         ];
 
         Role::where('name', 'admin')->first()?->syncPermissions(array_values(array_diff($adminPermissions, [
@@ -238,6 +260,8 @@ class PermissionSeeder extends Seeder
             'invoices.create',
             'lab.requests.view',
             'lab.requests.order',
+            'radiology.requests.view',
+            'radiology.requests.order',
         ]);
 
         Role::whereIn('name', ['doctor', 'nurse'])->get()->each(fn (Role $role) => $role->syncPermissions([
@@ -260,6 +284,9 @@ class PermissionSeeder extends Seeder
             'lab.catalogue.view',
             'lab.requests.view',
             ...($role->name === 'doctor' ? ['lab.requests.order'] : []),
+            'radiology.catalogue.view',
+            'radiology.requests.view',
+            ...($role->name === 'doctor' ? ['radiology.requests.order'] : []),
         ]));
 
         Role::where('name', 'laboratory-scientist')->first()?->syncPermissions([
@@ -279,6 +306,27 @@ class PermissionSeeder extends Seeder
             'lab.results.verify',
             'lab.results.approve',
             'lab.results.amend',
+        ]);
+
+        Role::where('name', 'radiology-staff')->first()?->syncPermissions([
+            'hospital.view',
+            'facilities.view',
+            'departments.view',
+            'patients.view',
+            'encounters.view',
+            'billing.catalogue.view',
+            'invoices.view',
+            'radiology.catalogue.view',
+            'radiology.catalogue.manage',
+            'radiology.requests.view',
+            'radiology.requests.order',
+            'radiology.schedule.manage',
+            'radiology.perform',
+            'radiology.reports.write',
+            'radiology.reports.verify',
+            'radiology.reports.approve',
+            'radiology.reports.amend',
+            'radiology.attachments.manage',
         ]);
 
         Role::where('name', 'patient')->first()?->syncPermissions([]);

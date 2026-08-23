@@ -15,6 +15,8 @@ use App\Models\LabTestProfile;
 use App\Models\LabUnit;
 use App\Models\NumberSequence;
 use App\Models\PaymentMethod;
+use App\Models\RadiologyModality;
+use App\Models\RadiologyStudy;
 use Illuminate\Database\Seeder;
 
 class HospitalFoundationSeeder extends Seeder
@@ -149,6 +151,28 @@ class HospitalFoundationSeeder extends Seeder
             ['name' => 'Example lab panel - configure professionally', 'description' => 'Structural example only.', 'is_active' => true]
         );
         $profile->tests()->syncWithoutDetaching([$labTest->id]);
+
+        $modality = RadiologyModality::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'code' => 'XRAY'],
+            [
+                'facility_id' => $facility->id,
+                'name' => 'X-ray modality - configure professionally',
+                'description' => 'Structural example only. Validate equipment, protocols and safety screening with radiology professionals.',
+                'is_active' => true,
+            ]
+        );
+        RadiologyStudy::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'code' => 'XR-CONFIG'],
+            [
+                'radiology_modality_id' => $modality->id,
+                'name' => 'Example X-ray study - configure professionally',
+                'description' => 'Structural example only. Do not use clinically until validated.',
+                'preparation_acknowledgements' => ['Professional configuration required'],
+                'safety_screening_acknowledgements' => ['Radiology safety screening required'],
+                'requires_professional_validation' => true,
+                'is_active' => true,
+            ]
+        );
     }
 
     private function sequences(): array
@@ -161,6 +185,8 @@ class HospitalFoundationSeeder extends Seeder
             ['key' => 'lab_request_number', 'label' => 'Laboratory request number', 'prefix' => 'LAB', 'date_format' => 'Ymd', 'padding_length' => 5],
             ['key' => 'lab_accession_number', 'label' => 'Laboratory accession number', 'prefix' => 'ACC', 'date_format' => 'Ymd', 'padding_length' => 5],
             ['key' => 'lab_specimen_number', 'label' => 'Laboratory specimen label', 'prefix' => 'SPC', 'date_format' => 'Ymd', 'padding_length' => 5],
+            ['key' => 'radiology_request_number', 'label' => 'Radiology request number', 'prefix' => 'RAD', 'date_format' => 'Ymd', 'padding_length' => 5],
+            ['key' => 'radiology_accession_number', 'label' => 'Radiology accession number', 'prefix' => 'RAC', 'date_format' => 'Ymd', 'padding_length' => 5],
             ['key' => 'prescription_number', 'label' => 'Prescription number', 'prefix' => 'RX', 'date_format' => 'Y', 'padding_length' => 6],
             ['key' => 'admission_number', 'label' => 'Admission number', 'prefix' => 'ADM', 'date_format' => 'Y', 'padding_length' => 6],
         ];

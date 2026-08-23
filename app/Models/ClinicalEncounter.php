@@ -106,6 +106,11 @@ class ClinicalEncounter extends Model
         return $this->hasMany(LabRequest::class);
     }
 
+    public function radiologyRequests(): HasMany
+    {
+        return $this->hasMany(RadiologyRequest::class);
+    }
+
     public function isSigned(): bool
     {
         return $this->status === 'signed';

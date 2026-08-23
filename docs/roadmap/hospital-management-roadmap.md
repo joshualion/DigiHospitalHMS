@@ -437,7 +437,32 @@ Delivered scope:
 
 Deferred:
 
-- Radiology, pharmacy, inventory, admissions, device integration, stock consumption and fabricated medical catalogues.
+- Pharmacy, inventory, admissions, device integration, stock consumption, PACS/DICOM and fabricated medical catalogues.
+
+## Phase 4B: Radiology Requests, Scheduling, Reports And Secure Attachments
+
+Status: implemented on 2026-08-23.
+
+Delivered scope:
+
+- Hospital/facility-scoped radiology modality and study catalogue.
+- Optional radiology study mapping to Phase 3A billable services.
+- Radiology requests linked to patient, visit, encounter and ordering clinician.
+- Request and accession numbering through `NumberSequenceService`.
+- Scheduling by facility, room, equipment and assigned staff with conflict prevention.
+- Ordered, scheduled, arrived, performed, reporting, verified, approved, released and cancelled workflows.
+- Structured draft reporting, verification, approval, release and printable approved report.
+- Critical-finding communication, acknowledgement and escalation history.
+- Append-only amendments after report approval/release.
+- Approved/released report visibility in the patient and encounter timeline.
+- Billing integration through `InvoiceWorkflowService`.
+- Private support attachments with validation, quarantine, clearance, authorized download and retirement controls.
+- Permissions, policies, hospital scoping, IDOR protection, radiology events and audit events.
+- Responsive Inertia/Vue catalogue, request, scheduling, worklist, report-entry and printable-report screens.
+
+Deferred:
+
+- PACS/DICOM, device integration, radiology protocol engines, contraindication engines, pharmacy, inventory and admissions.
 
 ## Phase 5: Pharmacy, Inventory, and Procurement
 

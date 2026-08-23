@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\NumberSequenceController;
 use App\Http\Controllers\Admin\PatientController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PublicWebsiteController;
+use App\Http\Controllers\Admin\RadiologyController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\ProfileController;
@@ -38,7 +39,7 @@ Route::post('/appointment/request', [PublicAppointmentRequestController::class, 
 Route::get('/policies', [PublicSiteController::class, 'page'])->defaults('slug', 'policies')->name('policies');
 Route::get('/preview/public-site/{page}', [PublicSiteController::class, 'preview'])->name('public.preview');
 
-Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse|cashier|accountant|laboratory-scientist'])
+Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse|cashier|accountant|laboratory-scientist|radiology-staff'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', function () {
@@ -148,6 +149,25 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('laboratory/requests/{labRequest}/release', [LaboratoryController::class, 'release'])->name('admin.lab.requests.release');
         Route::post('laboratory/requests/{labRequest}/amendments', [LaboratoryController::class, 'amend'])->name('admin.lab.requests.amendments.store');
         Route::get('laboratory/requests/{labRequest}/report', [LaboratoryController::class, 'report'])->name('admin.lab.requests.report');
+
+        Route::get('radiology/catalogue', [RadiologyController::class, 'catalogue'])->name('admin.radiology.catalogue');
+        Route::post('radiology/modalities', [RadiologyController::class, 'storeModality'])->name('admin.radiology.modalities.store');
+        Route::post('radiology/studies', [RadiologyController::class, 'storeStudy'])->name('admin.radiology.studies.store');
+        Route::get('radiology/requests', [RadiologyController::class, 'requests'])->name('admin.radiology.requests.index');
+        Route::post('radiology/requests', [RadiologyController::class, 'storeRequest'])->name('admin.radiology.requests.store');
+        Route::get('radiology/requests/{radiologyRequest}', [RadiologyController::class, 'show'])->name('admin.radiology.requests.show');
+        Route::patch('radiology/requests/{radiologyRequest}/schedule', [RadiologyController::class, 'schedule'])->name('admin.radiology.requests.schedule');
+        Route::patch('radiology/requests/{radiologyRequest}/transition', [RadiologyController::class, 'transition'])->name('admin.radiology.requests.transition');
+        Route::post('radiology/requests/{radiologyRequest}/report', [RadiologyController::class, 'saveReport'])->name('admin.radiology.reports.store');
+        Route::patch('radiology/reports/{report}/transition', [RadiologyController::class, 'reportTransition'])->name('admin.radiology.reports.transition');
+        Route::post('radiology/reports/{report}/critical-communications', [RadiologyController::class, 'communicateCritical'])->name('admin.radiology.critical-communications.store');
+        Route::patch('radiology/critical-communications/{communication}/acknowledge', [RadiologyController::class, 'acknowledgeCritical'])->name('admin.radiology.critical-communications.acknowledge');
+        Route::post('radiology/reports/{report}/amendments', [RadiologyController::class, 'amend'])->name('admin.radiology.reports.amendments.store');
+        Route::post('radiology/requests/{radiologyRequest}/attachments', [RadiologyController::class, 'uploadAttachment'])->name('admin.radiology.attachments.store');
+        Route::patch('radiology/attachments/{attachment}/clear', [RadiologyController::class, 'clearAttachment'])->name('admin.radiology.attachments.clear');
+        Route::get('radiology/attachments/{attachment}/download', [RadiologyController::class, 'downloadAttachment'])->name('admin.radiology.attachments.download');
+        Route::patch('radiology/attachments/{attachment}/retire', [RadiologyController::class, 'retireAttachment'])->name('admin.radiology.attachments.retire');
+        Route::get('radiology/requests/{radiologyRequest}/report', [RadiologyController::class, 'report'])->name('admin.radiology.requests.report');
 
         Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
         Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])->name('admin.public-website.edit');

@@ -6,6 +6,7 @@ use App\Models\ClinicalEncounter;
 use App\Models\EncounterVital;
 use App\Models\LabRequest;
 use App\Models\Patient;
+use App\Models\RadiologyRequest;
 use App\Models\Visit;
 use App\Services\ClinicalEncounterWorkflowService;
 use Illuminate\Http\RedirectResponse;
@@ -153,6 +154,7 @@ class ClinicalEncounterController extends FoundationController
             'events',
             'amendments',
             'labRequests.results',
+            'radiologyRequests.report',
         ])->toArray();
     }
 
@@ -163,6 +165,7 @@ class ClinicalEncounterController extends FoundationController
             ->merge($patient->alerts()->latest('recorded_at')->get()->map(fn ($item) => ['type' => 'alert', 'label' => $item->title, 'occurred_at' => $item->recorded_at]))
             ->merge(EncounterVital::where('patient_id', $patient->id)->latest('measured_at')->get()->map(fn ($item) => ['type' => 'vitals', 'label' => 'Vitals recorded', 'occurred_at' => $item->measured_at]))
             ->merge(LabRequest::where('patient_id', $patient->id)->whereIn('status', ['approved', 'released'])->latest('approved_at')->get()->map(fn ($item) => ['type' => 'lab', 'label' => $item->request_number, 'occurred_at' => $item->approved_at ?? $item->released_at]))
+            ->merge(RadiologyRequest::where('patient_id', $patient->id)->whereIn('status', ['approved', 'released'])->latest('approved_at')->get()->map(fn ($item) => ['type' => 'radiology', 'label' => $item->request_number, 'occurred_at' => $item->approved_at ?? $item->released_at]))
             ->merge(ClinicalEncounter::where('patient_id', $patient->id)->latest('started_at')->get()->map(fn ($item) => ['type' => 'encounter', 'label' => $item->status, 'occurred_at' => $item->started_at]))
             ->sortByDesc('occurred_at')
             ->values()

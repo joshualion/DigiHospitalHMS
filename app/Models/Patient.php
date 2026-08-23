@@ -95,6 +95,11 @@ class Patient extends Model
         return $this->hasMany(LabRequest::class);
     }
 
+    public function radiologyRequests(): HasMany
+    {
+        return $this->hasMany(RadiologyRequest::class);
+    }
+
     public function scopeForHospital($query, int $hospitalId)
     {
         return $query->where('hospital_id', $hospitalId);

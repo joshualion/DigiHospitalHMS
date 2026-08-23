@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\HospitalProfileController;
 use App\Http\Controllers\Admin\HospitalSettingController;
 use App\Http\Controllers\Admin\NumberSequenceController;
 use App\Http\Controllers\Admin\PatientController;
+use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PublicWebsiteController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\StaffController;
@@ -114,6 +115,19 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('billing/invoices/{invoice}/issue', [BillingController::class, 'issue'])->name('admin.invoices.issue');
         Route::patch('billing/invoices/{invoice}/transition', [BillingController::class, 'transition'])->name('admin.invoices.transition');
         Route::post('billing/invoices/{invoice}/replacement', [BillingController::class, 'replacement'])->name('admin.invoices.replacement');
+
+        Route::get('payments/workbench', [PaymentController::class, 'workbench'])->name('admin.payments.workbench');
+        Route::get('payments/accounting', [PaymentController::class, 'accounting'])->name('admin.payments.accounting');
+        Route::post('cashier-shifts', [PaymentController::class, 'openShift'])->name('admin.cashier-shifts.open');
+        Route::patch('cashier-shifts/{shift}/close', [PaymentController::class, 'closeShift'])->name('admin.cashier-shifts.close');
+        Route::patch('cashier-shifts/{shift}/review', [PaymentController::class, 'reviewShift'])->name('admin.cashier-shifts.review');
+        Route::post('payments', [PaymentController::class, 'postPayment'])->name('admin.payments.post');
+        Route::post('payments/{payment}/allocations', [PaymentController::class, 'allocate'])->name('admin.payments.allocations.store');
+        Route::get('payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('admin.payments.receipt');
+        Route::patch('payments/{payment}/reverse', [PaymentController::class, 'reverse'])->name('admin.payments.reverse');
+        Route::post('payments/{payment}/refunds', [PaymentController::class, 'requestRefund'])->name('admin.payments.refunds.request');
+        Route::patch('refunds/{refund}/decision', [PaymentController::class, 'decideRefund'])->name('admin.refunds.decision');
+        Route::patch('refunds/{refund}/process', [PaymentController::class, 'processRefund'])->name('admin.refunds.process');
 
         Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
         Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])->name('admin.public-website.edit');

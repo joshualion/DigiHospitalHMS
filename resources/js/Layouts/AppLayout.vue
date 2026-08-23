@@ -1,7 +1,7 @@
 <script setup>
 import ThemeSwitcher from '@/Components/Public/ThemeSwitcher.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { Activity, Building2, ClipboardList, FileClock, Gauge, Menu, PanelLeftClose, PanelLeftOpen, Settings, ShieldCheck, Stethoscope, UserCog, UsersRound, X } from '@lucide/vue';
+import { Activity, Building2, ClipboardList, FileClock, Gauge, Menu, PanelLeftClose, PanelLeftOpen, Settings, ShieldCheck, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 
 defineProps({
@@ -46,6 +46,7 @@ const navItems = computed(() => [
     { label: 'Queues', href: '/admin/queues', icon: Activity, show: can('queues.view') },
     { label: 'Clinical', href: '/admin/clinical/worklist', icon: Stethoscope, show: can('encounters.view') },
     { label: 'Billing', href: '/admin/billing/invoices', icon: FileClock, show: can('invoices.view') },
+    { label: 'Payments', href: '/admin/payments/workbench', icon: WalletCards, show: can('payments.view') },
     { label: 'Roles', href: '/admin/roles', icon: ShieldCheck, show: can('roles.view') },
     { label: 'Settings', href: '/admin/settings', icon: Settings, show: can('settings.manage') },
     { label: 'Numbering', href: '/admin/numbering', icon: FileClock, show: can('numbering.manage') },

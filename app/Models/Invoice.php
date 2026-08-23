@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Invoice extends Model
 {
-    protected $fillable = ['hospital_id', 'facility_id', 'patient_id', 'visit_id', 'clinical_encounter_id', 'replaces_invoice_id', 'replaced_by_invoice_id', 'invoice_number', 'status', 'currency', 'subtotal_minor', 'discount_minor', 'tax_minor', 'total_minor', 'created_by', 'issued_by', 'issued_at', 'cancelled_by', 'cancelled_at', 'voided_by', 'voided_at', 'status_reason'];
+    protected $fillable = ['hospital_id', 'facility_id', 'patient_id', 'visit_id', 'clinical_encounter_id', 'replaces_invoice_id', 'replaced_by_invoice_id', 'invoice_number', 'status', 'currency', 'subtotal_minor', 'discount_minor', 'tax_minor', 'total_minor', 'paid_minor', 'balance_minor', 'payment_status', 'created_by', 'issued_by', 'issued_at', 'cancelled_by', 'cancelled_at', 'voided_by', 'voided_at', 'status_reason'];
 
     protected function casts(): array
     {
@@ -33,6 +33,11 @@ class Invoice extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(InvoiceLine::class);
+    }
+
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(PaymentAllocation::class);
     }
 
     public function events(): HasMany

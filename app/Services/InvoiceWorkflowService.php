@@ -145,6 +145,9 @@ class InvoiceWorkflowService
             $invoice->forceFill([
                 'invoice_number' => $this->numbers->allocate($sequence),
                 'status' => 'issued',
+                'paid_minor' => 0,
+                'balance_minor' => $invoice->total_minor,
+                'payment_status' => $invoice->total_minor > 0 ? 'unpaid' : 'paid',
                 'issued_by' => $actor->id,
                 'issued_at' => now(),
             ])->save();

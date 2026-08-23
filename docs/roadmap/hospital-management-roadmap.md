@@ -806,3 +806,22 @@ Delivered scope:
 Deferred:
 
 - Payments, receipts, cashier shifts, insurance/HMO, laboratory, pharmacy and inventory.
+
+## Phase 3B: Payments, Receipts, Cashier Shifts And Reconciliation
+
+Status: implemented on 2026-08-23.
+
+Delivered scope:
+
+- Hospital-scoped payment methods for cash, transfer, POS/card and other approved methods.
+- Cashier shifts with opening float, cash collections, expected cash, counted cash, variance, close and supervisor review.
+- Payments linked to patient, facility, cashier and open cash shift where required.
+- Receipt numbering through `NumberSequenceService` with hospital-scoped idempotency protection.
+- Partial and multi-invoice allocation, patient deposits/unallocated credit and later allocation.
+- Server-derived invoice paid amount, balance and unpaid/part-paid/paid status.
+- Payment reversal, refund request/approval/rejection/processing, approval separation and audit history.
+- Cashier workbench, printable receipt page and accounting review/summary screens.
+
+Deferred:
+
+- Insurance/HMO, payment gateways, laboratory, pharmacy, inventory and full accounting integrations.

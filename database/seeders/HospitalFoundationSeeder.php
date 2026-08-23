@@ -9,6 +9,7 @@ use App\Models\Facility;
 use App\Models\Hospital;
 use App\Models\HospitalSetting;
 use App\Models\NumberSequence;
+use App\Models\PaymentMethod;
 use Illuminate\Database\Seeder;
 
 class HospitalFoundationSeeder extends Seeder
@@ -114,6 +115,13 @@ class HospitalFoundationSeeder extends Seeder
             ]
         );
         $service->facilities()->syncWithoutDetaching([$facility->id]);
+
+        foreach ($this->paymentMethods() as $method) {
+            PaymentMethod::firstOrCreate(
+                ['hospital_id' => $hospital->id, 'code' => $method['code']],
+                $method + ['hospital_id' => $hospital->id]
+            );
+        }
     }
 
     private function sequences(): array
@@ -126,6 +134,16 @@ class HospitalFoundationSeeder extends Seeder
             ['key' => 'lab_request_number', 'label' => 'Laboratory request number', 'prefix' => 'LAB', 'date_format' => 'Ymd', 'padding_length' => 5],
             ['key' => 'prescription_number', 'label' => 'Prescription number', 'prefix' => 'RX', 'date_format' => 'Y', 'padding_length' => 6],
             ['key' => 'admission_number', 'label' => 'Admission number', 'prefix' => 'ADM', 'date_format' => 'Y', 'padding_length' => 6],
+        ];
+    }
+
+    private function paymentMethods(): array
+    {
+        return [
+            ['code' => 'CASH', 'name' => 'Cash', 'type' => 'cash', 'reference_fields' => [], 'requires_open_shift' => true, 'is_active' => true],
+            ['code' => 'TRANSFER', 'name' => 'Bank transfer', 'type' => 'transfer', 'reference_fields' => [['key' => 'reference', 'label' => 'Transfer reference', 'required' => true]], 'requires_open_shift' => false, 'is_active' => true],
+            ['code' => 'POS', 'name' => 'POS / card', 'type' => 'card', 'reference_fields' => [['key' => 'terminal_reference', 'label' => 'Terminal reference', 'required' => true]], 'requires_open_shift' => false, 'is_active' => true],
+            ['code' => 'OTHER', 'name' => 'Other approved method', 'type' => 'other', 'reference_fields' => [['key' => 'reference', 'label' => 'Reference', 'required' => false]], 'requires_open_shift' => false, 'is_active' => true],
         ];
     }
 }

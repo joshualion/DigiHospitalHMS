@@ -69,6 +69,15 @@ class PermissionSeeder extends Seeder
             'invoices.create',
             'invoices.issue',
             'invoices.void',
+            'payments.view',
+            'payments.post',
+            'payments.reverse',
+            'refunds.request',
+            'refunds.approve',
+            'refunds.process',
+            'cashier-shifts.open',
+            'cashier-shifts.close',
+            'cashier-shifts.review',
         ];
 
         foreach ($permissions as $permission) {
@@ -130,6 +139,15 @@ class PermissionSeeder extends Seeder
             'invoices.create',
             'invoices.issue',
             'invoices.void',
+            'payments.view',
+            'payments.post',
+            'payments.reverse',
+            'refunds.request',
+            'refunds.approve',
+            'refunds.process',
+            'cashier-shifts.open',
+            'cashier-shifts.close',
+            'cashier-shifts.review',
         ];
 
         Role::where('name', 'admin')->first()?->syncPermissions(array_values(array_diff($adminPermissions, [
@@ -161,11 +179,24 @@ class PermissionSeeder extends Seeder
             'departments.view',
             'patients.view',
             'billing.catalogue.view',
-            'billing.catalogue.manage',
             'invoices.view',
-            'invoices.create',
-            'invoices.issue',
-            'invoices.void',
+            ...($role->name === 'cashier' ? [
+                'payments.view',
+                'payments.post',
+                'refunds.request',
+                'cashier-shifts.open',
+                'cashier-shifts.close',
+            ] : [
+                'billing.catalogue.manage',
+                'invoices.create',
+                'invoices.issue',
+                'invoices.void',
+                'payments.view',
+                'payments.reverse',
+                'refunds.approve',
+                'refunds.process',
+                'cashier-shifts.review',
+            ]),
         ]));
 
         Role::where('name', 'receptionist')->first()?->syncPermissions([

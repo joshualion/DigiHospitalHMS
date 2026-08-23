@@ -747,3 +747,23 @@ Deferred:
 
 - Patient photographs and documents until private storage, scanning and access logging are designed.
 - Patient merging, appointments, queues, encounters, billing, laboratory, pharmacy and admissions.
+
+## Phase 2B: Appointments, Walk-Ins, Check-In And Queues
+
+Status: implemented on 2026-08-23.
+
+Delivered scope:
+
+- Clinician working schedules, breaks, unavailability, appointment types and hospital-timezone availability generation.
+- Staff booking for registered patients with transactional conflict prevention.
+- Confirm, reschedule, cancel and no-show workflows with reasons, event history and audit logging.
+- Public appointment request form connected to the public CTA, limited to non-clinical contact/preferences, with rate limiting, consent, spam protection, encrypted contact storage and lookup hashes.
+- Staff review workflow for public requests without automatic patient or appointment creation.
+- Visit foundation for appointment check-in and walk-ins.
+- Daily facility/department queues with queue numbers, waiting/call/recall/transfer/skip/remove/priority actions, reasons, history and audit logging.
+- Reception appointment view, queue board, role-aware navigation, policies, permissions, hospital/facility scoping and IDOR protection.
+
+Deferred:
+
+- Encounters, clinical notes, medical triage, billing, laboratory, pharmacy and admissions.
+- Automated patient merge and rich calendar drag/drop scheduling.

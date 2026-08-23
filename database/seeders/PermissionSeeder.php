@@ -52,6 +52,13 @@ class PermissionSeeder extends Seeder
             'patients.archive',
             'patients.record-alerts',
             'patients.view-sensitive',
+            'appointments.view',
+            'appointments.book',
+            'appointments.manage',
+            'appointment-requests.review',
+            'queues.view',
+            'queues.manage',
+            'queues.prioritize',
         ];
 
         foreach ($permissions as $permission) {
@@ -96,6 +103,13 @@ class PermissionSeeder extends Seeder
             'patients.archive',
             'patients.record-alerts',
             'patients.view-sensitive',
+            'appointments.view',
+            'appointments.book',
+            'appointments.manage',
+            'appointment-requests.review',
+            'queues.view',
+            'queues.manage',
+            'queues.prioritize',
         ];
 
         Role::where('name', 'admin')->first()?->syncPermissions(array_values(array_diff($adminPermissions, [
@@ -130,6 +144,11 @@ class PermissionSeeder extends Seeder
             'patients.update',
             'patients.record-alerts',
             'patients.view-sensitive',
+            'appointments.view',
+            'appointments.book',
+            'appointment-requests.review',
+            'queues.view',
+            'queues.manage',
         ]);
 
         Role::whereIn('name', ['doctor', 'nurse'])->get()->each(fn (Role $role) => $role->syncPermissions([
@@ -140,6 +159,10 @@ class PermissionSeeder extends Seeder
             'patients.update',
             'patients.record-alerts',
             'patients.view-sensitive',
+            'appointments.view',
+            'appointments.manage',
+            'queues.view',
+            'queues.manage',
         ]));
 
         Role::where('name', 'patient')->first()?->syncPermissions([]);

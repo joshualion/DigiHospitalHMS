@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\FacilityController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Admin\PublicWebsiteController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicAppointmentRequestController;
 use App\Http\Controllers\PublicSiteController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -27,6 +29,8 @@ Route::get('/news/{slug}', [PublicSiteController::class, 'article'])->name('news
 Route::get('/blog', [PublicSiteController::class, 'page'])->defaults('slug', 'news')->name('blog');
 Route::get('/contact', [PublicSiteController::class, 'page'])->defaults('slug', 'contact')->name('contact');
 Route::get('/appointment', [PublicSiteController::class, 'page'])->defaults('slug', 'appointment')->name('appointment');
+Route::get('/appointment/request', [PublicAppointmentRequestController::class, 'create'])->name('appointment.request');
+Route::post('/appointment/request', [PublicAppointmentRequestController::class, 'store'])->name('appointment.request.store');
 Route::get('/policies', [PublicSiteController::class, 'page'])->defaults('slug', 'policies')->name('policies');
 Route::get('/preview/public-site/{page}', [PublicSiteController::class, 'preview'])->name('public.preview');
 
@@ -73,6 +77,18 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::patch('patients/{patient}/status', [PatientController::class, 'status'])->name('admin.patients.status');
         Route::post('patients/{patient}/allergies', [PatientController::class, 'storeAllergy'])->name('admin.patients.allergies.store');
         Route::post('patients/{patient}/alerts', [PatientController::class, 'storeAlert'])->name('admin.patients.alerts.store');
+
+        Route::get('appointments', [AppointmentController::class, 'index'])->name('admin.appointments.index');
+        Route::post('appointments', [AppointmentController::class, 'store'])->name('admin.appointments.store');
+        Route::get('appointments/availability', [AppointmentController::class, 'availability'])->name('admin.appointments.availability');
+        Route::patch('appointments/{appointment}/transition', [AppointmentController::class, 'transition'])->name('admin.appointments.transition');
+        Route::post('appointments/{appointment}/check-in', [AppointmentController::class, 'checkIn'])->name('admin.appointments.check-in');
+        Route::post('appointments/walk-ins', [AppointmentController::class, 'walkIn'])->name('admin.walk-ins.store');
+        Route::get('queues', [AppointmentController::class, 'queue'])->name('admin.queues.index');
+        Route::patch('queues/{queueEntry}', [AppointmentController::class, 'queueTransition'])->name('admin.queues.transition');
+        Route::patch('appointment-requests/{appointmentRequest}', [AppointmentController::class, 'requestReview'])->name('admin.appointment-requests.review');
+        Route::post('clinician-schedules', [AppointmentController::class, 'storeSchedule'])->name('admin.clinician-schedules.store');
+        Route::post('clinician-unavailability', [AppointmentController::class, 'storeUnavailability'])->name('admin.clinician-unavailability.store');
 
         Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
         Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])->name('admin.public-website.edit');

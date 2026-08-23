@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\AppointmentType;
 use App\Models\Facility;
 use App\Models\Hospital;
 use App\Models\HospitalSetting;
@@ -87,6 +88,11 @@ class HospitalFoundationSeeder extends Seeder
                 ]
             );
         }
+
+        AppointmentType::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'code' => 'CONSULT'],
+            ['name' => 'Consultation', 'duration_minutes' => 30, 'is_active' => true]
+        );
     }
 
     private function sequences(): array

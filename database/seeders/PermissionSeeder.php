@@ -59,6 +59,10 @@ class PermissionSeeder extends Seeder
             'queues.view',
             'queues.manage',
             'queues.prioritize',
+            'encounters.view',
+            'encounters.manage',
+            'encounters.sign',
+            'vitals.record',
         ];
 
         foreach ($permissions as $permission) {
@@ -110,6 +114,10 @@ class PermissionSeeder extends Seeder
             'queues.view',
             'queues.manage',
             'queues.prioritize',
+            'encounters.view',
+            'encounters.manage',
+            'encounters.sign',
+            'vitals.record',
         ];
 
         Role::where('name', 'admin')->first()?->syncPermissions(array_values(array_diff($adminPermissions, [
@@ -149,6 +157,8 @@ class PermissionSeeder extends Seeder
             'appointment-requests.review',
             'queues.view',
             'queues.manage',
+            'encounters.view',
+            'vitals.record',
         ]);
 
         Role::whereIn('name', ['doctor', 'nurse'])->get()->each(fn (Role $role) => $role->syncPermissions([
@@ -163,6 +173,9 @@ class PermissionSeeder extends Seeder
             'appointments.manage',
             'queues.view',
             'queues.manage',
+            'encounters.view',
+            'vitals.record',
+            ...($role->name === 'doctor' ? ['encounters.manage', 'encounters.sign'] : []),
         ]));
 
         Role::where('name', 'patient')->first()?->syncPermissions([]);

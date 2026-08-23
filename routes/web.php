@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\ClinicalEncounterController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\FacilityController;
 use App\Http\Controllers\Admin\HospitalProfileController;
@@ -89,6 +90,15 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::patch('appointment-requests/{appointmentRequest}', [AppointmentController::class, 'requestReview'])->name('admin.appointment-requests.review');
         Route::post('clinician-schedules', [AppointmentController::class, 'storeSchedule'])->name('admin.clinician-schedules.store');
         Route::post('clinician-unavailability', [AppointmentController::class, 'storeUnavailability'])->name('admin.clinician-unavailability.store');
+
+        Route::get('clinical/worklist', [ClinicalEncounterController::class, 'worklist'])->name('admin.clinical.worklist');
+        Route::post('visits/{visit}/encounter', [ClinicalEncounterController::class, 'start'])->name('admin.visits.encounter.start');
+        Route::get('encounters/{encounter}', [ClinicalEncounterController::class, 'show'])->name('admin.encounters.show');
+        Route::post('encounters/{encounter}/vitals', [ClinicalEncounterController::class, 'vitals'])->name('admin.encounters.vitals.store');
+        Route::patch('encounters/{encounter}/assessment', [ClinicalEncounterController::class, 'assessment'])->name('admin.encounters.assessment.update');
+        Route::post('encounters/{encounter}/diagnoses', [ClinicalEncounterController::class, 'diagnosis'])->name('admin.encounters.diagnoses.store');
+        Route::patch('encounters/{encounter}/transition', [ClinicalEncounterController::class, 'transition'])->name('admin.encounters.transition');
+        Route::post('encounters/{encounter}/amendments', [ClinicalEncounterController::class, 'amendment'])->name('admin.encounters.amendments.store');
 
         Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
         Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])->name('admin.public-website.edit');

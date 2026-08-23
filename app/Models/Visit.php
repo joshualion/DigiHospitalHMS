@@ -24,4 +24,29 @@ class Visit extends Model
     {
         return $this->hasOne(QueueEntry::class);
     }
+
+    public function appointment(): BelongsTo
+    {
+        return $this->belongsTo(Appointment::class);
+    }
+
+    public function clinician(): BelongsTo
+    {
+        return $this->belongsTo(StaffProfile::class, 'clinician_id');
+    }
+
+    public function facility(): BelongsTo
+    {
+        return $this->belongsTo(Facility::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function encounter(): HasOne
+    {
+        return $this->hasOne(ClinicalEncounter::class);
+    }
 }

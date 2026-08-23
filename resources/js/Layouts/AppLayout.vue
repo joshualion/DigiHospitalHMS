@@ -44,6 +44,7 @@ const navItems = computed(() => [
     { label: 'Patients', href: '/admin/patients', icon: UsersRound, show: can('patients.view') },
     { label: 'Appointments', href: '/admin/appointments', icon: ClipboardList, show: can('appointments.view') },
     { label: 'Queues', href: '/admin/queues', icon: Activity, show: can('queues.view') },
+    { label: 'Clinical', href: '/admin/clinical/worklist', icon: Stethoscope, show: can('encounters.view') },
     { label: 'Roles', href: '/admin/roles', icon: ShieldCheck, show: can('roles.view') },
     { label: 'Settings', href: '/admin/settings', icon: Settings, show: can('settings.manage') },
     { label: 'Numbering', href: '/admin/numbering', icon: FileClock, show: can('numbering.manage') },

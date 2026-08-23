@@ -767,3 +767,22 @@ Deferred:
 
 - Encounters, clinical notes, medical triage, billing, laboratory, pharmacy and admissions.
 - Automated patient merge and rich calendar drag/drop scheduling.
+
+## Phase 2C: Outpatient Vitals And Clinical Encounters
+
+Status: implemented on 2026-08-23.
+
+Delivered scope:
+
+- Encounters linked to patients, visits, appointment/walk-in source, facility, department, queue entry and responsible clinician.
+- Clinician worklist for checked-in and queued patients.
+- Start, pause, resume, sign and cancel workflows with transactionally coordinated visit, queue and appointment state updates.
+- Nursing/authorized staff vital recording with BMI calculation.
+- Clinical assessment fields for complaint, histories, examination, diagnoses, plan, follow-up and referral recommendation.
+- Signed encounter immutability with append-only amendments.
+- Patient clinical timeline combining encounters, vitals, allergies and alerts.
+- Prominent allergy/alert display, policies, permissions, validation, audit events, scoping and tests.
+
+Deferred:
+
+- Billing, prescriptions, laboratory, radiology, pharmacy, admissions, full referral module, normal-range interpretation and diagnostic catalogues.

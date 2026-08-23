@@ -63,6 +63,12 @@ class PermissionSeeder extends Seeder
             'encounters.manage',
             'encounters.sign',
             'vitals.record',
+            'billing.catalogue.view',
+            'billing.catalogue.manage',
+            'invoices.view',
+            'invoices.create',
+            'invoices.issue',
+            'invoices.void',
         ];
 
         foreach ($permissions as $permission) {
@@ -118,6 +124,12 @@ class PermissionSeeder extends Seeder
             'encounters.manage',
             'encounters.sign',
             'vitals.record',
+            'billing.catalogue.view',
+            'billing.catalogue.manage',
+            'invoices.view',
+            'invoices.create',
+            'invoices.issue',
+            'invoices.void',
         ];
 
         Role::where('name', 'admin')->first()?->syncPermissions(array_values(array_diff($adminPermissions, [
@@ -143,6 +155,19 @@ class PermissionSeeder extends Seeder
             'departments.view',
         ]));
 
+        Role::whereIn('name', ['cashier', 'accountant'])->get()->each(fn (Role $role) => $role->syncPermissions([
+            'hospital.view',
+            'facilities.view',
+            'departments.view',
+            'patients.view',
+            'billing.catalogue.view',
+            'billing.catalogue.manage',
+            'invoices.view',
+            'invoices.create',
+            'invoices.issue',
+            'invoices.void',
+        ]));
+
         Role::where('name', 'receptionist')->first()?->syncPermissions([
             'hospital.view',
             'facilities.view',
@@ -159,6 +184,9 @@ class PermissionSeeder extends Seeder
             'queues.manage',
             'encounters.view',
             'vitals.record',
+            'billing.catalogue.view',
+            'invoices.view',
+            'invoices.create',
         ]);
 
         Role::whereIn('name', ['doctor', 'nurse'])->get()->each(fn (Role $role) => $role->syncPermissions([
@@ -176,6 +204,8 @@ class PermissionSeeder extends Seeder
             'encounters.view',
             'vitals.record',
             ...($role->name === 'doctor' ? ['encounters.manage', 'encounters.sign'] : []),
+            'billing.catalogue.view',
+            'invoices.view',
         ]));
 
         Role::where('name', 'patient')->first()?->syncPermissions([]);

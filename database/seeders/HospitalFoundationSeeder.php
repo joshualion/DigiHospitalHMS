@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\AppointmentType;
+use App\Models\BillableService;
+use App\Models\BillableServiceCategory;
 use App\Models\Facility;
 use App\Models\Hospital;
 use App\Models\HospitalSetting;
@@ -93,6 +95,25 @@ class HospitalFoundationSeeder extends Seeder
             ['hospital_id' => $hospital->id, 'code' => 'CONSULT'],
             ['name' => 'Consultation', 'duration_minutes' => 30, 'is_active' => true]
         );
+
+        $category = BillableServiceCategory::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'code' => 'CONSULT'],
+            ['name' => 'Consultation Services', 'description' => 'Default outpatient billing category.', 'is_active' => true]
+        );
+
+        $service = BillableService::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'code' => 'GEN-CONSULT'],
+            [
+                'billable_service_category_id' => $category->id,
+                'name' => 'General consultation',
+                'description' => 'Default billable outpatient consultation service.',
+                'is_tax_exempt' => true,
+                'tax_rate_basis_points' => 0,
+                'is_discount_eligible' => true,
+                'is_active' => true,
+            ]
+        );
+        $service->facilities()->syncWithoutDetaching([$facility->id]);
     }
 
     private function sequences(): array

@@ -3,10 +3,12 @@
 namespace App\Providers;
 
 use App\Models\AuditEvent;
+use App\Models\BillableService;
 use App\Models\Department;
 use App\Models\Facility;
 use App\Models\Hospital;
 use App\Models\HospitalSetting;
+use App\Models\Invoice;
 use App\Models\NumberSequence;
 use App\Models\PublicSiteItem;
 use App\Models\PublicSiteMedia;
@@ -16,10 +18,12 @@ use App\Models\PublicSiteSection;
 use App\Models\StaffProfile;
 use App\Models\User;
 use App\Policies\AuditEventPolicy;
+use App\Policies\BillableServicePolicy;
 use App\Policies\DepartmentPolicy;
 use App\Policies\FacilityPolicy;
 use App\Policies\HospitalPolicy;
 use App\Policies\HospitalSettingPolicy;
+use App\Policies\InvoicePolicy;
 use App\Policies\NumberSequencePolicy;
 use App\Policies\PublicSiteItemPolicy;
 use App\Policies\PublicSiteMediaPolicy;
@@ -47,10 +51,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(AuditEvent::class, AuditEventPolicy::class);
+        Gate::policy(BillableService::class, BillableServicePolicy::class);
         Gate::policy(Department::class, DepartmentPolicy::class);
         Gate::policy(Facility::class, FacilityPolicy::class);
         Gate::policy(Hospital::class, HospitalPolicy::class);
         Gate::policy(HospitalSetting::class, HospitalSettingPolicy::class);
+        Gate::policy(Invoice::class, InvoicePolicy::class);
         Gate::policy(NumberSequence::class, NumberSequencePolicy::class);
         Gate::policy(PublicSiteItem::class, PublicSiteItemPolicy::class);
         Gate::policy(PublicSiteMedia::class, PublicSiteMediaPolicy::class);

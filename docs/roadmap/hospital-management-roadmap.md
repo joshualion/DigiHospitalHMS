@@ -786,3 +786,23 @@ Delivered scope:
 Deferred:
 
 - Billing, prescriptions, laboratory, radiology, pharmacy, admissions, full referral module, normal-range interpretation and diagnostic catalogues.
+
+## Phase 3A: Service Catalogue, Pricing And Invoicing Foundation
+
+Status: implemented on 2026-08-23.
+
+Delivered scope:
+
+- Hospital-scoped billable service categories and services with unique codes, department links, facility availability, active state and optional public-service mapping.
+- Default and facility-specific price history in minor units, with effective dates, currency and overlap protection.
+- Configurable tax exemption, tax basis points and discount eligibility without hardcoded country tax rules.
+- Draft invoices linked to patient, visit and encounter.
+- Server-calculated invoice lines with service snapshots, quantity, unit price, discounts, tax and totals.
+- Manual authorized lines with mandatory reason.
+- Invoice number allocation through `NumberSequenceService` at issue.
+- Draft, issued, cancelled, voided and replacement-draft workflows with audit/history and issued-invoice immutability.
+- Patient invoice history foundation, Inertia admin screens, policies, permissions, scoping and tests.
+
+Deferred:
+
+- Payments, receipts, cashier shifts, insurance/HMO, laboratory, pharmacy and inventory.

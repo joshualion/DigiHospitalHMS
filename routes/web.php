@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\BillingController;
 use App\Http\Controllers\Admin\ClinicalEncounterController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\FacilityController;
@@ -35,7 +36,7 @@ Route::post('/appointment/request', [PublicAppointmentRequestController::class, 
 Route::get('/policies', [PublicSiteController::class, 'page'])->defaults('slug', 'policies')->name('policies');
 Route::get('/preview/public-site/{page}', [PublicSiteController::class, 'preview'])->name('public.preview');
 
-Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse'])
+Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse|cashier|accountant'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', function () {
@@ -99,6 +100,20 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('encounters/{encounter}/diagnoses', [ClinicalEncounterController::class, 'diagnosis'])->name('admin.encounters.diagnoses.store');
         Route::patch('encounters/{encounter}/transition', [ClinicalEncounterController::class, 'transition'])->name('admin.encounters.transition');
         Route::post('encounters/{encounter}/amendments', [ClinicalEncounterController::class, 'amendment'])->name('admin.encounters.amendments.store');
+
+        Route::get('billing/catalogue', [BillingController::class, 'catalogue'])->name('admin.billing.catalogue');
+        Route::post('billing/categories', [BillingController::class, 'storeCategory'])->name('admin.billing.categories.store');
+        Route::post('billing/services', [BillingController::class, 'storeService'])->name('admin.billing.services.store');
+        Route::patch('billing/services/{service}', [BillingController::class, 'updateService'])->name('admin.billing.services.update');
+        Route::post('billing/services/{service}/prices', [BillingController::class, 'storePrice'])->name('admin.billing.prices.store');
+        Route::get('billing/invoices', [BillingController::class, 'invoices'])->name('admin.invoices.index');
+        Route::post('billing/invoices', [BillingController::class, 'storeInvoice'])->name('admin.invoices.store');
+        Route::get('billing/invoices/{invoice}', [BillingController::class, 'showInvoice'])->name('admin.invoices.show');
+        Route::post('billing/invoices/{invoice}/service-lines', [BillingController::class, 'addServiceLine'])->name('admin.invoices.service-lines.store');
+        Route::post('billing/invoices/{invoice}/manual-lines', [BillingController::class, 'addManualLine'])->name('admin.invoices.manual-lines.store');
+        Route::post('billing/invoices/{invoice}/issue', [BillingController::class, 'issue'])->name('admin.invoices.issue');
+        Route::patch('billing/invoices/{invoice}/transition', [BillingController::class, 'transition'])->name('admin.invoices.transition');
+        Route::post('billing/invoices/{invoice}/replacement', [BillingController::class, 'replacement'])->name('admin.invoices.replacement');
 
         Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
         Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])->name('admin.public-website.edit');

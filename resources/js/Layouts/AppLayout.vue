@@ -1,7 +1,7 @@
 <script setup>
 import ThemeSwitcher from '@/Components/Public/ThemeSwitcher.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { Activity, Bed, Building2, ClipboardList, FileClock, FlaskConical, Gauge, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, Pill, ScanLine, Settings, ShieldCheck, ShoppingCart, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
+import { Activity, Bed, Building2, ClipboardList, Droplets, FileClock, FlaskConical, Gauge, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, Pill, ScanLine, Settings, ShieldCheck, ShoppingCart, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 
 defineProps({
@@ -52,6 +52,7 @@ const navItems = computed(() => [
     { label: 'Payments', href: '/admin/payments/workbench', icon: WalletCards, show: can('payments.view') },
     { label: 'Laboratory', href: '/admin/laboratory/requests', icon: FlaskConical, show: can('lab.requests.view') },
     { label: 'Radiology', href: '/admin/radiology/requests', icon: ScanLine, show: can('radiology.requests.view') },
+    { label: 'Blood Bank', href: '/admin/blood-bank', icon: Droplets, show: can('blood-bank.view') },
     { label: 'Inventory', href: '/admin/inventory/stock', icon: PackageSearch, show: can('inventory.view') },
     { label: 'Procurement', href: '/admin/procurement', icon: ShoppingCart, show: can('procurement.view') },
     { label: 'Pharmacy', href: '/admin/pharmacy/prescriptions', icon: Pill, show: can('prescriptions.view') },
@@ -167,3 +168,4 @@ watch(collapsed, (value) => {
         </div>
     </div>
 </template>
+

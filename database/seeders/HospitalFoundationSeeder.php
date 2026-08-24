@@ -5,6 +5,9 @@ namespace Database\Seeders;
 use App\Models\AppointmentType;
 use App\Models\BillableService;
 use App\Models\BillableServiceCategory;
+use App\Models\BloodComponentType;
+use App\Models\BloodDonorCategory;
+use App\Models\BloodScreeningTest;
 use App\Models\Facility;
 use App\Models\Hospital;
 use App\Models\HospitalSetting;
@@ -155,6 +158,22 @@ class HospitalFoundationSeeder extends Seeder
         );
         $profile->tests()->syncWithoutDetaching([$labTest->id]);
 
+        foreach ([['VOL', 'Voluntary donor'], ['REP', 'Replacement donor'], ['OTHER', 'Other configured donor category']] as [$code, $name]) {
+            BloodDonorCategory::firstOrCreate(
+                ['hospital_id' => $hospital->id, 'code' => $code],
+                ['name' => $name, 'description' => 'Structural blood-bank configuration example. Eligibility is always manually decided by authorized staff.', 'is_active' => true]
+            );
+        }
+        foreach ([['WB', 'Whole blood'], ['RBC', 'Red cells'], ['PLASMA', 'Plasma'], ['PLT', 'Platelets']] as [$code, $name]) {
+            BloodComponentType::firstOrCreate(
+                ['hospital_id' => $hospital->id, 'code' => $code],
+                ['name' => $name.' - configure professionally', 'notes' => 'Structural blood-bank configuration example only. Storage, expiry and release rules require professional validation.', 'is_active' => true]
+            );
+        }
+        BloodScreeningTest::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'code' => 'BB-SCREEN-CONFIG'],
+            ['name' => 'Example blood screening test - configure professionally', 'is_required_for_release' => true, 'notes' => 'Structural example only. Do not use as a clinical rule or threshold.', 'is_active' => true]
+        );
         $modality = RadiologyModality::firstOrCreate(
             ['hospital_id' => $hospital->id, 'code' => 'XRAY'],
             [
@@ -213,6 +232,10 @@ class HospitalFoundationSeeder extends Seeder
             ['key' => 'purchase_order_number', 'label' => 'Purchase order number', 'prefix' => 'PO', 'date_format' => 'Y', 'padding_length' => 6],
             ['key' => 'goods_receipt_number', 'label' => 'Goods receipt number', 'prefix' => 'GRN', 'date_format' => 'Y', 'padding_length' => 6],
             ['key' => 'admission_number', 'label' => 'Admission number', 'prefix' => 'ADM', 'date_format' => 'Y', 'padding_length' => 6],
+            ['key' => 'blood_donor_number', 'label' => 'Blood donor number', 'prefix' => 'BDN', 'date_format' => 'Y', 'padding_length' => 6],
+            ['key' => 'blood_donation_number', 'label' => 'Blood donation number', 'prefix' => 'DON', 'date_format' => 'Y', 'padding_length' => 6],
+            ['key' => 'blood_collection_number', 'label' => 'Blood collection bag number', 'prefix' => 'BAG', 'date_format' => 'Y', 'padding_length' => 6],
+            ['key' => 'blood_component_number', 'label' => 'Blood component number', 'prefix' => 'BCP', 'date_format' => 'Y', 'padding_length' => 6],
         ];
     }
 

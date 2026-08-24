@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdmissionController;
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BillingController;
+use App\Http\Controllers\Admin\BloodBankController;
 use App\Http\Controllers\Admin\ClinicalEncounterController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\EmarController;
@@ -45,7 +46,7 @@ Route::post('/appointment/request', [PublicAppointmentRequestController::class, 
 Route::get('/policies', [PublicSiteController::class, 'page'])->defaults('slug', 'policies')->name('policies');
 Route::get('/preview/public-site/{page}', [PublicSiteController::class, 'preview'])->name('public.preview');
 
-Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse|cashier|accountant|laboratory-scientist|radiology-staff|pharmacist|storekeeper'])
+Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse|cashier|accountant|laboratory-scientist|radiology-staff|pharmacist|storekeeper|blood-bank-staff'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', function () {
@@ -205,6 +206,25 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::patch('radiology/attachments/{attachment}/retire', [RadiologyController::class, 'retireAttachment'])->name('admin.radiology.attachments.retire');
         Route::get('radiology/requests/{radiologyRequest}/report', [RadiologyController::class, 'report'])->name('admin.radiology.requests.report');
 
+        Route::get('blood-bank', [BloodBankController::class, 'index'])->name('admin.blood-bank.index');
+        Route::post('blood-bank/locations', [BloodBankController::class, 'storeLocation'])->name('admin.blood-bank.locations.store');
+        Route::post('blood-bank/storage-units', [BloodBankController::class, 'storeStorageUnit'])->name('admin.blood-bank.storage-units.store');
+        Route::post('blood-bank/categories', [BloodBankController::class, 'storeCategory'])->name('admin.blood-bank.categories.store');
+        Route::post('blood-bank/component-types', [BloodBankController::class, 'storeComponentType'])->name('admin.blood-bank.component-types.store');
+        Route::post('blood-bank/screening-tests', [BloodBankController::class, 'storeScreeningTest'])->name('admin.blood-bank.screening-tests.store');
+        Route::post('blood-bank/donors', [BloodBankController::class, 'storeDonor'])->name('admin.blood-bank.donors.store');
+        Route::get('blood-bank/donors/{donor}', [BloodBankController::class, 'showDonor'])->name('admin.blood-bank.donors.show');
+        Route::post('blood-bank/donors/{donor}/screening-decisions', [BloodBankController::class, 'screeningDecision'])->name('admin.blood-bank.donors.screening-decisions.store');
+        Route::post('blood-bank/appointments', [BloodBankController::class, 'scheduleAppointment'])->name('admin.blood-bank.appointments.store');
+        Route::post('blood-bank/collections', [BloodBankController::class, 'collect'])->name('admin.blood-bank.collections.store');
+        Route::get('blood-bank/donations/{donation}', [BloodBankController::class, 'showDonation'])->name('admin.blood-bank.donations.show');
+        Route::post('blood-bank/donations/{donation}/group-results', [BloodBankController::class, 'enterGroup'])->name('admin.blood-bank.group-results.store');
+        Route::post('blood-bank/group-results/{result}/verify', [BloodBankController::class, 'verifyGroup'])->name('admin.blood-bank.group-results.verify');
+        Route::post('blood-bank/donations/{donation}/screening-results', [BloodBankController::class, 'screeningResult'])->name('admin.blood-bank.screening-results.store');
+        Route::post('blood-bank/screening-results/{result}/verify', [BloodBankController::class, 'verifyScreening'])->name('admin.blood-bank.screening-results.verify');
+        Route::post('blood-bank/donations/{donation}/components', [BloodBankController::class, 'prepareComponent'])->name('admin.blood-bank.components.store');
+        Route::patch('blood-bank/components/{component}', [BloodBankController::class, 'componentAction'])->name('admin.blood-bank.components.action');
+        Route::post('blood-bank/components/{component}/amendments', [BloodBankController::class, 'amend'])->name('admin.blood-bank.components.amend');
         Route::get('inventory/catalogue', [InventoryController::class, 'catalogue'])->name('admin.inventory.catalogue');
         Route::post('inventory/locations', [InventoryController::class, 'storeLocation'])->name('admin.inventory.locations.store');
         Route::post('inventory/units', [InventoryController::class, 'storeUnit'])->name('admin.inventory.units.store');

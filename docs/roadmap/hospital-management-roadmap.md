@@ -677,6 +677,8 @@ Implementation sessions:
 
 Objective: Implement safe blood-bank inventory and transfusion chain of custody.
 
+Status: Phase 7A blood donor, collection, testing, component and inventory foundation is implemented. Patient blood requests, compatibility/crossmatch, issue, bedside transfusion, reactions and analyzer integrations remain deferred.
+
 Dependencies:
 
 - Inventory concepts, patients, lab, admissions/encounters, audit.

@@ -25,6 +25,7 @@ use App\Models\RadiologyRequest;
 use App\Models\RadiologyStudy;
 use App\Models\RefundRequest;
 use App\Models\StaffProfile;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Policies\AuditEventPolicy;
 use App\Policies\BillableServicePolicy;
@@ -49,6 +50,7 @@ use App\Policies\RadiologyRequestPolicy;
 use App\Policies\RadiologyStudyPolicy;
 use App\Policies\RefundRequestPolicy;
 use App\Policies\StaffProfilePolicy;
+use App\Policies\SupplierPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -91,6 +93,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(RadiologyStudy::class, RadiologyStudyPolicy::class);
         Gate::policy(RefundRequest::class, RefundRequestPolicy::class);
         Gate::policy(StaffProfile::class, StaffProfilePolicy::class);
+        Gate::policy(Supplier::class, SupplierPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
     }
 }

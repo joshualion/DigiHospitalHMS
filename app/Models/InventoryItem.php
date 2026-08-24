@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InventoryItem extends Model
@@ -28,5 +29,10 @@ class InventoryItem extends Model
     public function batches(): HasMany
     {
         return $this->hasMany(InventoryBatch::class);
+    }
+
+    public function suppliers(): BelongsToMany
+    {
+        return $this->belongsToMany(Supplier::class)->withPivot(['supplier_item_code', 'last_unit_cost_minor', 'currency', 'is_preferred'])->withTimestamps();
     }
 }

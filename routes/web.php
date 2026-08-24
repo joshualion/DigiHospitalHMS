@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\NumberSequenceController;
 use App\Http\Controllers\Admin\PatientController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PrescriptionController;
+use App\Http\Controllers\Admin\ProcurementController;
 use App\Http\Controllers\Admin\PublicWebsiteController;
 use App\Http\Controllers\Admin\RadiologyController;
 use App\Http\Controllers\Admin\RoleController;
@@ -186,6 +187,14 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::patch('inventory/adjustments/{adjustment}/approve', [InventoryController::class, 'approveAdjustment'])->name('admin.inventory.adjustments.approve');
         Route::post('inventory/movements/{movement}/reverse', [InventoryController::class, 'reverseMovement'])->name('admin.inventory.movements.reverse');
         Route::get('inventory/reports', [InventoryController::class, 'reports'])->name('admin.inventory.reports');
+        Route::get('procurement', [ProcurementController::class, 'index'])->name('admin.procurement.index');
+        Route::post('procurement/suppliers', [ProcurementController::class, 'storeSupplier'])->name('admin.procurement.suppliers.store');
+        Route::post('procurement/approval-limits', [ProcurementController::class, 'storeLimit'])->name('admin.procurement.approval-limits.store');
+        Route::post('procurement/requisitions', [ProcurementController::class, 'storeRequisition'])->name('admin.procurement.requisitions.store');
+        Route::patch('procurement/requisitions/{requisition}', [ProcurementController::class, 'requisitionAction'])->name('admin.procurement.requisitions.action');
+        Route::post('procurement/purchase-orders/{purchaseOrder}/receipts', [ProcurementController::class, 'receive'])->name('admin.procurement.receipts.store');
+        Route::post('procurement/receipt-lines/{line}/return', [ProcurementController::class, 'returnLine'])->name('admin.procurement.receipt-lines.return');
+        Route::post('procurement/receipt-lines/{line}/reverse', [ProcurementController::class, 'reverseLine'])->name('admin.procurement.receipt-lines.reverse');
 
         Route::get('pharmacy/prescriptions', [PrescriptionController::class, 'index'])->name('admin.prescriptions.index');
         Route::post('pharmacy/prescriptions', [PrescriptionController::class, 'store'])->name('admin.prescriptions.store');

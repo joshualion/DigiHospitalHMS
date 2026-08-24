@@ -580,6 +580,29 @@ Deferred:
 
 - Procurement, suppliers, purchase orders, automated interaction engines, admissions, insurance, formulary enforcement and clinical recommendation engines.
 
+## Phase 5C: Suppliers, Procurement, Purchase Orders And Goods Receipt
+
+Status: implemented on 2026-08-24.
+
+Delivered scope:
+
+- Hospital-scoped supplier catalogue with contacts, addresses, status, payment terms, lead time and supplied item links.
+- Purchase requisitions from authorized inventory locations with server-calculated minor-unit totals.
+- Draft, submitted, approved, rejected and converted purchase-order workflow.
+- Approval separation and configurable role/currency approval limits.
+- Numbered purchase orders with immutable supplier and item snapshots.
+- Purchase-order lines for inventory items, quantities, units, costs, discounts, taxes and totals.
+- Partial/full goods receipt notes with accepted, rejected and outstanding quantity tracking.
+- Batch/lot capture, quarantine handling, rejected-goods reasons and accepted-stock ledger posting through `InventoryLedgerService`.
+- Over-receipt blocking unless explicitly authorized.
+- Supplier returns and controlled receipt reversals without deleting history.
+- Reorder suggestions using reorder levels, on-hand stock and outstanding purchase orders.
+- Procurement dashboard, permissions, policies, scoping, audit events and role-aware navigation.
+
+Deferred:
+
+- Supplier payments/accounts payable, tendering, automated vendor scoring, insurance, admissions and full accounting integration.
+
 ## Phase 6: Admissions, Wards, Beds, and Nursing
 
 Objective: Support inpatient workflow.

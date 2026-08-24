@@ -210,6 +210,8 @@ class HospitalFoundationSeeder extends Seeder
             ['key' => 'radiology_request_number', 'label' => 'Radiology request number', 'prefix' => 'RAD', 'date_format' => 'Ymd', 'padding_length' => 5],
             ['key' => 'radiology_accession_number', 'label' => 'Radiology accession number', 'prefix' => 'RAC', 'date_format' => 'Ymd', 'padding_length' => 5],
             ['key' => 'prescription_number', 'label' => 'Prescription number', 'prefix' => 'RX', 'date_format' => 'Y', 'padding_length' => 6],
+            ['key' => 'purchase_order_number', 'label' => 'Purchase order number', 'prefix' => 'PO', 'date_format' => 'Y', 'padding_length' => 6],
+            ['key' => 'goods_receipt_number', 'label' => 'Goods receipt number', 'prefix' => 'GRN', 'date_format' => 'Y', 'padding_length' => 6],
             ['key' => 'admission_number', 'label' => 'Admission number', 'prefix' => 'ADM', 'date_format' => 'Y', 'padding_length' => 6],
         ];
     }

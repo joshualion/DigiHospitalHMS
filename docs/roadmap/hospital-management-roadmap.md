@@ -534,6 +534,30 @@ Implementation sessions:
 6. Procurement.
 7. Reorder and expiry reports.
 
+## Phase 5A: Medicine Catalogue, Inventory Locations, Batches And Stock Ledger
+
+Status: implemented on 2026-08-24.
+
+Delivered scope:
+
+- Hospital/facility-scoped inventory locations.
+- Units of measure and controlled pack/base-unit conversion factors.
+- Medicine and practical non-medicine inventory items with unique SKU and optional barcode.
+- Batch/lot records with manufacture date, expiry date, supplier reference, state and unit-cost snapshot.
+- Authorized opening balances through immutable stock movements.
+- Transactional stock balances by location, item and batch.
+- Transfer request, dispatch, receipt and cancellation workflow.
+- Adjustment requests with approval separation.
+- Reversal movements for corrections.
+- Negative-stock prevention.
+- Batch state management for quarantine, available, expired, damaged, recalled and exhausted.
+- Low-stock, near-expiry, expired-stock and FEFO reports.
+- Permissions, policies, role-aware navigation, scoping, audit events and responsive Inertia/Vue screens.
+
+Deferred:
+
+- Prescriptions, dispensing, procurement, supplier purchase orders, supplier master data, valuation reporting and automated expiry jobs.
+
 ## Phase 6: Admissions, Wards, Beds, and Nursing
 
 Objective: Support inpatient workflow.

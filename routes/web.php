@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\FacilityController;
 use App\Http\Controllers\Admin\HospitalProfileController;
 use App\Http\Controllers\Admin\HospitalSettingController;
+use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\LaboratoryController;
 use App\Http\Controllers\Admin\NumberSequenceController;
 use App\Http\Controllers\Admin\PatientController;
@@ -39,7 +40,7 @@ Route::post('/appointment/request', [PublicAppointmentRequestController::class, 
 Route::get('/policies', [PublicSiteController::class, 'page'])->defaults('slug', 'policies')->name('policies');
 Route::get('/preview/public-site/{page}', [PublicSiteController::class, 'preview'])->name('public.preview');
 
-Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse|cashier|accountant|laboratory-scientist|radiology-staff'])
+Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse|cashier|accountant|laboratory-scientist|radiology-staff|pharmacist|storekeeper'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', function () {
@@ -168,6 +169,22 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::get('radiology/attachments/{attachment}/download', [RadiologyController::class, 'downloadAttachment'])->name('admin.radiology.attachments.download');
         Route::patch('radiology/attachments/{attachment}/retire', [RadiologyController::class, 'retireAttachment'])->name('admin.radiology.attachments.retire');
         Route::get('radiology/requests/{radiologyRequest}/report', [RadiologyController::class, 'report'])->name('admin.radiology.requests.report');
+
+        Route::get('inventory/catalogue', [InventoryController::class, 'catalogue'])->name('admin.inventory.catalogue');
+        Route::post('inventory/locations', [InventoryController::class, 'storeLocation'])->name('admin.inventory.locations.store');
+        Route::post('inventory/units', [InventoryController::class, 'storeUnit'])->name('admin.inventory.units.store');
+        Route::post('inventory/items', [InventoryController::class, 'storeItem'])->name('admin.inventory.items.store');
+        Route::get('inventory/stock', [InventoryController::class, 'stock'])->name('admin.inventory.stock');
+        Route::post('inventory/batches/receive', [InventoryController::class, 'receiveBatch'])->name('admin.inventory.batches.receive');
+        Route::patch('inventory/batches/{batch}/state', [InventoryController::class, 'setBatchState'])->name('admin.inventory.batches.state');
+        Route::get('inventory/transfers', [InventoryController::class, 'transfers'])->name('admin.inventory.transfers');
+        Route::post('inventory/transfers', [InventoryController::class, 'storeTransfer'])->name('admin.inventory.transfers.store');
+        Route::patch('inventory/transfers/{transfer}', [InventoryController::class, 'transferAction'])->name('admin.inventory.transfers.action');
+        Route::get('inventory/adjustments', [InventoryController::class, 'adjustments'])->name('admin.inventory.adjustments');
+        Route::post('inventory/adjustments', [InventoryController::class, 'storeAdjustment'])->name('admin.inventory.adjustments.store');
+        Route::patch('inventory/adjustments/{adjustment}/approve', [InventoryController::class, 'approveAdjustment'])->name('admin.inventory.adjustments.approve');
+        Route::post('inventory/movements/{movement}/reverse', [InventoryController::class, 'reverseMovement'])->name('admin.inventory.movements.reverse');
+        Route::get('inventory/reports', [InventoryController::class, 'reports'])->name('admin.inventory.reports');
 
         Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
         Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])->name('admin.public-website.edit');

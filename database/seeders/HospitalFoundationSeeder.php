@@ -8,6 +8,9 @@ use App\Models\BillableServiceCategory;
 use App\Models\Facility;
 use App\Models\Hospital;
 use App\Models\HospitalSetting;
+use App\Models\InventoryItem;
+use App\Models\InventoryLocation;
+use App\Models\InventoryUnit;
 use App\Models\LabSpecimenType;
 use App\Models\LabTest;
 use App\Models\LabTestComponent;
@@ -172,6 +175,25 @@ class HospitalFoundationSeeder extends Seeder
                 'requires_professional_validation' => true,
                 'is_active' => true,
             ]
+        );
+
+        $each = InventoryUnit::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'code' => 'EACH'],
+            ['name' => 'Each - pharmacist configuration required', 'base_factor' => 1, 'requires_pharmacist_validation' => true, 'is_active' => true]
+        );
+        InventoryUnit::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'code' => 'PACK'],
+            ['name' => 'Pack - configure conversion', 'base_unit_id' => $each->id, 'base_factor' => 10, 'requires_pharmacist_validation' => true, 'is_active' => true]
+        );
+        foreach ([['MAIN-STORE', 'Main Store', 'main_store'], ['PHARMACY', 'Pharmacy', 'pharmacy'], ['WARD-STORE', 'Ward Store', 'ward_store']] as [$code, $name, $type]) {
+            InventoryLocation::firstOrCreate(
+                ['hospital_id' => $hospital->id, 'code' => $code],
+                ['facility_id' => $facility->id, 'name' => $name.' - configure workflow', 'type' => $type, 'is_active' => true]
+            );
+        }
+        InventoryItem::firstOrCreate(
+            ['hospital_id' => $hospital->id, 'sku' => 'MED-CONFIG'],
+            ['base_unit_id' => $each->id, 'type' => 'medicine', 'generic_name' => 'Example medicine - configure professionally', 'name' => 'Example medicine item - do not dispense until configured', 'dosage_form' => 'Configure', 'strength' => 'Configure', 'route' => 'Configure', 'description' => 'Structural example only. Pharmacist must validate medicine data, units and pack conversions.', 'reorder_level' => 10, 'requires_pharmacist_validation' => true, 'is_active' => true]
         );
     }
 

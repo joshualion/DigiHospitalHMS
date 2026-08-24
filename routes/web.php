@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\LaboratoryController;
 use App\Http\Controllers\Admin\NumberSequenceController;
 use App\Http\Controllers\Admin\PatientController;
 use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\PrescriptionController;
 use App\Http\Controllers\Admin\PublicWebsiteController;
 use App\Http\Controllers\Admin\RadiologyController;
 use App\Http\Controllers\Admin\RoleController;
@@ -185,6 +186,18 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::patch('inventory/adjustments/{adjustment}/approve', [InventoryController::class, 'approveAdjustment'])->name('admin.inventory.adjustments.approve');
         Route::post('inventory/movements/{movement}/reverse', [InventoryController::class, 'reverseMovement'])->name('admin.inventory.movements.reverse');
         Route::get('inventory/reports', [InventoryController::class, 'reports'])->name('admin.inventory.reports');
+
+        Route::get('pharmacy/prescriptions', [PrescriptionController::class, 'index'])->name('admin.prescriptions.index');
+        Route::post('pharmacy/prescriptions', [PrescriptionController::class, 'store'])->name('admin.prescriptions.store');
+        Route::get('pharmacy/prescriptions/{prescription}', [PrescriptionController::class, 'show'])->name('admin.prescriptions.show');
+        Route::post('pharmacy/prescriptions/{prescription}/sign', [PrescriptionController::class, 'sign'])->name('admin.prescriptions.sign');
+        Route::patch('pharmacy/prescriptions/{prescription}/transition', [PrescriptionController::class, 'transition'])->name('admin.prescriptions.transition');
+        Route::post('pharmacy/prescriptions/{prescription}/amendments', [PrescriptionController::class, 'amend'])->name('admin.prescriptions.amendments.store');
+        Route::post('pharmacy/prescriptions/{prescription}/reviews', [PrescriptionController::class, 'review'])->name('admin.prescriptions.reviews.store');
+        Route::post('pharmacy/prescriptions/{prescription}/bill', [PrescriptionController::class, 'bill'])->name('admin.prescriptions.bill');
+        Route::post('pharmacy/prescription-items/{item}/dispense', [PrescriptionController::class, 'dispense'])->name('admin.prescriptions.dispense');
+        Route::post('pharmacy/dispenses/{dispense}/return', [PrescriptionController::class, 'returnDispense'])->name('admin.prescriptions.returns.store');
+        Route::post('pharmacy/dispenses/{dispense}/reverse', [PrescriptionController::class, 'reverseDispense'])->name('admin.prescriptions.dispenses.reverse');
 
         Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
         Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])->name('admin.public-website.edit');

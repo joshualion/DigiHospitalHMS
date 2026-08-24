@@ -104,6 +104,12 @@ class PermissionSeeder extends Seeder
             'inventory.stock.transfer',
             'inventory.stock.adjust',
             'inventory.adjustments.approve',
+            'prescriptions.view',
+            'prescriptions.create',
+            'prescriptions.sign',
+            'prescriptions.review',
+            'prescriptions.dispense',
+            'prescriptions.reverse',
         ];
 
         foreach ($permissions as $permission) {
@@ -200,6 +206,12 @@ class PermissionSeeder extends Seeder
             'inventory.stock.transfer',
             'inventory.stock.adjust',
             'inventory.adjustments.approve',
+            'prescriptions.view',
+            'prescriptions.create',
+            'prescriptions.sign',
+            'prescriptions.review',
+            'prescriptions.dispense',
+            'prescriptions.reverse',
         ];
 
         Role::where('name', 'admin')->first()?->syncPermissions(array_values(array_diff($adminPermissions, [
@@ -291,6 +303,7 @@ class PermissionSeeder extends Seeder
             'encounters.view',
             'vitals.record',
             ...($role->name === 'doctor' ? ['encounters.manage', 'encounters.sign'] : []),
+            ...($role->name === 'doctor' ? ['prescriptions.view', 'prescriptions.create', 'prescriptions.sign'] : []),
             'billing.catalogue.view',
             'invoices.view',
             'lab.catalogue.view',
@@ -351,6 +364,8 @@ class PermissionSeeder extends Seeder
             'inventory.stock.transfer',
             'inventory.stock.adjust',
             ...($role->name === 'pharmacist' ? ['inventory.adjustments.approve'] : []),
+            'prescriptions.view',
+            ...($role->name === 'pharmacist' ? ['prescriptions.review', 'prescriptions.dispense', 'prescriptions.reverse'] : []),
         ]));
 
         Role::where('name', 'patient')->first()?->syncPermissions([]);

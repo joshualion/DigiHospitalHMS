@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InventoryItem extends Model
 {
-    protected $fillable = ['hospital_id', 'base_unit_id', 'sku', 'barcode', 'type', 'generic_name', 'brand_name', 'name', 'dosage_form', 'strength', 'route', 'description', 'reorder_level', 'requires_pharmacist_validation', 'is_active'];
+    protected $fillable = ['hospital_id', 'base_unit_id', 'billable_service_id', 'sku', 'barcode', 'type', 'generic_name', 'brand_name', 'name', 'dosage_form', 'strength', 'route', 'description', 'reorder_level', 'requires_pharmacist_validation', 'is_active'];
 
     protected function casts(): array
     {
@@ -18,6 +18,11 @@ class InventoryItem extends Model
     public function baseUnit(): BelongsTo
     {
         return $this->belongsTo(InventoryUnit::class, 'base_unit_id');
+    }
+
+    public function billableService(): BelongsTo
+    {
+        return $this->belongsTo(BillableService::class);
     }
 
     public function batches(): HasMany

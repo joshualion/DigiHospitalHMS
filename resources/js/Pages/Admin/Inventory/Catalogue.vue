@@ -9,11 +9,12 @@ const props = defineProps({
     units: { type: Array, default: () => [] },
     locations: { type: Array, default: () => [] },
     facilities: { type: Array, default: () => [] },
+    billableServices: { type: Array, default: () => [] },
 });
 
 const location = useForm({ facility_id: props.facilities[0]?.id || '', code: '', name: '', type: 'main_store' });
 const unit = useForm({ code: '', name: '', base_unit_id: '', base_factor: 1 });
-const item = useForm({ base_unit_id: '', sku: '', barcode: '', type: 'medicine', generic_name: '', brand_name: '', name: '', dosage_form: '', strength: '', route: '', description: '', reorder_level: 0 });
+const item = useForm({ base_unit_id: '', billable_service_id: '', sku: '', barcode: '', type: 'medicine', generic_name: '', brand_name: '', name: '', dosage_form: '', strength: '', route: '', description: '', reorder_level: 0 });
 </script>
 
 <template>
@@ -29,6 +30,7 @@ const item = useForm({ base_unit_id: '', sku: '', barcode: '', type: 'medicine',
                 <h2 class="text-lg font-black">Items</h2>
                 <form class="mt-4 grid gap-3 md:grid-cols-3" @submit.prevent="item.post('/admin/inventory/items', { preserveScroll: true, onSuccess: () => item.reset() })">
                     <select v-model="item.base_unit_id" class="rounded-md border-slate-300"><option value="">Base unit</option><option v-for="u in units" :key="u.id" :value="u.id">{{ u.code }} - {{ u.name }}</option></select>
+                    <select v-model="item.billable_service_id" class="rounded-md border-slate-300"><option value="">Billable service</option><option v-for="service in billableServices" :key="service.id" :value="service.id">{{ service.code }} - {{ service.name }}</option></select>
                     <TextInput id="item_sku" v-model="item.sku" label="SKU" />
                     <TextInput id="item_barcode" v-model="item.barcode" label="Barcode" />
                     <select v-model="item.type" class="rounded-md border-slate-300"><option value="medicine">Medicine</option><option value="supply">Supply</option><option value="equipment">Equipment</option><option value="other">Other</option></select>

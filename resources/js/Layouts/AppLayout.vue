@@ -1,7 +1,7 @@
 <script setup>
 import ThemeSwitcher from '@/Components/Public/ThemeSwitcher.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { Activity, Building2, ClipboardList, FileClock, FlaskConical, Gauge, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, ScanLine, Settings, ShieldCheck, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
+import { Activity, Building2, ClipboardList, FileClock, FlaskConical, Gauge, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, Pill, ScanLine, Settings, ShieldCheck, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 
 defineProps({
@@ -50,6 +50,7 @@ const navItems = computed(() => [
     { label: 'Laboratory', href: '/admin/laboratory/requests', icon: FlaskConical, show: can('lab.requests.view') },
     { label: 'Radiology', href: '/admin/radiology/requests', icon: ScanLine, show: can('radiology.requests.view') },
     { label: 'Inventory', href: '/admin/inventory/stock', icon: PackageSearch, show: can('inventory.view') },
+    { label: 'Pharmacy', href: '/admin/pharmacy/prescriptions', icon: Pill, show: can('prescriptions.view') },
     { label: 'Roles', href: '/admin/roles', icon: ShieldCheck, show: can('roles.view') },
     { label: 'Settings', href: '/admin/settings', icon: Settings, show: can('settings.manage') },
     { label: 'Numbering', href: '/admin/numbering', icon: FileClock, show: can('numbering.manage') },

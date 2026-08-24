@@ -100,6 +100,11 @@ class Patient extends Model
         return $this->hasMany(RadiologyRequest::class);
     }
 
+    public function prescriptions(): HasMany
+    {
+        return $this->hasMany(Prescription::class);
+    }
+
     public function scopeForHospital($query, int $hospitalId)
     {
         return $query->where('hospital_id', $hospitalId);

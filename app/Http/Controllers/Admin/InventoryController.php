@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\BillableService;
 use App\Models\Facility;
 use App\Models\InventoryAdjustmentRequest;
 use App\Models\InventoryBatch;
@@ -61,6 +62,7 @@ class InventoryController extends FoundationController
         $hospital = $this->currentHospital();
         $validated = $request->validate([
             'base_unit_id' => ['required', Rule::exists('inventory_units', 'id')->where('hospital_id', $hospital->id)],
+            'billable_service_id' => ['nullable', Rule::exists('billable_services', 'id')->where('hospital_id', $hospital->id)],
             'sku' => ['required', 'string', 'max:80', Rule::unique('inventory_items')->where('hospital_id', $hospital->id)],
             'barcode' => ['nullable', 'string', 'max:120', Rule::unique('inventory_items')->where('hospital_id', $hospital->id)],
             'type' => ['required', Rule::in(['medicine', 'supply', 'equipment', 'other'])],
@@ -221,6 +223,7 @@ class InventoryController extends FoundationController
             'units' => InventoryUnit::where('hospital_id', $hospitalId)->where('is_active', true)->orderBy('name')->get(),
             'items' => InventoryItem::where('hospital_id', $hospitalId)->where('is_active', true)->orderBy('name')->get(),
             'batches' => InventoryBatch::with('item')->where('hospital_id', $hospitalId)->orderByDesc('created_at')->get(),
+            'billableServices' => BillableService::where('hospital_id', $hospitalId)->where('is_active', true)->orderBy('name')->get(['id', 'code', 'name']),
         ];
     }
 }

@@ -558,6 +558,28 @@ Deferred:
 
 - Prescriptions, dispensing, procurement, supplier purchase orders, supplier master data, valuation reporting and automated expiry jobs.
 
+## Phase 5B: Prescribing, Pharmacist Review, Billing And Dispensing
+
+Status: implemented on 2026-08-24.
+
+Delivered scope:
+
+- Prescriptions linked to patient, encounter, clinician, hospital and facility.
+- Prescription items with dose, unit, route, frequency, duration, quantity, instructions, indication and PRN fields.
+- Draft, signed, discontinued, cancelled and completed prescription states.
+- Signed-prescription immutability through append-only amendments or discontinuation/cancellation.
+- Prominent allergy and alert display.
+- Pharmacist review with approval, clarification request, rejection and documented substitution authorization.
+- Medicine billing through mapped billable services and backend invoice pricing.
+- Partial and full dispensing with explicit batch selection, FEFO suggestions and outstanding-quantity checks.
+- Inventory deduction through the Phase 5A stock ledger.
+- Patient returns and controlled dispense reversals.
+- Permissions, policies, scoping, audit events and responsive Inertia/Vue pharmacy screens.
+
+Deferred:
+
+- Procurement, suppliers, purchase orders, automated interaction engines, admissions, insurance, formulary enforcement and clinical recommendation engines.
+
 ## Phase 6: Admissions, Wards, Beds, and Nursing
 
 Objective: Support inpatient workflow.

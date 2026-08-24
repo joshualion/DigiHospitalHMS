@@ -1,7 +1,7 @@
 <script setup>
 import ThemeSwitcher from '@/Components/Public/ThemeSwitcher.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { Activity, Building2, ClipboardList, FileClock, FlaskConical, Gauge, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, Pill, ScanLine, Settings, ShieldCheck, ShoppingCart, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
+import { Activity, Bed, Building2, ClipboardList, FileClock, FlaskConical, Gauge, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, Pill, ScanLine, Settings, ShieldCheck, ShoppingCart, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 
 defineProps({
@@ -45,6 +45,7 @@ const navItems = computed(() => [
     { label: 'Appointments', href: '/admin/appointments', icon: ClipboardList, show: can('appointments.view') },
     { label: 'Queues', href: '/admin/queues', icon: Activity, show: can('queues.view') },
     { label: 'Clinical', href: '/admin/clinical/worklist', icon: Stethoscope, show: can('encounters.view') },
+    { label: 'Admissions', href: '/admin/admissions', icon: Bed, show: can('admissions.view') },
     { label: 'Billing', href: '/admin/billing/invoices', icon: FileClock, show: can('invoices.view') },
     { label: 'Payments', href: '/admin/payments/workbench', icon: WalletCards, show: can('payments.view') },
     { label: 'Laboratory', href: '/admin/laboratory/requests', icon: FlaskConical, show: can('lab.requests.view') },

@@ -116,6 +116,11 @@ class ClinicalEncounter extends Model
         return $this->hasMany(Prescription::class);
     }
 
+    public function admissions(): HasMany
+    {
+        return $this->hasMany(Admission::class);
+    }
+
     public function isSigned(): bool
     {
         return $this->status === 'signed';

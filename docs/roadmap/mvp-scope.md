@@ -97,14 +97,16 @@ Minimum product that can honestly be piloted:
    - Test catalogue, requests, specimens, results, approval, printable report.
 9. Basic pharmacy and inventory
    - Medicine catalogue, prescription, dispensing, stock batches, receipts, adjustments, expiry/reorder reports.
-10. Essential reports
+10. Basic admissions and bed management
+   - Admission requests, approval, bed allocation, transfers, discharge and bed census.
+11. Essential reports
    - Patient attendance, daily collections, outstanding balances, lab activity, pharmacy stock/expiry, audit reports.
-11. Deployment and backup documentation
+12. Deployment and backup documentation
    - Installation, environment, migration, backup, restore, upgrade notes.
 
 ## Deferred From MVP
 
-- Full admissions/inpatient nursing.
+- Full inpatient nursing, medication administration and specialty ward charting.
 - Blood bank and transfusion.
 - Theatre management.
 - Insurance/HMO claims.
@@ -119,7 +121,7 @@ Minimum product that can honestly be piloted:
 
 ## Why These Items Are Deferred
 
-The current repository has no domain foundation. Building too many safety-critical modules at once would create untested clinical and financial risk. Blood bank, medication administration, admissions, and claims require stakeholder validation and stronger workflow foundations.
+The repository now has basic admissions and bed management, but broader inpatient nursing remains safety-critical. Blood bank, medication administration, specialty ward charting and claims require stakeholder validation and stronger workflow foundations.
 
 ## MVP Acceptance Criteria
 

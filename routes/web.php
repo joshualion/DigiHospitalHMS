@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdmissionController;
 use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BillingController;
@@ -107,6 +108,14 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::patch('encounters/{encounter}/transition', [ClinicalEncounterController::class, 'transition'])->name('admin.encounters.transition');
         Route::post('encounters/{encounter}/amendments', [ClinicalEncounterController::class, 'amendment'])->name('admin.encounters.amendments.store');
 
+        Route::get('admissions', [AdmissionController::class, 'index'])->name('admin.admissions.index');
+        Route::post('admissions/bed-classes', [AdmissionController::class, 'storeBedClass'])->name('admin.admissions.bed-classes.store');
+        Route::post('admissions/wards', [AdmissionController::class, 'storeWard'])->name('admin.admissions.wards.store');
+        Route::post('admissions/rooms', [AdmissionController::class, 'storeRoom'])->name('admin.admissions.rooms.store');
+        Route::post('admissions/beds', [AdmissionController::class, 'storeBed'])->name('admin.admissions.beds.store');
+        Route::patch('admissions/beds/{bed}/state', [AdmissionController::class, 'bedState'])->name('admin.admissions.beds.state');
+        Route::post('admissions/requests', [AdmissionController::class, 'requestAdmission'])->name('admin.admissions.requests.store');
+        Route::patch('admissions/{admission}', [AdmissionController::class, 'action'])->name('admin.admissions.action');
         Route::get('billing/catalogue', [BillingController::class, 'catalogue'])->name('admin.billing.catalogue');
         Route::post('billing/categories', [BillingController::class, 'storeCategory'])->name('admin.billing.categories.store');
         Route::post('billing/services', [BillingController::class, 'storeService'])->name('admin.billing.services.store');

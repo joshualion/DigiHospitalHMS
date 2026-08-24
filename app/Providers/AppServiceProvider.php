@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Admission;
 use App\Models\AuditEvent;
 use App\Models\BillableService;
 use App\Models\CashierShift;
@@ -27,6 +28,7 @@ use App\Models\RefundRequest;
 use App\Models\StaffProfile;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Policies\AdmissionPolicy;
 use App\Policies\AuditEventPolicy;
 use App\Policies\BillableServicePolicy;
 use App\Policies\CashierShiftPolicy;
@@ -70,6 +72,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Admission::class, AdmissionPolicy::class);
         Gate::policy(AuditEvent::class, AuditEventPolicy::class);
         Gate::policy(BillableService::class, BillableServicePolicy::class);
         Gate::policy(CashierShift::class, CashierShiftPolicy::class);

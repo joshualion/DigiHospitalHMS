@@ -105,6 +105,11 @@ class Patient extends Model
         return $this->hasMany(Prescription::class);
     }
 
+    public function admissions(): HasMany
+    {
+        return $this->hasMany(Admission::class);
+    }
+
     public function scopeForHospital($query, int $hospitalId)
     {
         return $query->where('hospital_id', $hospitalId);

@@ -52,6 +52,11 @@ class PrescriptionController extends FoundationController
             'items.*.instructions' => ['nullable', 'string', 'max:2000'],
             'items.*.indication' => ['nullable', 'string', 'max:1000'],
             'items.*.is_prn' => ['boolean'],
+            'items.*.medication_order_type' => ['nullable', Rule::in(['regular', 'once', 'stat', 'prn'])],
+            'items.*.scheduled_times' => ['nullable', 'array'],
+            'items.*.scheduled_times.*' => ['string', 'max:5'],
+            'items.*.start_at' => ['nullable', 'date'],
+            'items.*.end_at' => ['nullable', 'date', 'after_or_equal:items.*.start_at'],
             'items.*.prn_instructions' => ['nullable', 'string', 'max:1000'],
         ]);
         $prescription = $workflow->createDraft($validated + ['hospital_id' => $hospital->id], $request->user());

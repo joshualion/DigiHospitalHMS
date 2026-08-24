@@ -80,4 +80,14 @@ class InpatientChart extends Model
     {
         return $this->hasOne(InpatientDischargeSummary::class);
     }
+
+    public function emarSchedules(): HasMany
+    {
+        return $this->hasMany(EmarSchedule::class);
+    }
+
+    public function emarAdministrations(): HasMany
+    {
+        return $this->hasMany(EmarAdministration::class);
+    }
 }

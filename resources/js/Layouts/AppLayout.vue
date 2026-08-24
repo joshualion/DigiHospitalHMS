@@ -47,6 +47,7 @@ const navItems = computed(() => [
     { label: 'Clinical', href: '/admin/clinical/worklist', icon: Stethoscope, show: can('encounters.view') },
     { label: 'Admissions', href: '/admin/admissions', icon: Bed, show: can('admissions.view') },
     { label: 'Ward Charts', href: '/admin/inpatient', icon: Stethoscope, show: can('inpatient.view') },
+    { label: 'eMAR', href: '/admin/emar', icon: Pill, show: can('emar.view') },
     { label: 'Billing', href: '/admin/billing/invoices', icon: FileClock, show: can('invoices.view') },
     { label: 'Payments', href: '/admin/payments/workbench', icon: WalletCards, show: can('payments.view') },
     { label: 'Laboratory', href: '/admin/laboratory/requests', icon: FlaskConical, show: can('lab.requests.view') },

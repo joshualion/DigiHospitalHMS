@@ -607,7 +607,7 @@ Deferred:
 
 Objective: Support inpatient workflow.
 
-Status: Phase 6A admissions and bed management and Phase 6B inpatient clinical/nursing documentation are implemented. Medication administration, theatre, blood bank, insurance and specialty inpatient workflows remain deferred.
+Status: Phase 6A admissions and bed management, Phase 6B inpatient clinical/nursing documentation and Phase 6C inpatient eMAR are implemented. Theatre, blood bank, insurance, infusion integrations and specialty inpatient workflows remain deferred.
 
 Modules/workflows:
 

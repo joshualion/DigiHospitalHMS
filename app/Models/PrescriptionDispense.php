@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PrescriptionDispense extends Model
 {
@@ -32,5 +33,10 @@ class PrescriptionDispense extends Model
     public function sourceDispense(): BelongsTo
     {
         return $this->belongsTo(self::class, 'source_dispense_id');
+    }
+
+    public function administrations(): HasMany
+    {
+        return $this->hasMany(EmarAdministration::class);
     }
 }

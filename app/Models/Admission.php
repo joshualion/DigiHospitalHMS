@@ -55,4 +55,14 @@ class Admission extends Model
     {
         return $this->hasOne(InpatientChart::class);
     }
+
+    public function emarSchedules(): HasMany
+    {
+        return $this->hasMany(EmarSchedule::class);
+    }
+
+    public function emarAdministrations(): HasMany
+    {
+        return $this->hasMany(EmarAdministration::class);
+    }
 }

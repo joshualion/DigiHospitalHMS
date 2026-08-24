@@ -61,6 +61,10 @@ class PrescriptionWorkflowService
                     'instructions' => $row['instructions'] ?? null,
                     'indication' => $row['indication'] ?? null,
                     'is_prn' => (bool) ($row['is_prn'] ?? false),
+                    'medication_order_type' => $row['medication_order_type'] ?? ((bool) ($row['is_prn'] ?? false) ? 'prn' : 'regular'),
+                    'scheduled_times' => $row['scheduled_times'] ?? null,
+                    'start_at' => $row['start_at'] ?? null,
+                    'end_at' => $row['end_at'] ?? null,
                     'prn_instructions' => $row['prn_instructions'] ?? null,
                 ]);
             }

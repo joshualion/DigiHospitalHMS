@@ -1,8 +1,12 @@
 <script setup>
+import ActionToolbar from '@/Components/Admin/ActionToolbar.vue';
+import FormModal from '@/Components/Admin/FormModal.vue';
+import PageHeader from '@/Components/Admin/PageHeader.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 const props = defineProps({
     prescriptions: { type: Object, required: true },
@@ -20,51 +24,76 @@ const form = useForm({
     clinical_note: '',
     items: [{ inventory_item_id: '', inventory_unit_id: '', dose: '', route: '', frequency: '', duration: '', quantity: '', instructions: '', indication: '', is_prn: false, prn_instructions: '' }],
 });
+const showCreate = ref(false);
+
+function blankItem() {
+    return { inventory_item_id: '', inventory_unit_id: '', dose: '', route: '', frequency: '', duration: '', quantity: '', instructions: '', indication: '', is_prn: false, prn_instructions: '' };
+}
 
 function addItem() {
-    form.items.push({ inventory_item_id: '', inventory_unit_id: '', dose: '', route: '', frequency: '', duration: '', quantity: '', instructions: '', indication: '', is_prn: false, prn_instructions: '' });
+    form.items.push(blankItem());
+}
+
+function removeItem(index) {
+    if (form.items.length > 1) form.items.splice(index, 1);
+}
+
+function savePrescription() {
+    form.post('/admin/pharmacy/prescriptions', { preserveScroll: true, onSuccess: () => { showCreate.value = false; form.reset(); form.items = [blankItem()]; } });
 }
 </script>
 
 <template>
     <Head title="Prescriptions" />
     <AppLayout title="Prescriptions">
-        <div class="grid gap-6 xl:grid-cols-[1fr_420px]">
-            <section class="rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-                <div class="border-b border-slate-200 p-4 dark:border-slate-800">
-                    <h2 class="font-black">Pharmacist Worklist</h2>
-                </div>
-                <div class="divide-y divide-slate-100 dark:divide-slate-800">
-                    <Link v-for="rx in prescriptions.data" :key="rx.id" class="grid gap-3 p-4 md:grid-cols-[1fr_auto]" :href="`/admin/pharmacy/prescriptions/${rx.id}`">
-                        <div>
-                            <p class="font-bold">{{ rx.prescription_number }} - {{ rx.patient?.full_name }}</p>
-                            <p class="text-sm text-slate-500">{{ rx.items.map((item) => item.medicine_name).join(', ') }}</p>
-                        </div>
-                        <span class="h-fit rounded-full bg-slate-100 px-2 py-1 text-xs font-bold text-slate-700">{{ rx.status }}</span>
-                    </Link>
-                </div>
-            </section>
-            <form class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900" @submit.prevent="form.post('/admin/pharmacy/prescriptions')">
-                <h2 class="font-black">Draft Prescription</h2>
-                <div class="mt-4 grid gap-3">
-                    <select v-model="form.patient_id" class="rounded-md border-slate-300"><option value="">Patient</option><option v-for="patient in patients" :key="patient.id" :value="patient.id">{{ patient.hospital_number }} - {{ patient.full_name }}</option></select>
-                    <select v-model="form.facility_id" class="rounded-md border-slate-300"><option v-for="facility in facilities" :key="facility.id" :value="facility.id">{{ facility.name }}</option></select>
-                    <select v-model="form.clinical_encounter_id" class="rounded-md border-slate-300"><option value="">Encounter</option><option v-for="encounter in encounters" :key="encounter.id" :value="encounter.id">Encounter #{{ encounter.id }} - {{ encounter.status }}</option></select>
-                    <textarea v-model="form.clinical_note" class="rounded-md border-slate-300" rows="2" placeholder="Clinical note"></textarea>
-                    <div v-for="(row, index) in form.items" :key="index" class="grid gap-2 rounded-md border border-slate-200 p-3">
-                        <select v-model="row.inventory_item_id" class="rounded-md border-slate-300"><option value="">Medicine</option><option v-for="item in items" :key="item.id" :value="item.id">{{ item.name }}</option></select>
-                        <select v-model="row.inventory_unit_id" class="rounded-md border-slate-300"><option value="">Unit</option><option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.code }}</option></select>
-                        <TextInput :id="`dose_${index}`" v-model="row.dose" label="Dose" />
-                        <TextInput :id="`qty_${index}`" v-model="row.quantity" label="Quantity" type="number" />
-                        <TextInput :id="`freq_${index}`" v-model="row.frequency" label="Frequency" />
-                        <TextInput :id="`duration_${index}`" v-model="row.duration" label="Duration" />
-                        <textarea v-model="row.instructions" class="rounded-md border-slate-300" rows="2" placeholder="Instructions"></textarea>
-                        <label class="text-sm"><input v-model="row.is_prn" type="checkbox"> PRN</label>
+        <PageHeader title="Prescriptions" description="Pharmacist worklist and prescription drafting.">
+            <template #actions>
+                <ActionToolbar align="end">
+                    <PrimaryButton type="button" @click="showCreate = true">Draft Prescription</PrimaryButton>
+                </ActionToolbar>
+            </template>
+        </PageHeader>
+
+        <section class="min-w-0 rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div class="border-b border-slate-200 p-4 dark:border-slate-800">
+                <h2 class="font-black">Pharmacist Worklist</h2>
+            </div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                <Link v-for="rx in prescriptions.data" :key="rx.id" class="grid min-w-0 gap-3 p-4 md:grid-cols-[1fr_auto]" :href="`/admin/pharmacy/prescriptions/${rx.id}`">
+                    <div class="min-w-0">
+                        <p class="break-words font-bold">{{ rx.prescription_number }} - {{ rx.patient?.full_name }}</p>
+                        <p class="break-words text-sm text-slate-500">{{ rx.items.map((item) => item.medicine_name).join(', ') }}</p>
                     </div>
-                    <button class="rounded-md border px-3 py-2 text-sm font-bold" type="button" @click="addItem">Add medicine</button>
-                    <PrimaryButton :disabled="form.processing">Create draft</PrimaryButton>
+                    <span class="h-fit rounded-full bg-slate-100 px-2 py-1 text-xs font-bold text-slate-700">{{ rx.status }}</span>
+                </Link>
+                <p v-if="prescriptions.data.length === 0" class="p-4 text-sm text-slate-500">No prescriptions.</p>
+            </div>
+        </section>
+
+        <FormModal :show="showCreate" title="Draft Prescription" :form="form" submit-label="Create draft" size="full" @close="showCreate = false" @submit="savePrescription">
+            <div class="grid gap-3 md:grid-cols-2">
+                <select v-model="form.patient_id" class="rounded-md border-slate-300"><option value="">Patient</option><option v-for="patient in patients" :key="patient.id" :value="patient.id">{{ patient.hospital_number }} - {{ patient.full_name }}</option></select>
+                <select v-model="form.facility_id" class="rounded-md border-slate-300"><option v-for="facility in facilities" :key="facility.id" :value="facility.id">{{ facility.name }}</option></select>
+                <select v-model="form.clinical_encounter_id" class="rounded-md border-slate-300 md:col-span-2"><option value="">Encounter</option><option v-for="encounter in encounters" :key="encounter.id" :value="encounter.id">Encounter #{{ encounter.id }} - {{ encounter.status }}</option></select>
+                <textarea v-model="form.clinical_note" class="rounded-md border-slate-300 md:col-span-2" rows="2" placeholder="Clinical note"></textarea>
+            </div>
+            <div class="mt-4 grid gap-3">
+                <div v-for="(row, index) in form.items" :key="index" class="grid gap-2 rounded-md border border-slate-200 p-3 md:grid-cols-2">
+                    <select v-model="row.inventory_item_id" class="rounded-md border-slate-300"><option value="">Medicine</option><option v-for="item in items" :key="item.id" :value="item.id">{{ item.name }}</option></select>
+                    <select v-model="row.inventory_unit_id" class="rounded-md border-slate-300"><option value="">Unit</option><option v-for="unit in units" :key="unit.id" :value="unit.id">{{ unit.code }}</option></select>
+                    <TextInput :id="`dose_${index}`" v-model="row.dose" label="Dose" />
+                    <TextInput :id="`qty_${index}`" v-model="row.quantity" label="Quantity" type="number" />
+                    <TextInput :id="`route_${index}`" v-model="row.route" label="Route" />
+                    <TextInput :id="`freq_${index}`" v-model="row.frequency" label="Frequency" />
+                    <TextInput :id="`duration_${index}`" v-model="row.duration" label="Duration" />
+                    <TextInput :id="`indication_${index}`" v-model="row.indication" label="Indication" />
+                    <textarea v-model="row.instructions" class="rounded-md border-slate-300 md:col-span-2" rows="2" placeholder="Instructions"></textarea>
+                    <label class="text-sm"><input v-model="row.is_prn" type="checkbox"> PRN</label>
+                    <TextInput :id="`prn_${index}`" v-model="row.prn_instructions" label="PRN instructions" />
+                    <button class="w-fit rounded-md border px-3 py-2 text-sm font-bold" type="button" @click="removeItem(index)">Remove</button>
                 </div>
-            </form>
-        </div>
+                <button class="w-fit rounded-md border px-3 py-2 text-sm font-bold" type="button" @click="addItem">Add medicine</button>
+            </div>
+        </FormModal>
     </AppLayout>
 </template>

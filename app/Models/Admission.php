@@ -65,4 +65,9 @@ class Admission extends Model
     {
         return $this->hasMany(EmarAdministration::class);
     }
+
+    public function bloodRequests(): HasMany
+    {
+        return $this->hasMany(BloodRequest::class);
+    }
 }

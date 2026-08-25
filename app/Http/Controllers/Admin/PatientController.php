@@ -315,6 +315,8 @@ class PatientController extends FoundationController
             'contacts.recorder:id,firstname,lastname',
             'allergies.recorder:id,firstname,lastname',
             'alerts.recorder:id,firstname,lastname',
+            'bloodRequests.componentType:id,name',
+            'bloodRequests.issues:id,blood_request_id,issue_number,status,issued_at',
             'activityEvents.actor:id,firstname,lastname',
         ])->toArray();
     }

@@ -147,6 +147,13 @@ function updatePatient() {
                         <p v-for="event in patient.activity_events" :key="event.id" class="py-2">{{ event.action }} · {{ event.occurred_at }}</p>
                     </div>
                 </section>
+                <section class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                    <h2 class="font-bold">Blood Requests</h2>
+                    <div class="mt-3 divide-y divide-slate-100 text-sm dark:divide-slate-800">
+                        <Link v-for="request in patient.blood_requests" :key="request.id" class="block py-2 font-semibold" :href="`/admin/blood-bank/requests/${request.id}`">{{ request.request_number }} - {{ request.component_type?.name }} - {{ request.state }}</Link>
+                        <p v-if="patient.blood_requests.length === 0" class="py-2 text-slate-500">No blood requests recorded.</p>
+                    </div>
+                </section>
             </aside>
         </div>
     </AppLayout>

@@ -236,6 +236,9 @@ class HospitalFoundationSeeder extends Seeder
             ['key' => 'blood_donation_number', 'label' => 'Blood donation number', 'prefix' => 'DON', 'date_format' => 'Y', 'padding_length' => 6],
             ['key' => 'blood_collection_number', 'label' => 'Blood collection bag number', 'prefix' => 'BAG', 'date_format' => 'Y', 'padding_length' => 6],
             ['key' => 'blood_component_number', 'label' => 'Blood component number', 'prefix' => 'BCP', 'date_format' => 'Y', 'padding_length' => 6],
+            ['key' => 'blood_request_number', 'label' => 'Patient blood request number', 'prefix' => 'BTR', 'date_format' => 'Y', 'padding_length' => 6],
+            ['key' => 'blood_specimen_label', 'label' => 'Patient blood specimen label', 'prefix' => 'BSP', 'date_format' => 'Ymd', 'padding_length' => 6],
+            ['key' => 'blood_issue_number', 'label' => 'Blood component issue number', 'prefix' => 'BIS', 'date_format' => 'Y', 'padding_length' => 6],
         ];
     }
 

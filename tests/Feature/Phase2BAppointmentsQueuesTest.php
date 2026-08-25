@@ -91,12 +91,14 @@ class Phase2BAppointmentsQueuesTest extends TestCase
 
     public function test_public_request_is_encrypted_reviewed_and_does_not_create_patient_or_appointment(): void
     {
+        $preferredDate = now()->addDay()->toDateString();
+
         $this->post('/appointment/request', [
             'name' => 'Public Person',
             'phone' => '08033334444',
             'preferred_facility_id' => $this->facility->id,
             'preferred_department_id' => $this->department->id,
-            'preferred_date' => '2026-08-24',
+            'preferred_date' => $preferredDate,
             'consent' => '1',
             'website' => '',
         ])->assertRedirect();

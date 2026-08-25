@@ -40,6 +40,16 @@ class BloodComponent extends Model
         return $this->hasMany(BloodComponentTransfer::class);
     }
 
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(BloodComponentReservation::class);
+    }
+
+    public function issues(): HasMany
+    {
+        return $this->hasMany(BloodComponentIssue::class);
+    }
+
     public function isUsableCandidate(): bool
     {
         return $this->state === 'available' && (! $this->expires_on || $this->expires_on->isFuture() || $this->expires_on->isToday());

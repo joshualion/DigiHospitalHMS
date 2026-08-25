@@ -111,6 +111,11 @@ class ClinicalEncounter extends Model
         return $this->hasMany(RadiologyRequest::class);
     }
 
+    public function bloodRequests(): HasMany
+    {
+        return $this->hasMany(BloodRequest::class);
+    }
+
     public function prescriptions(): HasMany
     {
         return $this->hasMany(Prescription::class);

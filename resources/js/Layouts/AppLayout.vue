@@ -52,7 +52,7 @@ const navItems = computed(() => [
     { label: 'Payments', href: '/admin/payments/workbench', icon: WalletCards, show: can('payments.view') },
     { label: 'Laboratory', href: '/admin/laboratory/requests', icon: FlaskConical, show: can('lab.requests.view') },
     { label: 'Radiology', href: '/admin/radiology/requests', icon: ScanLine, show: can('radiology.requests.view') },
-    { label: 'Blood Bank', href: '/admin/blood-bank', icon: Droplets, show: can('blood-bank.view') },
+    { label: 'Blood Bank', href: '/admin/blood-bank', icon: Droplets, show: can('blood-bank.view') || can('blood-bank.requests.view') },
     { label: 'Inventory', href: '/admin/inventory/stock', icon: PackageSearch, show: can('inventory.view') },
     { label: 'Procurement', href: '/admin/procurement', icon: ShoppingCart, show: can('procurement.view') },
     { label: 'Pharmacy', href: '/admin/pharmacy/prescriptions', icon: Pill, show: can('prescriptions.view') },

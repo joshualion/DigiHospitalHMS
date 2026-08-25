@@ -1,9 +1,13 @@
 <script setup>
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import ActionToolbar from '@/Components/Admin/ActionToolbar.vue';
+import ConfirmDialog from '@/Components/Admin/ConfirmDialog.vue';
+import FormModal from '@/Components/Admin/FormModal.vue';
+import PageHeader from '@/Components/Admin/PageHeader.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
     labRequest: { type: Object, required: true },
@@ -13,36 +17,69 @@ const props = defineProps({
 const collectForm = useForm({ lab_specimen_type_id: props.specimenTypes[0]?.id || '' });
 const resultForms = computed(() => Object.fromEntries(props.labRequest.tests.flatMap((test) => (test.test?.components || []).map((component) => [`${test.id}-${component.id}`, useForm({ lab_test_component_id: component.id, numeric_value: '', text_value: '', qualitative_value: '', comment: '' })]))));
 const amendment = useForm({ reason: '', content: '' });
+const actionForm = useForm({ action: '', reason: '', notes: '' });
+const releaseForm = useForm({});
+const activeModal = ref(null);
+const actionTarget = ref(null);
 
 function specimenAction(specimen, action) {
-    const reason = action === 'reject' ? window.prompt('Rejection reason') : null;
-    if (action === 'reject' && !reason) return;
-    router.patch(`/admin/laboratory/specimens/${specimen.id}/transition`, { action, reason }, { preserveScroll: true });
+    actionTarget.value = specimen;
+    actionForm.defaults({ action, reason: '', notes: '' });
+    actionForm.reset();
+    activeModal.value = 'specimen-action';
 }
 
 function resultAction(result, action) {
-    router.patch(`/admin/laboratory/results/${result.id}/transition`, { action }, { preserveScroll: true });
+    actionTarget.value = result;
+    actionForm.defaults({ action, reason: '', notes: '' });
+    actionForm.reset();
+    activeModal.value = 'result-action';
 }
 
 function acknowledge(result) {
-    const notes = window.prompt('Critical acknowledgement and escalation notes');
-    if (!notes) return;
-    router.post(`/admin/laboratory/results/${result.id}/critical-acknowledgement`, { notes }, { preserveScroll: true });
+    actionTarget.value = result;
+    actionForm.defaults({ action: 'acknowledge', reason: '', notes: '' });
+    actionForm.reset();
+    activeModal.value = 'acknowledge';
+}
+
+function saveSpecimenAction() {
+    actionForm.patch(`/admin/laboratory/specimens/${actionTarget.value.id}/transition`, { preserveScroll: true, onSuccess: () => { activeModal.value = null; actionForm.reset(); } });
+}
+
+function saveResultAction() {
+    actionForm.patch(`/admin/laboratory/results/${actionTarget.value.id}/transition`, { preserveScroll: true, onSuccess: () => { activeModal.value = null; actionForm.reset(); } });
+}
+
+function saveAcknowledgement() {
+    actionForm.post(`/admin/laboratory/results/${actionTarget.value.id}/critical-acknowledgement`, { preserveScroll: true, onSuccess: () => { activeModal.value = null; actionForm.reset(); } });
+}
+
+function saveSpecimen() {
+    collectForm.post(`/admin/laboratory/requests/${props.labRequest.id}/specimens`, { preserveScroll: true, onSuccess: () => { activeModal.value = null; collectForm.reset(); } });
+}
+
+function saveAmendment() {
+    amendment.post(`/admin/laboratory/requests/${props.labRequest.id}/amendments`, { preserveScroll: true, onSuccess: () => { activeModal.value = null; amendment.reset(); } });
 }
 </script>
 
 <template>
     <Head :title="labRequest.request_number" />
     <AppLayout :title="labRequest.request_number">
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <Link href="/admin/laboratory/requests" class="text-sm font-bold text-red-800">Back to worklist</Link>
-            <div class="flex flex-wrap gap-2">
+        <PageHeader :title="labRequest.request_number" description="Laboratory request, specimen tracking and result workflow.">
+            <template #actions>
+                <ActionToolbar align="end">
+                    <Link href="/admin/laboratory/requests" class="rounded-md border px-3 py-2 text-sm font-bold">Back</Link>
+                    <PrimaryButton type="button" @click="activeModal = 'specimen'">Collect Specimen</PrimaryButton>
+                    <PrimaryButton type="button" @click="activeModal = 'amendment'">Add Amendment</PrimaryButton>
                 <Link v-if="['approved', 'released'].includes(labRequest.status)" class="rounded-md border px-3 py-2 text-sm font-bold" :href="`/admin/laboratory/requests/${labRequest.id}/report`">Report</Link>
-                <button class="rounded-md border px-3 py-2 text-sm font-bold" type="button" @click="router.post(`/admin/laboratory/requests/${labRequest.id}/release`)">Release</button>
-            </div>
-        </div>
+                    <button class="rounded-md border px-3 py-2 text-sm font-bold" type="button" :disabled="releaseForm.processing" @click="releaseForm.post(`/admin/laboratory/requests/${labRequest.id}/release`, { preserveScroll: true })">Release</button>
+                </ActionToolbar>
+            </template>
+        </PageHeader>
 
-        <div class="grid gap-6 xl:grid-cols-[1fr_360px]">
+        <div class="grid gap-6">
             <section class="space-y-6">
                 <section class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                     <div class="grid gap-3 md:grid-cols-4">
@@ -90,13 +127,8 @@ function acknowledge(result) {
                 </section>
             </section>
 
-            <aside class="space-y-6">
-                <form class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900" @submit.prevent="collectForm.post(`/admin/laboratory/requests/${labRequest.id}/specimens`, { preserveScroll: true })">
-                    <h2 class="font-black">Specimen</h2>
-                    <div class="mt-4 grid gap-3">
-                        <select v-model="collectForm.lab_specimen_type_id" class="rounded-md border-slate-300"><option v-for="type in specimenTypes" :key="type.id" :value="type.id">{{ type.name }}</option></select>
-                        <PrimaryButton :disabled="collectForm.processing">Collect specimen</PrimaryButton>
-                    </div>
+            <section class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                    <h2 class="font-black">Specimens</h2>
                     <div class="mt-4 divide-y divide-slate-100 text-sm dark:divide-slate-800">
                         <article v-for="specimen in labRequest.specimens" :key="specimen.id" class="py-3">
                             <p class="font-bold">{{ specimen.label_number }} - {{ specimen.status }}</p>
@@ -107,16 +139,29 @@ function acknowledge(result) {
                             </div>
                         </article>
                     </div>
-                </form>
+            </section>
 
-                <form class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900" @submit.prevent="amendment.post(`/admin/laboratory/requests/${labRequest.id}/amendments`, { preserveScroll: true, onSuccess: () => amendment.reset() })">
-                    <h2 class="font-black">Amend Approved Report</h2>
-                    <input v-model="amendment.reason" class="mt-3 w-full rounded-md border-slate-300 text-sm" placeholder="Reason">
-                    <textarea v-model="amendment.content" class="mt-3 w-full rounded-md border-slate-300 text-sm" rows="3" placeholder="Amendment"></textarea>
-                    <PrimaryButton class="mt-3" :disabled="amendment.processing">Add amendment</PrimaryButton>
-                    <p v-for="item in labRequest.amendments" :key="item.id" class="mt-3 text-sm"><strong>{{ item.reason }}</strong> - {{ item.content }}</p>
-                </form>
-            </aside>
+            <section class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                <h2 class="font-black">Amendments</h2>
+                <p v-for="item in labRequest.amendments" :key="item.id" class="mt-3 break-words text-sm"><strong>{{ item.reason }}</strong> - {{ item.content }}</p>
+            </section>
         </div>
+
+        <FormModal :show="activeModal === 'specimen'" title="Collect Specimen" :form="collectForm" submit-label="Collect specimen" @close="activeModal = null" @submit="saveSpecimen">
+            <select v-model="collectForm.lab_specimen_type_id" class="w-full rounded-md border-slate-300"><option v-for="type in specimenTypes" :key="type.id" :value="type.id">{{ type.name }}</option></select>
+        </FormModal>
+
+        <FormModal :show="activeModal === 'amendment'" title="Amend Approved Report" :form="amendment" submit-label="Add amendment" @close="activeModal = null" @submit="saveAmendment">
+            <div class="grid gap-3">
+                <input v-model="amendment.reason" class="w-full rounded-md border-slate-300 text-sm" placeholder="Reason">
+                <textarea v-model="amendment.content" class="w-full rounded-md border-slate-300 text-sm" rows="4" placeholder="Amendment"></textarea>
+            </div>
+        </FormModal>
+
+        <ConfirmDialog :show="activeModal === 'specimen-action'" :title="`${actionForm.action} specimen`" confirm-label="Save action" :form="actionForm" :require-reason="actionForm.action === 'reject'" @close="activeModal = null" @confirm="saveSpecimenAction" />
+        <ConfirmDialog :show="activeModal === 'result-action'" :title="`${actionForm.action} result`" confirm-label="Save action" :form="actionForm" @close="activeModal = null" @confirm="saveResultAction" />
+        <FormModal :show="activeModal === 'acknowledge'" title="Critical Acknowledgement" :form="actionForm" submit-label="Record acknowledgement" @close="activeModal = null" @submit="saveAcknowledgement">
+            <textarea v-model="actionForm.notes" class="w-full rounded-md border-slate-300 text-sm" rows="4" placeholder="Critical acknowledgement and escalation notes"></textarea>
+        </FormModal>
     </AppLayout>
 </template>

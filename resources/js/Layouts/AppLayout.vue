@@ -82,16 +82,17 @@ watch(collapsed, (value) => {
 </script>
 
 <template>
-    <div class="admin-theme min-h-screen antialiased">
+    <div class="admin-theme min-h-dvh overflow-x-hidden antialiased">
         <div v-if="mobileOpen" class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden" @click="mobileOpen = false"></div>
 
         <aside
-            class="fixed inset-y-0 left-0 z-50 flex flex-col border-r p-3 transition-all duration-200 lg:translate-x-0"
+            class="fixed inset-y-0 left-0 z-50 flex max-h-dvh min-h-0 flex-col overflow-hidden border-r p-3 transition-all duration-200 lg:translate-x-0"
             :class="[sidebarCompact ? 'w-[5.25rem]' : 'w-72', mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0']"
             style="background: var(--admin-sidebar); border-color: var(--admin-sidebar-border); color: var(--admin-text);"
         >
+            <div class="shrink-0">
             <div class="flex items-center justify-between gap-2 px-2 py-2">
-                <Link href="/dashboard" class="flex min-w-0 items-center gap-3 rounded-md">
+                <Link href="/dashboard" class="flex min-w-0 items-center gap-3 rounded-md" @click="mobileOpen = false">
                     <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl font-black" style="background: var(--public-accent); color: var(--public-accent-foreground);">H</span>
                     <span v-if="!sidebarCompact" class="min-w-0">
                         <span class="block truncate text-lg font-black">HMS</span>
@@ -107,8 +108,9 @@ watch(collapsed, (value) => {
                 <component :is="collapsed ? PanelLeftOpen : PanelLeftClose" class="h-4 w-4" />
                 <span v-if="!sidebarCompact">Collapse</span>
             </button>
+            </div>
 
-            <nav class="mt-5 flex-1 space-y-1 text-sm font-bold" aria-label="Admin navigation">
+            <nav class="mt-5 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1 text-sm font-bold" aria-label="Admin navigation">
                 <Link
                     v-for="item in navItems.filter((entry) => entry.show)"
                     :key="item.href"
@@ -123,7 +125,7 @@ watch(collapsed, (value) => {
                 </Link>
             </nav>
 
-            <div class="border-t pt-4" style="border-color: var(--admin-border);">
+            <div class="shrink-0 border-t pt-4" style="border-color: var(--admin-border);">
                 <div class="flex items-center gap-2" :class="sidebarCompact ? 'justify-center' : 'justify-between'">
                     <ThemeSwitcher :defaults="themeDefaults" />
                     <button v-if="!sidebarCompact" class="rounded-md border px-3 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="logout">Logout</button>
@@ -131,7 +133,7 @@ watch(collapsed, (value) => {
             </div>
         </aside>
 
-        <div class="transition-all duration-200" :class="collapsed ? 'lg:pl-[5.25rem]' : 'lg:pl-72'">
+        <div class="min-w-0 transition-all duration-200" :class="collapsed ? 'lg:pl-[5.25rem]' : 'lg:pl-72'">
             <header class="sticky top-0 z-30 border-b backdrop-blur-xl" style="background: color-mix(in srgb, var(--public-header) 86%, transparent); border-color: var(--admin-border);">
                 <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
                     <div class="flex min-w-0 items-center gap-3">
@@ -162,7 +164,7 @@ watch(collapsed, (value) => {
                 </div>
             </div>
 
-            <main class="mx-auto max-w-7xl px-4 py-6">
+            <main class="mx-auto min-w-0 max-w-7xl overflow-x-hidden px-4 py-6">
                 <slot />
             </main>
         </div>

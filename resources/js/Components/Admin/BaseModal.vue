@@ -82,32 +82,32 @@ onBeforeUnmount(() => {
 
 <template>
     <Teleport to="body">
-        <div v-if="show" class="fixed inset-0 z-[80] overflow-hidden" role="presentation">
-            <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" @click="closeOnBackdrop && requestClose()"></div>
+        <div v-if="show" class="admin-theme admin-modal-root fixed inset-0 z-[80] overflow-hidden" role="presentation">
+            <div class="absolute inset-0 backdrop-blur-sm" style="background: color-mix(in srgb, #020817 66%, transparent);" @click="closeOnBackdrop && requestClose()"></div>
             <div class="relative flex min-h-dvh items-end justify-center p-0 sm:items-center sm:p-4">
                 <section
                     ref="panel"
-                    class="relative flex max-h-dvh w-full flex-col rounded-t-lg border bg-white shadow-2xl outline-none dark:bg-slate-950 sm:max-h-[88vh] sm:rounded-lg"
+                    class="admin-modal-panel relative flex max-h-dvh w-full flex-col rounded-t-lg border shadow-2xl outline-none sm:max-h-[88vh] sm:rounded-lg"
                     :class="sizeClass"
-                    style="border-color: var(--admin-border); color: var(--admin-text);"
+                    style="background: var(--admin-surface); border-color: var(--admin-border); color: var(--admin-text);"
                     role="dialog"
                     aria-modal="true"
                     tabindex="-1"
                     @click.stop
                 >
-                    <header class="flex shrink-0 items-start justify-between gap-4 border-b px-4 py-4 sm:px-5" style="border-color: var(--admin-border);">
+                    <header class="flex shrink-0 items-start justify-between gap-4 border-b px-4 py-4 sm:px-5" style="background: var(--admin-surface); border-color: var(--admin-border);">
                         <div class="min-w-0">
                             <h2 class="text-lg font-black">{{ title }}</h2>
                             <p v-if="description" class="mt-1 text-sm" style="color: var(--admin-text-muted);">{{ description }}</p>
                         </div>
-                        <button class="grid h-10 w-10 shrink-0 place-items-center rounded-md border" style="border-color: var(--admin-border);" type="button" aria-label="Close dialog" :disabled="busy" @click="requestClose">
+                        <button class="grid h-10 w-10 shrink-0 place-items-center rounded-md border disabled:opacity-60" style="background: var(--public-input); border-color: var(--admin-border); color: var(--admin-text);" type="button" aria-label="Close dialog" :disabled="busy" @click="requestClose">
                             <X class="h-4 w-4" />
                         </button>
                     </header>
-                    <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+                    <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5" style="background: var(--admin-surface);">
                         <slot />
                     </div>
-                    <footer v-if="$slots.footer" class="shrink-0 border-t px-4 py-4 sm:px-5" style="border-color: var(--admin-border);">
+                    <footer v-if="$slots.footer" class="shrink-0 border-t px-4 py-4 sm:px-5" style="background: var(--admin-surface); border-color: var(--admin-border);">
                         <slot name="footer" />
                     </footer>
                 </section>

@@ -1,7 +1,8 @@
 <script setup>
+import ConfirmDialog from '@/Components/Admin/ConfirmDialog.vue';
 import MediaPicker from '@/Components/Admin/PublicWebsite/MediaPicker.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { router, useForm } from '@inertiajs/vue3';
+import { router, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 const props = defineProps({
@@ -13,12 +14,15 @@ const props = defineProps({
     can_view_json: { type: Boolean, default: false },
 });
 
+const page = usePage();
 const pageModel = ref(JSON.parse(JSON.stringify(props.page)));
 const activePanel = ref('page');
 const activeSectionKey = ref(pageModel.value.sections[0]?.key || 'hero');
 const activeItemId = ref(pageModel.value.sections.flatMap((section) => section.items || [])[0]?.id || null);
 const showDiagnostics = ref(false);
 const uploadForm = useForm({ title: '', alt_text: '', caption: '', credit: '', image: null });
+const confirmForm = useForm({});
+const pendingConfirm = ref(null);
 const accentOptions = [['calm', 'Calm'], ['healing', 'Healing'], ['alert', 'Alert'], ['blood', 'Blood'], ['seagrass', 'Seagrass']];
 const itemLabels = { service: 'Services', department: 'Departments', clinician: 'Featured clinicians', testimonial: 'Testimonials', article: 'News/articles' };
 const itemSections = { service: 'services', department: 'departments', clinician: 'doctors', testimonial: 'testimonials', article: 'news' };
@@ -69,8 +73,25 @@ function statusClass(record) {
     return 'bg-green-100 text-green-800';
 }
 
-function uploadMedia() {
-    uploadForm.post('/admin/public-website/media', { forceFormData: true, preserveScroll: true, onSuccess: () => uploadForm.reset() });
+function uploadMedia(afterUpload = null) {
+    uploadForm.post('/admin/public-website/media', {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            afterUpload?.(page.props.flash?.uploaded_media);
+            uploadForm.reset();
+        },
+    });
+}
+
+function deleteMedia(asset) {
+    pendingConfirm.value = {
+        title: 'Delete Media',
+        message: `Delete unavailable media '${asset.title}' from the media library?`,
+        label: 'Delete',
+        method: 'delete',
+        url: `/admin/public-website/media/${asset.id}`,
+    };
 }
 
 function savePage() {
@@ -134,7 +155,13 @@ function publishPage() {
 }
 
 function unpublishPage() {
-    if (window.confirm('Unpublish this page from the public website?')) router.post(`/admin/public-website/pages/${pageModel.value.id}/unpublish`, {}, { preserveScroll: true });
+    pendingConfirm.value = {
+        title: 'Unpublish Page',
+        message: 'Unpublish this page from the public website?',
+        label: 'Unpublish',
+        method: 'post',
+        url: `/admin/public-website/pages/${pageModel.value.id}/unpublish`,
+    };
 }
 
 function publishItem(item) {
@@ -142,7 +169,13 @@ function publishItem(item) {
 }
 
 function unpublishItem(item) {
-    if (window.confirm('Unpublish this item from the public website?')) router.post(`/admin/public-website/items/${item.id}/unpublish`, {}, { preserveScroll: true });
+    pendingConfirm.value = {
+        title: 'Unpublish Item',
+        message: `Unpublish '${item.title}' from the public website?`,
+        label: 'Unpublish',
+        method: 'post',
+        url: `/admin/public-website/items/${item.id}/unpublish`,
+    };
 }
 
 function removeItemFromDraft(item) {
@@ -152,7 +185,34 @@ function removeItemFromDraft(item) {
 }
 
 function restoreRevision(revision) {
-    if (window.confirm(`Restore revision ${revision.version} into draft?`)) router.post(`/admin/public-website/revisions/${revision.id}/restore`, {}, { preserveScroll: true });
+    pendingConfirm.value = {
+        title: 'Restore Revision',
+        message: `Restore revision ${revision.version} into draft?`,
+        label: 'Restore',
+        method: 'post',
+        url: `/admin/public-website/revisions/${revision.id}/restore`,
+    };
+}
+
+function closeConfirm() {
+    pendingConfirm.value = null;
+}
+
+function submitConfirm() {
+    const action = pendingConfirm.value;
+    if (!action) return;
+
+    const options = {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: closeConfirm,
+    };
+
+    if (action.method === 'delete') {
+        confirmForm.delete(action.url, options);
+    } else {
+        confirmForm.post(action.url, options);
+    }
 }
 
 function addArrayItem(array, value) {
@@ -293,7 +353,7 @@ function toggleAccent(value) {
                         <label class="block text-sm font-semibold">Canonical URL
                             <input v-model="seo.canonical_url" class="mt-1 w-full rounded-md border-slate-300" type="text">
                         </label>
-                        <MediaPicker v-model="seo.image" v-model:alt-value="seo.image_alt" :media="media" label="Social sharing image" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" />
+                        <MediaPicker v-model="seo.image" v-model:alt-value="seo.image_alt" :media="media" label="Social sharing image" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" @delete="deleteMedia" />
                         <button class="rounded-md bg-slate-950 px-4 py-2 text-sm font-bold text-white" type="submit">Save SEO draft</button>
                     </form>
 
@@ -367,7 +427,7 @@ function toggleAccent(value) {
                                 <input v-model="slide.secondary_label" class="rounded-md border-slate-300 text-sm" type="text" placeholder="Secondary button label">
                                 <input v-model="slide.secondary_url" class="rounded-md border-slate-300 text-sm" type="text" placeholder="Secondary button URL">
                             </div>
-                            <MediaPicker v-model="slide.image" v-model:alt-value="slide.alt" :media="media" label="Slide image" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" />
+                            <MediaPicker v-model="slide.image" v-model:alt-value="slide.alt" :media="media" label="Slide image" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" @delete="deleteMedia" />
                             <label class="flex items-center gap-2 text-sm font-semibold"><input v-model="slide.active" type="checkbox"> Slide enabled</label>
                         </article>
                     </template>
@@ -400,7 +460,7 @@ function toggleAccent(value) {
                             <input v-model="sectionContent(activeSection).cta_label" class="rounded-md border-slate-300 text-sm" type="text" placeholder="CTA label">
                             <input v-model="sectionContent(activeSection).cta_url" class="rounded-md border-slate-300 text-sm" type="text" placeholder="CTA URL">
                         </div>
-                        <MediaPicker v-model="sectionContent(activeSection).image" v-model:alt-value="sectionContent(activeSection).image_alt" :media="media" label="About image" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" />
+                        <MediaPicker v-model="sectionContent(activeSection).image" v-model:alt-value="sectionContent(activeSection).image_alt" :media="media" label="About image" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" @delete="deleteMedia" />
                     </template>
 
                     <template v-else-if="activeSection.key === 'why_choose_us'">
@@ -495,7 +555,7 @@ function toggleAccent(value) {
                                         <input v-model="item.draft_content.specialty" class="rounded-md border-slate-300 text-sm" type="text" placeholder="Specialty">
                                         <textarea v-model="item.draft_content.bio" class="rounded-md border-slate-300 text-sm md:col-span-2" rows="4" placeholder="Biography"></textarea>
                                     </div>
-                                    <MediaPicker v-model="item.draft_content.photo" v-model:alt-value="item.draft_content.alt" :media="media" label="Clinician photo" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" />
+                                    <MediaPicker v-model="item.draft_content.photo" v-model:alt-value="item.draft_content.alt" :media="media" label="Clinician photo" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" @delete="deleteMedia" />
                                 </div>
 
                                 <div v-if="type === 'testimonial'" class="grid gap-3 md:grid-cols-2">
@@ -512,7 +572,7 @@ function toggleAccent(value) {
                                         <textarea v-model="item.draft_content.excerpt" class="rounded-md border-slate-300 text-sm md:col-span-2" rows="2" placeholder="Excerpt"></textarea>
                                         <textarea v-model="item.draft_content.body" class="rounded-md border-slate-300 text-sm md:col-span-2" rows="6" placeholder="Article body"></textarea>
                                     </div>
-                                    <MediaPicker v-model="item.draft_content.image" v-model:alt-value="item.draft_content.alt" :media="media" label="Article image" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" />
+                                    <MediaPicker v-model="item.draft_content.image" v-model:alt-value="item.draft_content.alt" :media="media" label="Article image" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" @delete="deleteMedia" />
                                 </div>
 
                                 <button class="rounded-md bg-slate-950 px-4 py-2 text-sm font-bold text-white" type="submit">Save item draft</button>
@@ -541,5 +601,15 @@ function toggleAccent(value) {
                 <pre class="mt-4 max-h-96 overflow-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify(pageModel, null, 2) }}</pre>
             </section>
         </div>
+
+        <ConfirmDialog
+            :show="Boolean(pendingConfirm)"
+            :title="pendingConfirm?.title || 'Confirm Action'"
+            :message="pendingConfirm?.message || ''"
+            :form="confirmForm"
+            :confirm-label="pendingConfirm?.label || 'Confirm'"
+            @close="closeConfirm"
+            @confirm="submitConfirm"
+        />
     </AppLayout>
 </template>

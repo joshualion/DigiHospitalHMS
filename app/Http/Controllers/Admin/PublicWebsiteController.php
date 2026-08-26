@@ -308,7 +308,20 @@ class PublicWebsiteController extends FoundationController
 
         $audit->record('website.media_uploaded', $media, null, $media->except(['path']), actor: $request->user());
 
-        return back()->with('success', 'Media uploaded.');
+        return back()
+            ->with('success', 'Media uploaded.')
+            ->with('uploaded_media', [
+                'id' => $media->id,
+                'title' => $media->title,
+                'alt_text' => $media->alt_text,
+                'caption' => $media->caption,
+                'credit' => $media->credit,
+                'path' => $media->path,
+                'url' => $media->url,
+                'mime_type' => $media->mime_type,
+                'width' => $media->width,
+                'height' => $media->height,
+            ]);
     }
 
     public function deleteMedia(PublicSiteMedia $media, AuditService $audit, PublicSiteMediaUsage $mediaUsage): RedirectResponse

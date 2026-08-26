@@ -419,11 +419,15 @@ class Phase1BPublicSiteTest extends TestCase
             'title' => 'Care team',
             'alt_text' => 'Care team image',
             'image' => UploadedFile::fake()->image('team.jpg', 900, 600),
-        ])->assertRedirect()->assertSessionHasNoErrors();
+        ])->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('uploaded_media.url')
+            ->assertSessionHas('uploaded_media.alt_text', 'Care team image');
 
         $media = PublicSiteMedia::firstOrFail();
         Storage::disk('public')->assertExists($media->path);
         $this->assertStringEndsWith('.jpg', $media->path);
+        $this->assertStringStartsWith('/storage/public-site/', $media->url);
 
         $this->actingAs($manager)->post('/admin/public-website/media', [
             'title' => 'Unsafe',

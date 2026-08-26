@@ -52,6 +52,10 @@ class PublicSiteMedia extends Model
 
     public function getUrlAttribute(): string
     {
+        if ($this->disk === 'public') {
+            return Storage::url($this->path);
+        }
+
         return Storage::disk($this->disk)->url($this->path);
     }
 }

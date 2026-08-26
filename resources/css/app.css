@@ -271,6 +271,42 @@
   border-color: var(--public-accent) !important;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--public-accent) 24%, transparent) !important;
 }
+.admin-modal-root {
+  background: transparent;
+  color: var(--admin-text);
+}
+.admin-modal-panel {
+  box-shadow: var(--admin-shadow);
+}
+.admin-modal-root input,
+.admin-modal-root select,
+.admin-modal-root textarea {
+  background: var(--public-input) !important;
+  border-color: var(--admin-border) !important;
+  color: var(--admin-text) !important;
+}
+.admin-modal-root input::placeholder,
+.admin-modal-root textarea::placeholder {
+  color: var(--admin-text-muted) !important;
+  opacity: 1;
+}
+.admin-modal-root input:focus,
+.admin-modal-root select:focus,
+.admin-modal-root textarea:focus,
+.admin-modal-root button:focus-visible,
+.admin-modal-root a:focus-visible {
+  border-color: var(--public-accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--public-accent) 24%, transparent) !important;
+  outline: none !important;
+}
+.admin-modal-root button,
+.admin-modal-root a {
+  color: inherit;
+}
+.admin-modal-root button[style*="--public-accent"],
+.admin-modal-root button[style*="background: var(--public-accent)"] {
+  color: var(--public-accent-foreground) !important;
+}
 .admin-shell-card {
   background: color-mix(in srgb, var(--admin-surface) 94%, transparent);
   border: 1px solid var(--admin-border);
@@ -293,6 +329,37 @@
 }
 .admin-nav-link:hover {
   transform: translateX(2px);
+}
+.admin-sidebar-scroll {
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+.admin-sidebar-scroll:hover,
+.admin-sidebar-scroll:focus,
+.admin-sidebar-scroll:focus-within {
+  scrollbar-color: color-mix(in srgb, var(--public-accent) 42%, var(--admin-border)) transparent;
+}
+.admin-sidebar-scroll::-webkit-scrollbar {
+  height: 0.45rem;
+  width: 0.45rem;
+}
+.admin-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 999px;
+}
+.admin-sidebar-scroll:hover::-webkit-scrollbar-thumb,
+.admin-sidebar-scroll:focus::-webkit-scrollbar-thumb,
+.admin-sidebar-scroll:focus-within::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--public-accent) 42%, var(--admin-border));
+}
+.admin-sidebar-scroll:hover::-webkit-scrollbar-thumb:hover,
+.admin-sidebar-scroll:focus::-webkit-scrollbar-thumb:hover,
+.admin-sidebar-scroll:focus-within::-webkit-scrollbar-thumb:hover {
+  background-color: var(--public-accent);
 }
 
 .public-brand {

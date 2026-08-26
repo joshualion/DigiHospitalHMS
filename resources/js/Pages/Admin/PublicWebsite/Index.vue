@@ -1,6 +1,8 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Link, router, useForm } from '@inertiajs/vue3';
+import { Link, useForm } from '@inertiajs/vue3';
+import { onBeforeUnmount, ref } from 'vue';
+import ConfirmDialog from '@/Components/Admin/ConfirmDialog.vue';
 
 defineProps({
     pages: { type: Array, required: true },
@@ -16,20 +18,59 @@ const mediaForm = useForm({
     credit: '',
     image: null,
 });
+const pendingPreview = ref('');
+const pendingFileName = ref('');
+const fileInput = ref(null);
+const pendingDelete = ref(null);
+const deleteForm = useForm({});
+
+function revokePendingPreview() {
+    if (pendingPreview.value) URL.revokeObjectURL(pendingPreview.value);
+    pendingPreview.value = '';
+    pendingFileName.value = '';
+}
+
+function clearPendingUpload() {
+    revokePendingPreview();
+    mediaForm.image = null;
+    if (fileInput.value) fileInput.value.value = '';
+}
+
+function previewUpload(event) {
+    const file = event.target.files?.[0] || null;
+    revokePendingPreview();
+    mediaForm.image = file;
+    if (!file) return;
+    pendingFileName.value = file.name;
+    pendingPreview.value = URL.createObjectURL(file);
+}
 
 function uploadMedia() {
     mediaForm.post('/admin/public-website/media', {
         forceFormData: true,
         preserveScroll: true,
-        onSuccess: () => mediaForm.reset(),
+        onSuccess: () => {
+            mediaForm.reset();
+            clearPendingUpload();
+        },
     });
 }
 
 function deleteMedia(asset) {
-    if (window.confirm(`Delete "${asset.title}" from the media library?`)) {
-        router.delete(`/admin/public-website/media/${asset.id}`, { preserveScroll: true });
-    }
+    pendingDelete.value = asset;
 }
+
+function confirmDeleteMedia() {
+    deleteForm.delete(`/admin/public-website/media/${pendingDelete.value.id}`, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+            pendingDelete.value = null;
+        },
+    });
+}
+
+onBeforeUnmount(revokePendingPreview);
 </script>
 
 <template>
@@ -94,8 +135,15 @@ function deleteMedia(asset) {
                             <input v-model="mediaForm.credit" class="mt-1 w-full rounded-md border-slate-300" type="text">
                         </label>
                         <label class="text-sm font-semibold">Image
-                            <input class="mt-1 block w-full text-sm" type="file" accept="image/jpeg,image/png,image/webp" @input="mediaForm.image = $event.target.files[0]">
+                            <input ref="fileInput" class="mt-1 block w-full text-sm" type="file" accept="image/jpeg,image/png,image/webp" @change="previewUpload">
                         </label>
+                        <div v-if="pendingPreview" class="rounded-md border border-slate-200 bg-slate-50 p-3">
+                            <img :src="pendingPreview" :alt="pendingFileName" class="h-56 w-full rounded-md object-cover">
+                            <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                                <p class="min-w-0 truncate text-sm text-slate-600">{{ pendingFileName }}</p>
+                                <button class="rounded-md border border-rose-300 px-3 py-2 text-xs font-bold text-rose-700" type="button" @click="clearPendingUpload">Remove selected file</button>
+                            </div>
+                        </div>
                         <button class="rounded-md bg-teal-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-60" type="submit" :disabled="mediaForm.processing">Upload</button>
                     </div>
                     <p v-if="Object.keys(mediaForm.errors).length" class="mt-3 text-sm text-rose-700">Check the upload fields and try again.</p>
@@ -116,5 +164,15 @@ function deleteMedia(asset) {
                 </div>
             </section>
         </div>
+
+        <ConfirmDialog
+            :show="Boolean(pendingDelete)"
+            title="Delete Media"
+            :message="pendingDelete ? `Delete '${pendingDelete.title}' from the media library?` : ''"
+            :form="deleteForm"
+            confirm-label="Delete"
+            @close="pendingDelete = null"
+            @confirm="confirmDeleteMedia"
+        />
     </AppLayout>
 </template>

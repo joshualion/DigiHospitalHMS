@@ -1,5 +1,6 @@
 <script setup>
 import ThemeSwitcher from '@/Components/Public/ThemeSwitcher.vue';
+import ToastHost from '@/Components/Admin/ToastHost.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { Activity, Bed, Building2, ClipboardList, Droplets, FileClock, FlaskConical, Gauge, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, Pill, ScanLine, Settings, ShieldCheck, ShoppingCart, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -83,6 +84,7 @@ watch(collapsed, (value) => {
 
 <template>
     <div class="admin-theme min-h-dvh overflow-x-hidden antialiased">
+        <ToastHost />
         <div v-if="mobileOpen" class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden" @click="mobileOpen = false"></div>
 
         <aside
@@ -110,7 +112,7 @@ watch(collapsed, (value) => {
             </button>
             </div>
 
-            <nav class="mt-5 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1 text-sm font-bold" aria-label="Admin navigation">
+            <nav class="admin-sidebar-scroll mt-5 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1 text-sm font-bold" aria-label="Admin navigation">
                 <Link
                     v-for="item in navItems.filter((entry) => entry.show)"
                     :key="item.href"
@@ -157,12 +159,6 @@ watch(collapsed, (value) => {
                     </div>
                 </div>
             </header>
-
-            <div v-if="$page.props.flash.status || $page.props.flash.success" class="mx-auto max-w-7xl px-4 pt-4">
-                <div class="rounded-md border px-4 py-3 text-sm font-semibold" style="background: var(--public-accent-soft); border-color: var(--public-accent); color: var(--admin-text);">
-                    {{ $page.props.flash.success || $page.props.flash.status }}
-                </div>
-            </div>
 
             <main class="mx-auto min-w-0 max-w-7xl overflow-x-hidden px-4 py-6">
                 <slot />

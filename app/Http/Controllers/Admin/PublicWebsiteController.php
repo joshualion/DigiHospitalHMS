@@ -415,13 +415,15 @@ class PublicWebsiteController extends FoundationController
     {
         return array_merge($page->toArray(), [
             'title' => $page->draft_title ?? $page->title,
-            'draft_seo' => $page->draft_seo ?? $page->seo ?? [],
-            'seo' => $page->draft_seo ?? $page->seo ?? [],
+            'draft_content' => $this->editorPageContent($page->draft_content ?? []),
+            'draft_seo' => $this->editorSeo($page->draft_seo ?? $page->seo ?? []),
+            'seo' => $this->editorSeo($page->draft_seo ?? $page->seo ?? []),
             'is_modified' => $page->draftSnapshot() !== $page->publishedSnapshot(),
             'sections' => $page->sections->map(fn (PublicSiteSection $section) => array_merge($section->toArray(), [
                 'label' => $section->draft_label ?? $section->label,
                 'sort_order' => $section->draft_sort_order ?? $section->sort_order,
                 'is_enabled' => $section->draft_is_enabled ?? $section->is_enabled,
+                'draft_content' => $this->editorSectionContent($section),
                 'is_modified' => $section->draftSnapshot() !== $section->publishedSnapshot(),
                 'items' => $section->items->map(fn (PublicSiteItem $item) => array_merge($item->toArray(), [
                     'public_site_section_id' => $item->draft_public_site_section_id ?? $item->public_site_section_id,
@@ -429,6 +431,7 @@ class PublicWebsiteController extends FoundationController
                     'slug' => $item->draft_slug ?? $item->slug,
                     'title' => $item->draft_title ?? $item->title,
                     'summary' => $item->draft_summary ?? $item->summary,
+                    'draft_content' => $this->editorItemContent($item->draft_type ?? $item->type, $item->draft_content ?? []),
                     'is_enabled' => $item->draft_is_enabled ?? $item->is_enabled,
                     'is_featured' => $item->draft_is_featured ?? $item->is_featured,
                     'sort_order' => $item->draft_sort_order ?? $item->sort_order,
@@ -436,6 +439,71 @@ class PublicWebsiteController extends FoundationController
                 ]))->values(),
             ]))->values(),
         ]);
+    }
+
+    private function editorPageContent(array $content): array
+    {
+        return array_replace_recursive([
+            'utility' => [
+                'visible' => false,
+                'phone' => '',
+                'emergency_phone' => '',
+                'email' => '',
+                'hours' => '',
+                'location' => '',
+            ],
+            'navigation' => [
+                'appointment_label' => 'Appointment information',
+                'appointment_url' => '/appointment',
+                'items' => [],
+            ],
+            'theme' => [
+                'appearance' => 'system',
+                'accent' => 'calm',
+                'allowed_accents' => ['calm', 'healing', 'alert', 'blood', 'seagrass'],
+                'show_switcher' => true,
+            ],
+            'footer' => [
+                'summary' => '',
+                'badges' => [],
+                'copyright' => '',
+            ],
+        ], $content);
+    }
+
+    private function editorSeo(array $seo): array
+    {
+        return array_replace([
+            'title' => '',
+            'description' => '',
+            'canonical_url' => '',
+            'image' => '',
+            'image_alt' => '',
+        ], $this->normalizeSeo($seo));
+    }
+
+    private function editorSectionContent(PublicSiteSection $section): array
+    {
+        $content = $section->draft_content ?? [];
+
+        return match ($section->key) {
+            'hero' => array_replace(['rotation_ms' => 6500, 'slides' => []], $content),
+            'info_banner', 'why_choose_us' => array_replace(['items' => []], $content),
+            default => $content,
+        };
+    }
+
+    private function editorItemContent(?string $type, array $content): array
+    {
+        $defaults = [
+            'service' => ['icon' => '', 'description' => '', 'cta_label' => '', 'cta_url' => ''],
+            'department' => ['icon' => '', 'public_title' => '', 'summary' => ''],
+            'clinician' => ['display_name' => '', 'professional_title' => '', 'specialty' => '', 'bio' => '', 'photo' => '', 'alt' => ''],
+            'testimonial' => ['display_name' => '', 'context' => '', 'text' => '', 'rating' => null, 'approved' => false],
+            'article' => ['excerpt' => '', 'body' => '', 'image' => '', 'alt' => '', 'author' => '', 'published_on' => ''],
+        ];
+
+        return array_replace($defaults[$type] ?? [], $content);
     }
 
     private function launchWarnings(PublicSitePage $page): array

@@ -276,7 +276,9 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('pharmacy/dispenses/{dispense}/reverse', [PrescriptionController::class, 'reverseDispense'])->name('admin.prescriptions.dispenses.reverse');
 
         Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
-        Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])->name('admin.public-website.edit');
+        Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])
+            ->missing(fn () => redirect()->route('admin.public-website.index')->with('warning', 'That public website page no longer exists. Choose an available page to manage.'))
+            ->name('admin.public-website.edit');
         Route::patch('public-website/pages/{page}', [PublicWebsiteController::class, 'updatePage'])->name('admin.public-website.pages.update');
         Route::patch('public-website/pages/{page}/theme', [PublicWebsiteController::class, 'updateTheme'])->name('admin.public-website.pages.theme');
         Route::post('public-website/pages/{page}/publish', [PublicWebsiteController::class, 'publishPage'])->name('admin.public-website.pages.publish');

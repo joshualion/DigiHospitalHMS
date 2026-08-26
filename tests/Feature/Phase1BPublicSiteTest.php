@@ -499,6 +499,87 @@ class Phase1BPublicSiteTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('can_view_json', true));
     }
 
+    public function test_admin_public_website_editor_handles_page_with_no_sections_items_or_media(): void
+    {
+        $admin = $this->userWithPermissions(['website.view', 'website.edit']);
+        $page = PublicSitePage::create([
+            'hospital_id' => $this->hospital->id,
+            'slug' => 'empty-editor-page',
+            'title' => 'Empty Editor Page',
+            'template' => 'standard',
+            'status' => 'draft',
+            'draft_content' => null,
+            'published_content' => null,
+            'seo' => null,
+            'draft_seo' => null,
+        ]);
+
+        $this->actingAs($admin)->get("/admin/public-website/pages/{$page->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/PublicWebsite/Edit')
+                ->has('page.sections', 0)
+                ->where('page.draft_content.navigation.items', [])
+                ->where('page.draft_content.footer.badges', [])
+                ->where('page.draft_content.theme.accent', 'calm')
+                ->where('page.seo.title', '')
+                ->where('media', []));
+    }
+
+    public function test_admin_public_website_editor_handles_partially_configured_content(): void
+    {
+        $admin = $this->userWithPermissions(['website.view', 'website.edit']);
+        $page = PublicSitePage::create([
+            'hospital_id' => $this->hospital->id,
+            'slug' => 'partial-editor-page',
+            'title' => 'Partial Editor Page',
+            'template' => 'home',
+            'status' => 'draft',
+            'draft_content' => ['navigation' => []],
+            'seo' => ['canonical' => '/partial-editor-page'],
+        ]);
+        $section = $page->sections()->create([
+            'key' => 'hero',
+            'type' => 'hero_slider',
+            'label' => 'Hero slider',
+            'draft_content' => [],
+            'published_content' => null,
+        ]);
+        PublicSiteItem::create([
+            'hospital_id' => $this->hospital->id,
+            'public_site_section_id' => $section->id,
+            'draft_public_site_section_id' => $section->id,
+            'type' => 'service',
+            'draft_type' => 'service',
+            'slug' => 'partial-service',
+            'draft_slug' => 'partial-service',
+            'title' => 'Partial Service',
+            'draft_title' => 'Partial Service',
+            'status' => 'draft',
+            'draft_content' => null,
+        ]);
+
+        $this->actingAs($admin)->get("/admin/public-website/pages/{$page->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/PublicWebsite/Edit')
+                ->where('page.draft_content.navigation.items', [])
+                ->where('page.draft_content.footer.summary', '')
+                ->where('page.seo.canonical_url', '/partial-editor-page')
+                ->where('page.sections.0.draft_content.slides', [])
+                ->where('page.sections.0.items.0.draft_content.description', '')
+                ->where('page.sections.0.items.0.public_site_section_id', $section->id));
+    }
+
+    public function test_stale_public_website_page_id_redirects_to_admin_index(): void
+    {
+        $admin = $this->userWithPermissions(['website.view', 'website.edit']);
+
+        $this->actingAs($admin)->get('/admin/public-website/pages/999999')
+            ->assertRedirect(route('admin.public-website.index'))
+            ->assertSessionHas('warning', 'That public website page no longer exists. Choose an available page to manage.');
+    }
+
     public function test_legacy_cms_admin_routes_are_archived(): void
     {
         $admin = $this->userWithPermissions(['website.view']);

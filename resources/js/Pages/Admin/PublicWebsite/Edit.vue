@@ -7,6 +7,7 @@ import { computed, ref } from 'vue';
 
 const props = defineProps({
     page: { type: Object, required: true },
+    launch_warnings: { type: Array, default: () => [] },
     preview_url: { type: String, required: true },
     media: { type: Array, required: true },
     item_types: { type: Array, required: true },
@@ -16,6 +17,7 @@ const props = defineProps({
 
 const page = usePage();
 const pageModel = ref(JSON.parse(JSON.stringify(props.page)));
+normalizePageModel();
 const activePanel = ref('page');
 const activeSectionKey = ref(pageModel.value.sections[0]?.key || 'hero');
 const activeItemId = ref(pageModel.value.sections.flatMap((section) => section.items || [])[0]?.id || null);
@@ -27,12 +29,19 @@ const accentOptions = [['calm', 'Calm'], ['healing', 'Healing'], ['alert', 'Aler
 const itemLabels = { service: 'Services', department: 'Departments', clinician: 'Featured clinicians', testimonial: 'Testimonials', article: 'News/articles' };
 const itemSections = { service: 'services', department: 'departments', clinician: 'doctors', testimonial: 'testimonials', article: 'news' };
 ensurePageContent();
+ensureSections();
 
 const sectionTabs = computed(() => [...pageModel.value.sections].sort((a, b) => Number(a.sort_order) - Number(b.sort_order)));
 const activeSection = computed(() => pageModel.value.sections.find((section) => section.key === activeSectionKey.value));
 const pageContent = computed(() => pageModel.value.draft_content || (pageModel.value.draft_content = {}));
 const seo = computed(() => pageModel.value.seo || (pageModel.value.seo = {}));
 const theme = computed(() => pageContent.value.theme || (pageContent.value.theme = { appearance: 'system', accent: 'calm', allowed_accents: ['calm', 'healing', 'alert', 'blood', 'seagrass'], show_switcher: true }));
+
+function normalizePageModel() {
+    pageModel.value.sections = Array.isArray(pageModel.value.sections) ? pageModel.value.sections : [];
+    pageModel.value.revisions = Array.isArray(pageModel.value.revisions) ? pageModel.value.revisions : [];
+    pageModel.value.published_version ||= 0;
+}
 
 function allItems() {
     return pageModel.value.sections.flatMap((section) => section.items || []);
@@ -45,12 +54,26 @@ function ensurePageContent() {
     pageModel.value.draft_content.navigation.items ||= [];
     pageModel.value.draft_content.footer ||= {};
     pageModel.value.draft_content.footer.badges ||= [];
+    pageModel.value.draft_content.theme ||= { appearance: 'system', accent: 'calm', allowed_accents: ['calm', 'healing', 'alert', 'blood', 'seagrass'], show_switcher: true };
+    pageModel.value.draft_content.theme.allowed_accents ||= ['calm', 'healing', 'alert', 'blood', 'seagrass'];
     pageModel.value.seo ||= {};
 }
 
 function sectionContent(section) {
     section.draft_content ||= {};
+    if (section.key === 'hero') section.draft_content.slides ||= [];
+    if (['info_banner', 'why_choose_us'].includes(section.key)) section.draft_content.items ||= [];
     return section.draft_content;
+}
+
+function ensureSections() {
+    pageModel.value.sections.forEach((section) => {
+        section.items = Array.isArray(section.items) ? section.items : [];
+        sectionContent(section);
+        section.items.forEach((item) => {
+            item.draft_content ||= defaultItemContent(item.type);
+        });
+    });
 }
 
 function itemsByType(type) {

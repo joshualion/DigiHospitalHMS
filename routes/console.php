@@ -3,6 +3,7 @@
 use App\Models\Facility;
 use App\Models\FacilityMembership;
 use App\Models\Hospital;
+use App\Models\PublicSitePage;
 use App\Models\StaffProfile;
 use App\Models\User;
 use App\Services\AuditService;
@@ -167,3 +168,79 @@ Artisan::command('foundation:bootstrap-admin
 
     return 0;
 })->purpose('Safely bootstrap the first local hospital superadministrator');
+
+Artisan::command('public-site:hero-smoke-state {state}', function (string $state): int {
+    if (app()->isProduction()) {
+        $this->error('Refusing to modify public-site hero smoke state in production.');
+
+        return 1;
+    }
+
+    $path = storage_path('app/public-launch-cleanup-a-hero-backup.json');
+    $page = PublicSitePage::query()->where('slug', 'home')->oldest('id')->first();
+    $section = $page?->sections()->where('key', 'hero')->first();
+
+    if (! $page || ! $section) {
+        $this->error('Home hero section was not found.');
+
+        return 1;
+    }
+
+    if ($state === 'backup') {
+        file_put_contents($path, json_encode([
+            'draft_content' => $section->draft_content,
+            'published_content' => $section->published_content,
+        ], JSON_PRETTY_PRINT));
+        $this->info('Hero smoke backup saved.');
+
+        return 0;
+    }
+
+    if ($state === 'restore') {
+        if (! file_exists($path)) {
+            $this->warn('No hero smoke backup found.');
+
+            return 0;
+        }
+
+        $backup = json_decode((string) file_get_contents($path), true);
+        $section->forceFill([
+            'draft_content' => $backup['draft_content'] ?? [],
+            'published_content' => $backup['published_content'] ?? [],
+        ])->save();
+        @unlink($path);
+        $this->info('Hero smoke backup restored.');
+
+        return 0;
+    }
+
+    $slides = match ($state) {
+        'zero' => [],
+        'one' => [
+            ['label' => 'Smoke test', 'headline' => 'Hero smoke test', 'text' => 'Temporary verification content.', 'image' => '/frontend/images/slider/1.png', 'alt' => 'Hero smoke image', 'active' => true],
+        ],
+        'multiple' => [
+            ['label' => 'Smoke test', 'headline' => 'First hero smoke test', 'text' => 'Temporary verification content.', 'image' => '/frontend/images/slider/1.png', 'alt' => 'First hero smoke image', 'active' => true],
+            ['label' => 'Smoke test', 'headline' => 'Second hero smoke test', 'text' => 'Temporary verification content.', 'image' => '/frontend/images/slider/2.jpg', 'alt' => 'Second hero smoke image', 'active' => true],
+        ],
+        'broken' => [
+            ['label' => 'Smoke test', 'headline' => 'Broken image smoke test', 'text' => 'Temporary verification content.', 'image' => '/frontend/images/slider/missing-launch-smoke.jpg', 'alt' => 'Broken hero smoke image', 'active' => true],
+        ],
+        default => null,
+    };
+
+    if ($slides === null) {
+        $this->error('State must be backup, restore, zero, one, multiple, or broken.');
+
+        return 1;
+    }
+
+    $content = ['rotation_ms' => 6500, 'slides' => $slides];
+    $section->forceFill([
+        'draft_content' => $content,
+        'published_content' => $content,
+    ])->save();
+    $this->info("Hero smoke state set to {$state}.");
+
+    return 0;
+})->purpose('Switch local public-site hero states for launch cleanup browser smoke tests');

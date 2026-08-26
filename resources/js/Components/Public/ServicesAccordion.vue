@@ -10,6 +10,7 @@ const iconMap = { stethoscope: Stethoscope, siren: Siren, care: HeartPulse };
 function toggle(service) { openSlug.value = openSlug.value === service.slug ? null : service.slug; }
 function panelId(service) { return `service-panel-${service.slug}`; }
 function buttonId(service) { return `service-button-${service.slug}`; }
+function serviceContent(service) { return service.content || {}; }
 </script>
 
 <template>
@@ -19,7 +20,7 @@ function buttonId(service) { return `service-button-${service.slug}`; }
                 <h3>
                     <button :id="buttonId(service)" type="button" class="public-focus flex w-full items-center gap-4 p-5 text-left" :aria-expanded="openSlug === service.slug" :aria-controls="panelId(service)" @click="toggle(service)">
                         <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl" style="background: var(--public-accent-soft); color: var(--public-accent);">
-                            <component :is="iconMap[service.content.icon] || HeartPulse" class="h-6 w-6" aria-hidden="true" />
+                            <component :is="iconMap[serviceContent(service).icon] || HeartPulse" class="h-6 w-6" aria-hidden="true" />
                         </span>
                         <span class="min-w-0 flex-1">
                             <span class="block text-lg font-black" style="color: var(--public-text);">{{ service.title }}</span>
@@ -30,8 +31,8 @@ function buttonId(service) { return `service-button-${service.slug}`; }
                 </h3>
                 <div v-show="openSlug === service.slug" :id="panelId(service)" class="px-5 pb-5" role="region" :aria-labelledby="buttonId(service)">
                     <div class="rounded-2xl p-5" style="background: var(--public-accent-soft); color: var(--public-text);">
-                        <p class="text-sm leading-7">{{ service.content.description || service.summary }}</p>
-                        <Link :href="service.content.cta_url || '/services'" class="public-focus public-link mt-4 inline-flex text-sm font-black">{{ service.content.cta_label || 'Learn more' }}</Link>
+                        <p class="text-sm leading-7">{{ serviceContent(service).description || service.summary }}</p>
+                        <Link v-if="serviceContent(service).cta_label && serviceContent(service).cta_url" :href="serviceContent(service).cta_url" class="public-focus public-link mt-4 inline-flex text-sm font-black">{{ serviceContent(service).cta_label }}</Link>
                     </div>
                 </div>
             </article>

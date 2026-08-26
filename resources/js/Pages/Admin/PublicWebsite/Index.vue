@@ -109,6 +109,12 @@ onBeforeUnmount(revokePendingPreview);
                             </div>
                             <p class="mt-1 text-sm text-slate-600">/{{ page.slug === 'home' ? '' : page.slug }} · {{ page.sections_count }} sections · version {{ page.published_version }}</p>
                             <p class="mt-1 text-xs text-slate-500">Last published: {{ page.published_at || 'Not published' }}</p>
+                            <div v-if="page.launch_warnings?.length" class="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-900">
+                                <p>Launch content required:</p>
+                                <ul class="mt-1 list-disc space-y-1 pl-4">
+                                    <li v-for="warning in page.launch_warnings" :key="warning">{{ warning }}</li>
+                                </ul>
+                            </div>
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <a :href="page.slug === 'home' ? '/' : `/${page.slug}`" class="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold" target="_blank">View</a>

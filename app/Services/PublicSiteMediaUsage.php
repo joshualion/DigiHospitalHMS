@@ -17,9 +17,12 @@ class PublicSiteMediaUsage
             $values = array_filter([
                 $media->path,
                 Storage::disk($media->disk)->url($media->path),
+                asset(Storage::disk($media->disk)->url($media->path)),
+                $media->url,
             ]);
 
             $usageCount = collect($values)
+                ->unique()
                 ->sum(fn (string $value): int => $references->filter(fn (string $reference): bool => $reference === $value)->count());
 
             if ($media->usage_count !== $usageCount) {

@@ -41,6 +41,7 @@ class Phase1BPublicSiteTest extends TestCase
         Department::factory()->create(['hospital_id' => $this->hospital->id, 'name' => 'Cardiology', 'category' => 'clinical']);
 
         $this->seed(PublicSiteSeeder::class);
+        $this->seedPublicItemFixtures();
     }
 
     public function test_published_public_homepage_renders_with_section_content(): void
@@ -55,7 +56,7 @@ class Phase1BPublicSiteTest extends TestCase
                 ->where('site.theme.switcherVisible', true)
                 ->where('site.theme.allowedAccents', ['calm', 'healing', 'alert', 'blood', 'seagrass'])
                 ->has('sections.hero')
-                ->has('items.service'));
+                ->has('items.service', 2));
     }
 
     public function test_theme_defaults_are_draft_controlled_validated_audited_and_published(): void
@@ -213,8 +214,7 @@ class Phase1BPublicSiteTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('page.title', 'Home')
-                ->where('page.seo.canonical_url', '/')
-                ->has('sections.services')
+                ->where('page.seo.canonical_url', 'http://localhost')
                 ->where('items.service.0.slug', 'general-consultation')
                 ->where('items.service.0.title', 'General consultation'));
 
@@ -225,7 +225,7 @@ class Phase1BPublicSiteTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('page.title', 'Draft-only home title')
-                ->where('page.seo.canonical_url', '/draft-home')
+                ->where('page.seo.canonical_url', 'http://localhost/draft-home')
                 ->missing('sections.services')
                 ->has('items.service', 1)
                 ->where('items.service.0.title', 'Emergency information'));
@@ -286,14 +286,14 @@ class Phase1BPublicSiteTest extends TestCase
         $this->assertSame(['First badge', 'Second badge'], $home->refresh()->draft_content['footer']['badges']);
 
         $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->where('sections.hero.content.slides.0.headline', 'Calm, coordinated care for every visit.'));
+            ->has('sections.hero.content.slides', 0));
 
         $this->actingAs($publisher)->post("/admin/public-website/pages/{$home->id}/publish")->assertRedirect();
 
         $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->where('sections.hero.content.slides.0.headline', 'Second slide')
             ->where('site.footer.badges', ['First badge', 'Second badge'])
-            ->where('page.seo.canonical_url', '/structured'));
+            ->where('page.seo.canonical_url', 'http://localhost/structured'));
     }
 
     public function test_detail_pages_render_published_item_content_and_media(): void
@@ -342,7 +342,7 @@ class Phase1BPublicSiteTest extends TestCase
         $this->assertSame('published', $service->status);
         $this->assertNotNull($department->presentable_id);
         $this->assertArrayNotHasKey('personal_phone', $clinician->published_content ?? []);
-        $this->assertStringContainsString('demonstration only', strtolower($testimonial->summary));
+        $this->assertStringContainsString('approved', strtolower($testimonial->summary));
 
         $this->get('/')
             ->assertOk()
@@ -427,7 +427,7 @@ class Phase1BPublicSiteTest extends TestCase
         $media = PublicSiteMedia::firstOrFail();
         Storage::disk('public')->assertExists($media->path);
         $this->assertStringEndsWith('.jpg', $media->path);
-        $this->assertStringStartsWith('/storage/public-site/', $media->url);
+        $this->assertStringContainsString('/storage/public-site/', $media->url);
 
         $this->actingAs($manager)->post('/admin/public-website/media', [
             'title' => 'Unsafe',
@@ -520,5 +520,59 @@ class Phase1BPublicSiteTest extends TestCase
         ]);
 
         return $user;
+    }
+
+    private function seedPublicItemFixtures(): void
+    {
+        $home = PublicSitePage::where('hospital_id', $this->hospital->id)->where('slug', 'home')->firstOrFail();
+        $sections = $home->sections()->get()->keyBy('key');
+        $fixtures = [
+            ['section_key' => 'services', 'type' => 'service', 'slug' => 'general-consultation', 'title' => 'General consultation', 'summary' => 'Approved public service summary.', 'content' => ['icon' => 'stethoscope', 'description' => 'Approved public service details.', 'cta_label' => 'Learn more', 'cta_url' => '/services'], 'sort_order' => 1],
+            ['section_key' => 'services', 'type' => 'service', 'slug' => 'emergency-information', 'title' => 'Emergency information', 'summary' => 'Approved urgent-contact information.', 'content' => ['icon' => 'siren', 'description' => 'Approved urgent-contact details.', 'cta_label' => 'Contact', 'cta_url' => '/contact'], 'sort_order' => 2],
+            ['section_key' => 'departments', 'type' => 'department', 'slug' => 'cardiology', 'title' => 'Cardiology', 'summary' => 'Approved public department summary.', 'content' => ['icon' => 'building-2', 'public_title' => 'Cardiology', 'summary' => 'Approved public department summary.'], 'sort_order' => 1],
+            ['section_key' => 'doctors', 'type' => 'clinician', 'slug' => 'published-clinician-fixture', 'title' => 'Published Clinician Fixture', 'summary' => 'Approved clinician summary.', 'content' => ['professional_title' => 'Clinician', 'bio' => 'Approved clinician biography.', 'photo' => '/frontend/images/doctors/prof.jpg', 'alt' => 'Clinician portrait'], 'sort_order' => 1],
+            ['section_key' => 'testimonials', 'type' => 'testimonial', 'slug' => 'approved-testimonial-fixture', 'title' => 'Approved testimonial fixture', 'summary' => 'Approved testimonial summary.', 'content' => ['text' => 'Approved public statement.', 'approved' => true], 'sort_order' => 1],
+            ['section_key' => 'news', 'type' => 'article', 'slug' => 'published-article-fixture', 'title' => 'Published article fixture', 'summary' => 'Approved article summary.', 'content' => ['body' => 'Approved article body.', 'author' => 'Communications'], 'sort_order' => 1],
+        ];
+
+        foreach ($fixtures as $fixture) {
+            $presentableType = $fixture['type'] === 'department' ? Department::class : null;
+            $presentableId = $fixture['type'] === 'department' ? Department::where('hospital_id', $this->hospital->id)->where('name', $fixture['title'])->value('id') : null;
+
+            PublicSiteItem::updateOrCreate(
+                ['hospital_id' => $this->hospital->id, 'type' => $fixture['type'], 'slug' => $fixture['slug']],
+                [
+                    'public_site_section_id' => $sections[$fixture['section_key']]?->id,
+                    'draft_public_site_section_id' => $sections[$fixture['section_key']]?->id,
+                    'published_public_site_section_id' => $sections[$fixture['section_key']]?->id,
+                    'presentable_type' => $presentableType,
+                    'presentable_id' => $presentableId,
+                    'title' => $fixture['title'],
+                    'draft_title' => $fixture['title'],
+                    'published_title' => $fixture['title'],
+                    'summary' => $fixture['summary'],
+                    'draft_summary' => $fixture['summary'],
+                    'published_summary' => $fixture['summary'],
+                    'draft_type' => $fixture['type'],
+                    'published_type' => $fixture['type'],
+                    'draft_slug' => $fixture['slug'],
+                    'published_slug' => $fixture['slug'],
+                    'draft_content' => $fixture['content'],
+                    'published_content' => $fixture['content'],
+                    'status' => 'published',
+                    'is_enabled' => true,
+                    'draft_is_enabled' => true,
+                    'published_is_enabled' => true,
+                    'is_featured' => true,
+                    'draft_is_featured' => true,
+                    'published_is_featured' => true,
+                    'sort_order' => $fixture['sort_order'],
+                    'draft_sort_order' => $fixture['sort_order'],
+                    'published_sort_order' => $fixture['sort_order'],
+                    'published_version' => 1,
+                    'published_at' => now(),
+                ],
+            );
+        }
     }
 }

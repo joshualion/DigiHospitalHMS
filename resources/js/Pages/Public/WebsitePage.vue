@@ -1,6 +1,7 @@
 ﻿<script setup>
 import InfoBand from '@/Components/Public/InfoBand.vue';
 import PublicButton from '@/Components/Public/PublicButton.vue';
+import PublicImage from '@/Components/Public/PublicImage.vue';
 import PublicPageHero from '@/Components/Public/PublicPageHero.vue';
 import SectionHeading from '@/Components/Public/SectionHeading.vue';
 import ServicesAccordion from '@/Components/Public/ServicesAccordion.vue';
@@ -42,6 +43,17 @@ const testimonials = computed(() => props.items.testimonial || []);
 const articles = computed(() => props.items.article || []);
 const activeSlide = computed(() => slides.value[slideIndex.value] || slides.value[0] || {});
 const trustIcons = [ShieldCheck, Users, Activity];
+const hasHeroCopy = computed(() => slides.value.length > 0 || Boolean(pageTitle.value));
+const pageTitle = computed(() => props.page.title || props.site.hospital?.display_name || 'Hospital');
+const hasAboutContent = computed(() => Boolean(about.value.heading || about.value.description || about.value.image || about.value.primary_image || about.value.points?.length));
+const hasServicesContent = computed(() => services.value.length > 0 || Boolean(props.sections.services?.content?.heading || props.sections.services?.content?.description));
+const hasDepartmentsContent = computed(() => departments.value.length > 0 || Boolean(departmentsSection.value.heading || departmentsSection.value.description));
+const hasTrustContent = computed(() => whyItems.value.length > 0 || Boolean(trustSection.value.heading || trustSection.value.description));
+const hasCliniciansContent = computed(() => doctors.value.length > 0 || Boolean(cliniciansSection.value.heading || cliniciansSection.value.description));
+const hasAppointmentContent = computed(() => Boolean(appointment.value.heading || appointment.value.text || appointment.value.button_label));
+const hasNewsContent = computed(() => articles.value.length > 0 || Boolean(newsSection.value.heading || newsSection.value.description));
+const hasContactDetails = computed(() => Boolean(contact.value.address || contact.value.phone || contact.value.email || contact.value.hours));
+const standardBody = computed(() => props.page.content?.body || props.page.content?.summary || '');
 
 function showSlide(index) {
     if (!slides.value.length) return;
@@ -50,7 +62,7 @@ function showSlide(index) {
 }
 
 function standardSummary() {
-    return props.page.content?.summary || props.page.content?.body || 'This page is ready for approved public content.';
+    return props.page.content?.summary || props.page.content?.body || '';
 }
 
 onMounted(() => {
@@ -70,18 +82,26 @@ onBeforeUnmount(() => window.clearInterval(timer));
             <meta property="og:title" :content="seo.title || page.title">
             <meta v-if="seo.description" property="og:description" :content="seo.description">
             <meta v-if="seo.image" property="og:image" :content="seo.image">
-            <meta v-if="preview" name="robots" content="noindex,nofollow">
+            <meta property="og:type" :content="seo.og_type || 'website'">
+            <meta v-if="seo.canonical_url" property="og:url" :content="seo.canonical_url">
+            <meta v-if="seo.image_alt" property="og:image:alt" :content="seo.image_alt">
+            <meta name="twitter:card" :content="seo.twitter_card || 'summary_large_image'">
+            <meta name="twitter:title" :content="seo.title || page.title">
+            <meta v-if="seo.description" name="twitter:description" :content="seo.description">
+            <meta v-if="seo.image" name="twitter:image" :content="seo.image">
+            <meta v-if="preview || seo.robots" name="robots" :content="preview ? 'noindex,nofollow' : seo.robots">
             <link v-if="!preview && seo.canonical_url" rel="canonical" :href="seo.canonical_url">
+            <link rel="icon" href="/favicon.ico">
         </Head>
 
         <template v-if="page.slug === 'home'">
             <section class="relative grid min-h-[31rem] md:min-h-[clamp(31rem,63svh,36rem)] xl:min-h-[clamp(33rem,60svh,38rem)] place-items-center overflow-hidden px-4 pb-24 pt-20 text-center text-white sm:px-6 sm:pb-28 sm:pt-24 lg:px-8 lg:pb-32" @mouseenter="paused = true" @mouseleave="paused = false">
-                <img v-if="activeSlide.image" :src="activeSlide.image" :alt="activeSlide.alt || activeSlide.headline" class="absolute inset-0 h-full w-full object-cover" width="1800" height="1000" fetchpriority="high">
+                <PublicImage :src="activeSlide.image" :alt="activeSlide.alt || activeSlide.headline || pageTitle" class="absolute inset-0 h-full w-full" img-class="h-full w-full object-cover" fallback-class="h-full w-full" width="1800" height="1000" loading="eager" fetchpriority="high" sizes="100vw" :show-fallback-label="false" />
                 <div class="absolute inset-0" style="background: var(--public-hero-overlay);"></div>
                 <div class="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/35 to-transparent"></div>
-                <div class="relative mx-auto max-w-5xl -translate-y-4 px-2 pb-20 sm:-translate-y-6 sm:pb-24 lg:pb-28">
+                <div v-if="hasHeroCopy" class="relative mx-auto max-w-5xl -translate-y-4 px-2 pb-20 sm:-translate-y-6 sm:pb-24 lg:pb-28">
                     <p v-if="activeSlide.label || activeSlide.eyebrow" class="text-sm font-black uppercase tracking-[0.22em]" style="color: var(--public-accent);">{{ activeSlide.label || activeSlide.eyebrow }}</p>
-                    <h1 class="mx-auto mt-5 max-w-5xl text-4xl font-black leading-[1.03] tracking-tight sm:text-6xl lg:text-7xl">{{ activeSlide.headline || page.title }}</h1>
+                    <h1 class="mx-auto mt-5 max-w-5xl text-4xl font-black leading-[1.03] tracking-tight sm:text-6xl lg:text-7xl">{{ activeSlide.headline || pageTitle }}</h1>
                     <p v-if="activeSlide.text" class="mx-auto mt-6 max-w-2xl text-lg leading-8 text-white/86 sm:text-xl">{{ activeSlide.text }}</p>
                     <div class="mt-9 flex flex-wrap justify-center gap-3">
                         <PublicButton v-if="activeSlide.primary_label" :href="activeSlide.primary_url || '/contact'">{{ activeSlide.primary_label }} <ArrowRight class="h-4 w-4" aria-hidden="true" /></PublicButton>
@@ -106,13 +126,13 @@ onBeforeUnmount(() => window.clearInterval(timer));
 
             <InfoBand :items="infoItems" />
 
-            <section class="public-section">
+            <section v-if="hasAboutContent" class="public-section">
                 <div class="public-container">
-                    <SectionHeading :kicker="about.label || 'About the hospital'" :title="about.heading || 'Hospital care designed around people'" :description="about.description" />
+                    <SectionHeading :kicker="about.label" :title="about.heading || pageTitle" :description="about.description" />
                     <div class="mt-12 grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
                         <div class="relative order-2 lg:order-1">
                             <div class="absolute -inset-4 rounded-[2rem]" style="background: var(--public-accent-soft);"></div>
-                            <img v-if="about.image || about.primary_image" :src="about.image || about.primary_image" :alt="about.image_alt || about.primary_alt || about.heading" class="relative aspect-[4/3] w-full rounded-[2rem] object-cover shadow-2xl" width="760" height="570" loading="lazy">
+                            <PublicImage v-if="about.image || about.primary_image" :src="about.image || about.primary_image" :alt="about.image_alt || about.primary_alt || about.heading || pageTitle" class="relative aspect-[4/3] w-full overflow-hidden rounded-[2rem] shadow-2xl" width="760" height="570" loading="lazy" sizes="(min-width: 1024px) 45vw, 100vw" />
                         </div>
                         <div class="order-1 lg:order-2">
                             <p class="public-prose text-left">{{ about.description }}</p>
@@ -127,17 +147,17 @@ onBeforeUnmount(() => window.clearInterval(timer));
                 </div>
             </section>
 
-            <section class="public-section public-muted">
+            <section v-if="hasServicesContent" class="public-section public-muted">
                 <div class="public-container">
-                    <SectionHeading kicker="Services" :title="sections.services?.content?.heading || 'Hospital services'" :description="sections.services?.content?.description || 'Explore approved public service information managed through the publishing workflow.'" />
+                    <SectionHeading kicker="Services" :title="sections.services?.content?.heading || 'Services'" :description="sections.services?.content?.description" />
                     <ServicesAccordion :services="services" />
-                    <div class="mt-10 text-center"><PublicButton href="/services" variant="secondary">View all services</PublicButton></div>
+                    <div v-if="services.length" class="mt-10 text-center"><PublicButton href="/services" variant="secondary">View all services</PublicButton></div>
                 </div>
             </section>
 
-            <section class="public-section">
+            <section v-if="hasDepartmentsContent" class="public-section">
                 <div class="public-container">
-                    <SectionHeading kicker="Departments" :title="departmentsSection.heading || 'Departments'" :description="departmentsSection.description || 'Published department profiles reference approved public presentation fields, not internal administrative notes.'" />
+                    <SectionHeading kicker="Departments" :title="departmentsSection.heading || 'Departments'" :description="departmentsSection.description" />
                     <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                         <article v-for="department in departments.slice(0, 6)" :key="department.slug" class="public-card rounded-3xl p-6 transition hover:-translate-y-1">
                             <Building2 class="h-8 w-8 public-accent" aria-hidden="true" />
@@ -149,9 +169,9 @@ onBeforeUnmount(() => window.clearInterval(timer));
                 </div>
             </section>
 
-            <section class="public-section" style="background: var(--public-footer); color: var(--public-footer-text);">
+            <section v-if="hasTrustContent" class="public-section" style="background: var(--public-footer); color: var(--public-footer-text);">
                 <div class="public-container">
-                    <SectionHeading :kicker="trustSection.label || 'Why choose us'" :title="trustSection.heading || 'Why choose us'" :description="trustSection.description || 'Every public section is governed, previewed and published deliberately.'" />
+                    <SectionHeading :kicker="trustSection.label" :title="trustSection.heading || 'Information'" :description="trustSection.description" />
                     <div class="mt-10 grid gap-5 md:grid-cols-3">
                         <article v-for="(item, index) in whyItems" :key="item.heading" class="rounded-3xl border border-white/10 p-7 text-center transition hover:-translate-y-1" style="background: rgba(255,255,255,0.045);">
                             <component :is="trustIcons[index % trustIcons.length]" class="mx-auto h-9 w-9" style="color: var(--public-accent);" aria-hidden="true" />
@@ -162,12 +182,12 @@ onBeforeUnmount(() => window.clearInterval(timer));
                 </div>
             </section>
 
-            <section class="public-section">
+            <section v-if="hasCliniciansContent" class="public-section">
                 <div class="public-container">
-                    <SectionHeading kicker="Clinicians" :title="cliniciansSection.heading || 'Featured public profiles'" :description="cliniciansSection.description || 'Clinician profiles publish only approved public information and remain separate from private staff records.'" />
+                    <SectionHeading kicker="Clinicians" :title="cliniciansSection.heading || 'Clinicians'" :description="cliniciansSection.description" />
                     <div class="mt-10 grid gap-6 md:grid-cols-3">
                         <article v-for="doctor in doctors.slice(0, 3)" :key="doctor.slug" class="public-card overflow-hidden rounded-[2rem] transition hover:-translate-y-1">
-                            <img v-if="doctor.content.photo" :src="doctor.content.photo" :alt="doctor.content.alt || doctor.title" class="h-72 w-full object-cover" width="520" height="420" loading="lazy">
+                            <PublicImage v-if="doctor.content.photo" :src="doctor.content.photo" :alt="doctor.content.alt || doctor.title" class="h-72 w-full" width="520" height="420" loading="lazy" sizes="(min-width: 768px) 33vw, 100vw" />
                             <div class="p-6 text-center">
                                 <h3 class="text-xl font-black" style="color: var(--public-text);">{{ doctor.title }}</h3>
                                 <p class="mt-1 text-sm font-bold public-accent">{{ doctor.content.professional_title || doctor.summary }}</p>
@@ -193,18 +213,18 @@ onBeforeUnmount(() => window.clearInterval(timer));
                 </div>
             </section>
 
-            <section class="px-4 py-16 sm:px-6 lg:px-8" style="background: var(--public-accent); color: var(--public-accent-foreground);">
+            <section v-if="hasAppointmentContent" class="px-4 py-16 sm:px-6 lg:px-8" style="background: var(--public-accent); color: var(--public-accent-foreground);">
                 <div class="public-container text-center">
-                    <h2 class="mx-auto max-w-3xl text-3xl font-black sm:text-4xl">{{ appointment.heading || 'Need appointment information?' }}</h2>
-                    <p class="mx-auto mt-4 max-w-2xl text-base leading-8 opacity-90">{{ appointment.text || 'Online booking is not active yet. Contact the hospital for current visit information.' }}</p>
-                    <PublicButton class="mt-8" :href="appointment.button_url || '/appointment'" variant="secondary">{{ appointment.button_label || 'Appointment information' }}</PublicButton>
+                    <h2 class="mx-auto max-w-3xl text-3xl font-black sm:text-4xl">{{ appointment.heading }}</h2>
+                    <p v-if="appointment.text" class="mx-auto mt-4 max-w-2xl text-base leading-8 opacity-90">{{ appointment.text }}</p>
+                    <PublicButton v-if="appointment.button_label" class="mt-8" :href="appointment.button_url || '/appointment/request'" variant="secondary">{{ appointment.button_label }}</PublicButton>
                 </div>
             </section>
 
-            <section class="public-section">
+            <section v-if="hasNewsContent || hasContactDetails" class="public-section">
                 <div class="public-container grid gap-10 lg:grid-cols-[1fr_0.9fr]">
-                    <div>
-                        <SectionHeading kicker="News" :title="newsSection.heading || 'Latest public updates'" :description="newsSection.description || 'Approved announcements and public information from the hospital.'" align="left" />
+                    <div v-if="hasNewsContent">
+                        <SectionHeading kicker="News" :title="newsSection.heading || 'News'" :description="newsSection.description" align="left" />
                         <div class="mt-8 space-y-4">
                             <article v-for="article in articles.slice(0, 3)" :key="article.slug" class="public-card rounded-3xl p-6">
                                 <h3 class="text-lg font-black" style="color: var(--public-text);">{{ article.title }}</h3>
@@ -214,8 +234,8 @@ onBeforeUnmount(() => window.clearInterval(timer));
                             <p v-if="articles.length === 0" class="public-card rounded-3xl p-8" style="color: var(--public-text-secondary);">No news articles are published yet.</p>
                         </div>
                     </div>
-                    <div class="public-card rounded-[2rem] p-8 text-center">
-                        <SectionHeading kicker="Contact" :title="contact.heading || 'Contact and location'" description="Reach the hospital through approved public contact details." />
+                    <div v-if="hasContactDetails" class="public-card rounded-[2rem] p-8 text-center">
+                        <SectionHeading kicker="Contact" :title="contact.heading || 'Contact and location'" />
                         <div class="mt-7 space-y-3 text-sm leading-7" style="color: var(--public-text-secondary);">
                             <p v-if="contact.address">{{ contact.address }}</p>
                             <p v-if="contact.phone">{{ contact.phone }}</p>
@@ -234,13 +254,13 @@ onBeforeUnmount(() => window.clearInterval(timer));
                 <div class="public-container">
                     <div v-if="page.slug === 'doctors'" class="grid gap-6 md:grid-cols-3">
                         <article v-for="doctor in doctors" :key="doctor.slug" class="public-card overflow-hidden rounded-[2rem]">
-                            <img v-if="doctor.content.photo" :src="doctor.content.photo" :alt="doctor.content.alt || doctor.title" class="h-72 w-full object-cover" width="520" height="420" loading="lazy">
+                            <PublicImage v-if="doctor.content.photo" :src="doctor.content.photo" :alt="doctor.content.alt || doctor.title" class="h-72 w-full" width="520" height="420" loading="lazy" sizes="(min-width: 768px) 33vw, 100vw" />
                             <div class="p-6 text-center"><h2 class="text-xl font-black">{{ doctor.title }}</h2><p class="mt-2 public-accent text-sm font-bold">{{ doctor.content.professional_title || doctor.summary }}</p><Link :href="`/doctors/${doctor.slug}`" class="public-focus public-link mt-4 inline-flex text-sm font-black">View profile</Link></div>
                         </article>
                         <p v-if="doctors.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">No clinician profiles are published yet.</p>
                     </div>
                     <div v-else-if="page.slug === 'services'">
-                        <SectionHeading kicker="Services" title="Approved public service information" description="These are marketing entries, not operational billing catalogue records." />
+                        <SectionHeading kicker="Services" title="Services" />
                         <ServicesAccordion :services="services" />
                     </div>
                     <div v-else-if="page.slug === 'departments'" class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -252,11 +272,13 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         <p v-if="articles.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">No news articles are published yet.</p>
                     </div>
                     <article v-else-if="page.slug === 'doctor-profile' || page.slug === 'article'" class="public-card mx-auto max-w-4xl rounded-[2rem] p-8">
-                        <img v-if="page.content?.photo || page.content?.image" :src="page.content.photo || page.content.image" :alt="page.content.alt || page.title" class="mb-8 aspect-video w-full rounded-3xl object-cover" width="900" height="520">
-                        <div class="public-prose text-lg" v-html="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary"></div>
+                        <PublicImage v-if="page.content?.photo || page.content?.image" :src="page.content.photo || page.content.image" :alt="page.content.alt || page.title" class="mb-8 aspect-video w-full overflow-hidden rounded-3xl" width="900" height="520" loading="eager" sizes="(min-width: 1024px) 900px, 100vw" />
+                        <div v-if="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary" class="public-prose text-lg" v-html="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary"></div>
+                        <p v-else class="text-center text-sm font-bold" style="color: var(--public-text-secondary);">This public page is unavailable because approved content has not been published.</p>
                     </article>
                     <div v-else class="public-card mx-auto max-w-4xl rounded-[2rem] p-8 text-center">
-                        <p class="public-prose text-lg">{{ page.content?.body || page.content?.summary || 'This public page is ready for approved content.' }}</p>
+                        <p v-if="standardBody" class="public-prose text-lg">{{ standardBody }}</p>
+                        <p v-else class="text-sm font-bold" style="color: var(--public-text-secondary);">This public page is unavailable because approved content has not been published.</p>
                         <div v-if="page.slug === 'contact'" class="mt-8 rounded-3xl p-6 text-base" style="background: var(--public-accent-soft); color: var(--public-text);">
                             <p v-if="contact.address">{{ contact.address }}</p><p v-if="contact.phone">{{ contact.phone }}</p><p v-if="contact.email">{{ contact.email }}</p><p v-if="contact.hours">{{ contact.hours }}</p>
                         </div>

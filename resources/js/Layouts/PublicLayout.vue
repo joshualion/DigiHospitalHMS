@@ -33,9 +33,11 @@ const contact = computed(() => props.site?.contact || {});
 const themeDefaults = computed(() => shell.value.theme || { appearance: 'system', accent: 'calm', allowedAccents: ['calm', 'healing', 'alert', 'blood', 'seagrass'], switcherVisible: true });
 const hospitalName = computed(() => props.site.hospital?.display_name || 'Hospital');
 const hospitalTagline = computed(() => props.site.hospital?.tagline || props.site.branding?.tagline || '');
-const hospitalLogoPath = computed(() => props.site.hospital?.logo_path || '');
+const hospitalLogoPath = computed(() => props.site.hospital?.logo_url || props.site.hospital?.logo_path || '');
 const footerCopyright = computed(() => (footer.value.copyright || `Copyright {year} ${hospitalName.value}. All rights reserved.`).replace('{year}', new Date().getFullYear()));
 const footerBadges = computed(() => footer.value.badges || []);
+const hasFooterSummary = computed(() => Boolean(footer.value.summary));
+const hasFooterContact = computed(() => Boolean(contact.value.address || contact.value.phone || contact.value.email || contact.value.hours));
 
 function isActive(href) {
     return href === '/' ? page.url === '/' : page.url.startsWith(href);
@@ -123,12 +125,12 @@ onBeforeUnmount(() => {
                     <div class="max-w-md">
                         <PublicBrandMark :name="hospitalName" :tagline="hospitalTagline" :logo-path="hospitalLogoPath" context="footer" />
                     </div>
-                    <p class="mt-5 max-w-md text-sm leading-7 text-white/72">{{ footer.summary || 'A configurable public hospital website managed from the administration area.' }}</p>
+                    <p v-if="hasFooterSummary" class="mt-5 max-w-md text-sm leading-7 text-white/72">{{ footer.summary }}</p>
                     <div v-if="footerBadges.length" class="mt-6 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-wide text-white/55">
                         <span v-for="badge in footerBadges" :key="badge">{{ badge }}</span>
                     </div>
                 </div>
-                <div>
+                <div v-if="hasFooterContact">
                     <h2 class="text-sm font-black uppercase tracking-wide" style="color: var(--public-accent);">Explore</h2>
                     <div class="mt-4 grid gap-2 text-sm text-white/72">
                         <Link v-for="item in navigation" :key="`footer-${item.href}`" :href="item.href" class="public-focus hover:text-white">{{ item.label }}</Link>

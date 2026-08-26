@@ -9,7 +9,7 @@ const props = defineProps({
     context: { type: String, default: 'header' },
 });
 
-const resolvedTagline = computed(() => props.tagline || 'Care and hospital services');
+const resolvedTagline = computed(() => props.tagline || '');
 const isFooter = computed(() => props.context === 'footer');
 const contextClass = computed(() => (isFooter.value ? 'public-brand-footer' : 'public-brand-header'));
 const logoSrc = computed(() => {
@@ -30,7 +30,7 @@ const logoSrc = computed(() => {
         </span>
         <span class="public-brand-copy">
             <span class="public-brand-wordmark">{{ name }}</span>
-            <span class="public-brand-tagline-row">
+            <span v-if="resolvedTagline" class="public-brand-tagline-row">
                 <span class="public-brand-tagline-mark" aria-hidden="true"></span>
                 <span class="public-brand-tagline">{{ resolvedTagline }}</span>
             </span>

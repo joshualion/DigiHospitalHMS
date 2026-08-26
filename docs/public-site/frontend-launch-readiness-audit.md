@@ -4,6 +4,29 @@ Audit date: 2026-08-26
 Scope: public home/landing, about, services, departments, doctors/profile, news/article, contact, appointment request, policies, header/navigation/mobile menu, footer, public theme modes and accents, CMS preview/published behavior, and maintenance-page readiness.  
 No application code, routes, controllers, CMS data, CSS, or database structure was changed for this audit.
 
+## Launch Cleanup A Update
+
+Update date: 2026-08-26
+Commit scope: launch blockers only.
+
+Verified resolved in Cleanup A:
+
+- Placeholder/demo public seed content is no longer published as live hospital claims. `PublicSiteSeeder` now creates neutral CMS scaffolding and keeps optional services, departments, clinicians, testimonials, news, contact details, and policy/body copy empty until administrators publish approved content.
+- Public rendering now uses published CMS payloads and hospital settings as source-of-truth fallbacks. Optional homepage sections hide or show empty/unavailable states instead of inventing services, clinicians, testimonials, news, or contact details.
+- Administrators now see launch warnings on the public website index and editor when required content is missing or published content still contains demo markers.
+- Public media URLs are normalized more reliably, media usage protection recognizes absolute and storage-relative URLs, and public images render through a reusable `PublicImage` component with alt text, loading/fetch priority controls, stable dimensions, responsive packaged slider variants, and themed missing/broken-image fallbacks.
+- The hero slider was verified with zero, one, multiple, and deliberately broken image states. Hero copy remains readable when media is unavailable.
+- Oversized packaged slider images were left intact and derivative WebP variants were generated under `public/frontend/images/slider/responsive/` for safe responsive use.
+- Public SEO metadata now includes normalized absolute canonical URLs, titles/descriptions from published CMS data with hospital fallbacks, Open Graph type/url/image/alt, Twitter card/title/description/image, favicon, and preview `noindex,nofollow`.
+- Appointment request feedback now includes submitting, success, validation-error, and server-error states, prevents duplicate frontend submissions, preserves validation-error values, focuses/scrolls to feedback, and uses confirmation wording that does not promise automatic booking.
+- Public empty-list, missing-content, broken-image, and unavailable-page states were added or tightened across the shared public pages.
+
+Verified remaining for Launch Cleanup B:
+
+- The production Vite bundle still emits the existing chunk-size warning (`app-DBZ-3Ipj.js` about 768 KB before gzip). General Vite chunk splitting remains intentionally deferred.
+- Full publish-time broken-link validation for every CMS URL is still deferred.
+- CMS control for every system fallback string, richer structured data, full page-by-page accent regression, maintenance-page routing, and broader accessibility polish remain deferred.
+
 ## 1. Current strengths
 
 - The public site has a modern Inertia/Vue shell with CMS-backed pages, sections, items, navigation, footer content, theme defaults, preview mode, and published-mode separation.
@@ -15,23 +38,23 @@ No application code, routes, controllers, CMS data, CSS, or database structure w
 
 ## 2. Launch-blocking defects
 
-1. Placeholder/demo content is still visible in seeded and fallback public content.
+1. Placeholder/demo content is still visible in seeded and fallback public content. **Resolved in Cleanup A for public seed/live fallback paths.**
    - Examples include `Demo Hospital`, `info@example.test`, `Replace placeholder copy`, `Sample clinician profile`, placeholder testimonials, placeholder news, and generic policy/about copy in `database/seeders/PublicSiteSeeder.php`.
    - This must be replaced or blocked from publication before launch.
 
-2. Public media reliability is not launch-ready.
+2. Public media reliability is not launch-ready. **Resolved in Cleanup A for public rendering, hero states, media URL normalization, usage protection, and packaged hero derivatives.**
    - Recent admin media work indicates broken library previews and inability to replace slider images reliably. The public hero depends directly on `activeSlide.image` with no visible fallback state if the selected image is missing.
    - Several hero assets are oversized: `public/frontend/images/slider/1.png` is about 2.85 MB, `3.png` about 2.23 MB, and `222.png` about 3.53 MB.
 
-3. SEO and social metadata are incomplete for launch.
+3. SEO and social metadata are incomplete for launch. **Resolved in Cleanup A for titles, descriptions, canonical URLs, Open Graph, Twitter card metadata, preview robots, favicon/logo/social fallbacks.**
    - `WebsitePage.vue` emits title, description, OG title/description/image, canonical, and preview robots, but there is no visible `og:type`, Twitter card metadata, absolute canonical normalization, per-profile canonical generation, structured data, or default social image fallback.
    - Seeded canonical URL for home is `/`, which is not production-safe without absolute canonical handling.
 
-4. Appointment request success/failure feedback is too thin for public launch.
+4. Appointment request success/failure feedback is too thin for public launch. **Resolved in Cleanup A.**
    - The form disables during submission and shows field errors, but no modern success confirmation/toast or clear post-submit next step is visible in the component.
    - Select/date validation messages are not rendered beside every field, only the shared `TextInput` fields and consent show errors visibly.
 
-5. Production asset size needs action before launch.
+5. Production asset size needs action before launch. **Deferred to Launch Cleanup B.**
    - Current built public bundle includes `public/build/assets/app-B0kXydYk.js` at about 760 KB before gzip and `app-DZccpBMi.css` at about 84 KB.
    - The existing Vite chunk warning remains relevant; the public/admin bundle should be split or lazily loaded before a public launch.
 

@@ -34,7 +34,10 @@ class PublicWebsiteController extends FoundationController
             ->get();
 
         return Inertia::render('Admin/PublicWebsite/Index', [
-            'pages' => $pages,
+            'pages' => $pages->map(fn (PublicSitePage $page) => array_merge($page->toArray(), [
+                'sections_count' => $page->sections_count,
+                'launch_warnings' => $this->launchWarnings($page),
+            ])),
             'media' => PublicSiteMedia::where('hospital_id', $hospital->id)->latest()->paginate(8),
             'stats' => [
                 'published_pages' => $pages->where('status', 'published')->count(),
@@ -54,6 +57,7 @@ class PublicWebsiteController extends FoundationController
 
         return Inertia::render('Admin/PublicWebsite/Edit', [
             'page' => $this->editorPagePayload($page),
+            'launch_warnings' => $this->launchWarnings($page),
             'preview_url' => URL::temporarySignedRoute('public.preview', now()->addMinutes(30), ['page' => $page]),
             'media' => PublicSiteMedia::where('hospital_id', $page->hospital_id)->latest()->get(),
             'item_types' => ['service', 'department', 'clinician', 'testimonial', 'article'],
@@ -432,6 +436,57 @@ class PublicWebsiteController extends FoundationController
                 ]))->values(),
             ]))->values(),
         ]);
+    }
+
+    private function launchWarnings(PublicSitePage $page): array
+    {
+        $page->loadMissing('hospital.settings', 'sections.items');
+        $warnings = [];
+        $publishedContent = $page->published_content ?? [];
+        $publishedSeo = $page->published_seo ?? $page->seo ?? [];
+        $textPayload = strtolower(json_encode([$publishedContent, $publishedSeo, $page->published_title, $page->title]) ?: '');
+        $demoMarkers = ['demo hospital', 'example.test', 'placeholder', 'replace before production', 'demonstration content', 'sample clinician'];
+
+        foreach ($demoMarkers as $marker) {
+            if (str_contains($textPayload, $marker)) {
+                $warnings[] = 'Published page content still contains demo or placeholder wording.';
+                break;
+            }
+        }
+
+        if ($page->status !== 'published' || ! $page->published_at) {
+            $warnings[] = 'Page is not currently published.';
+        }
+
+        if (blank($publishedSeo['title'] ?? null)) {
+            $warnings[] = 'SEO title is required before launch.';
+        }
+
+        if (blank($publishedSeo['description'] ?? null)) {
+            $warnings[] = 'Meta description is required before launch.';
+        }
+
+        if ($page->slug === 'home') {
+            $hero = $page->sections->firstWhere('key', 'hero');
+            $slides = collect($hero?->published_content['slides'] ?? [])->filter(fn ($slide) => ($slide['active'] ?? true) !== false && filled($slide['headline'] ?? null));
+            if ($slides->isEmpty()) {
+                $warnings[] = 'Home hero needs at least one published slide with approved headline copy.';
+            }
+
+            $contact = $page->hospital->settings?->contact_details ?? [];
+            if (blank($page->hospital->email) && blank($contact['public_email'] ?? null) && blank($page->hospital->phone_numbers[0] ?? null) && blank($contact['public_phone'] ?? null)) {
+                $warnings[] = 'Publish verified public contact details in hospital settings before launch.';
+            }
+
+            foreach (['service' => 'service', 'clinician' => 'clinician profile', 'article' => 'news article'] as $type => $label) {
+                $hasPublished = PublicSiteItem::published()->where('hospital_id', $page->hospital_id)->where('published_type', $type)->exists();
+                if (! $hasPublished) {
+                    $warnings[] = "No approved public {$label} is published.";
+                }
+            }
+        }
+
+        return array_values(array_unique($warnings));
     }
 
     private function sanitizeText(string $value): string

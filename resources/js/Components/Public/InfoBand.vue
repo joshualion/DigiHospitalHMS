@@ -17,8 +17,8 @@ const icons = { phone: Phone, clock: Clock, 'map-pin': MapPin, calendar: Calenda
                     <h2 class="mt-4 text-lg font-black" style="color: var(--public-text);">{{ item.heading }}</h2>
                     <p class="mt-2 text-sm leading-6" style="color: var(--public-text-secondary);">{{ item.text }}</p>
                     <Link
-                        v-if="item.link_label"
-                        :href="item.url || '/contact'"
+                        v-if="item.link_label && item.url"
+                        :href="item.url"
                         class="public-focus mt-5 inline-flex min-h-[40px] items-center justify-center rounded-full border px-4 py-2 text-sm font-black shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
                         style="background: var(--public-accent-soft); border-color: var(--public-border); color: var(--public-link);"
                     >

@@ -262,6 +262,12 @@ function toggleAccent(value) {
                             <span class="text-slate-600">Published version {{ pageModel.published_version }}</span>
                             <span class="text-slate-600">Last published {{ pageModel.published_at || 'never' }}</span>
                         </div>
+                        <div v-if="launch_warnings.length" class="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+                            <p>Launch content required before this page is public-ready:</p>
+                            <ul class="mt-2 list-disc space-y-1 pl-5">
+                                <li v-for="warning in launch_warnings" :key="warning">{{ warning }}</li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <a :href="preview_url" class="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold" target="_blank">Preview draft</a>

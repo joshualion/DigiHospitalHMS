@@ -1,115 +1,66 @@
 # DigiHospitalHMS
 
-DigiHospitalHMS is a hospital management system built with Laravel, Inertia, Vue 3, Tailwind CSS, and Vite.
+DigiHospitalHMS is a Laravel-based hospital management system with a launch-ready public website and an actively expanding hospital operations backend.
 
-This repository is not a generic Laravel starter. It is a hospital-domain application with:
+The application is built as a modular Laravel monolith using Inertia, Vue 3, Tailwind CSS, Vite, Spatie Permission, PHPUnit, and Playwright. It is no longer a generic Laravel starter; it contains hospital-domain models, workflows, authorization, audit trails, admin screens, public content management, and deployment support.
 
-- hospital administration foundations,
-- role and permission management,
-- facility and department management,
-- staff and audit foundations,
-- a sectional public website with draft, preview, publish, and revision workflow,
-- a theme-driven public frontend,
-- and a branded maintenance-mode experience for deployment.
+## Status
 
-## Current Status
+The public website, public content management workflow, admin shell, and branded maintenance experience are launch-ready.
 
-Implemented:
+Core HMS development is ongoing. The current backend includes tested foundations and operational workflows through patient identity, appointments, clinical encounters, billing, payments, laboratory, radiology, inventory, pharmacy, procurement, admissions, inpatient charting, eMAR, blood bank, and patient blood requests. Additional production hardening, integrations, reporting, insurance/HMO flows, notifications, and deployment-specific configuration should be completed per installation.
 
-- Phase 0: repository recovery and environment stabilization
-- Phase 1A: hospital administration foundations
-- Phase 1B: public website content management and publishing workflow
-- Phase 1B.1: public website UI overhaul, theme system, and branded maintenance page
+## Key Features
 
-Not implemented yet:
+- Public hospital website with responsive Vue/Inertia pages, managed sections, media, theme accents, mobile navigation, appointment request intake, and SEO-friendly published pages.
+- Draft, preview, publish, unpublish, revision restore, authorization, and audit workflow for public website content.
+- Hospital administration foundations for hospitals, facilities, departments, staff profiles, role/permission access control, settings, numbering sequences, and audit events.
+- Patient registration and identity management with hospital numbers, duplicate warnings, protected contact lookup, allergies, alerts, activity history, and scoped access.
+- Appointment booking, public request review, clinician availability, queues, walk-ins, check-in, priority handling, and visit transitions.
+- Clinical encounter workflow with vitals, diagnosis, lifecycle controls, signed-record immutability, amendments, and audit history.
+- Billing catalogue, service pricing, invoices, manual authorized lines, payment allocation, cashier shifts, reversals, refunds, and reconciliation foundations.
+- Laboratory and radiology workflows with requests, catalogues, specimens/studies, reports, verification/approval, amendments, billing integration, critical communication, and private attachment handling.
+- Inventory, stock ledger, procurement, goods receipt, prescribing, pharmacist review, dispensing, returns, and FEFO/stock controls.
+- Admissions, bed management, inpatient clinical charting, nursing documentation, discharge summaries, eMAR scheduling, administration records, and medication audit trails.
+- Blood bank foundations for donors, donations, components, screening, storage, transfers, reservations, compatibility testing, patient blood requests, emergency release, issue, return, and reversal.
+- Branded Laravel maintenance page with countdown, contact actions, emergency messaging, and native Laravel maintenance-mode support.
 
-- patient registration
-- appointments workflow
-- encounters
-- billing
-- laboratory
-- pharmacy
-- inventory
-- admissions
-- blood bank
-- insurance/HMO
-- and other Phase 2+ hospital operations
-
-The current public website and admin shell are real and deployable, but the full clinical and operational backend is still under active development.
-
-## Stack
-
-Backend:
+## Tech Stack
 
 - PHP 8.2+
 - Laravel 12
 - Inertia Laravel
-- Spatie Laravel Permission
-
-Frontend:
-
 - Vue 3
-- Inertia.js
 - Tailwind CSS 3
 - Vite
-- Lucide icons
-
-Testing and tooling:
-
+- MySQL or SQLite for local development
+- Spatie Laravel Permission
 - PHPUnit
 - Playwright
 - Laravel Pint
 
-## Main Features
-
-### Administration foundation
-
-- Hospital profile management
-- Facility and department setup
-- Staff records and access control foundations
-- Role and permission model
-- Audit logging
-- Settings and numbering sequence support
-
-### Public website
-
-- Vue/Inertia public website
-- Draft, preview, publish, unpublish, and revision restore workflow
-- Section-based homepage and public pages
-- Theme system with multiple accent modes
-- Responsive public layout and mobile navigation
-- Media-backed public content
-
-### Deployment support
-
-- Custom branded Laravel maintenance page
-- Countdown to relaunch via environment configuration
-- Configurable maintenance contact actions
-- Native Laravel maintenance-mode and bypass secret support
-
 ## Project Structure
 
-Key directories:
+- `app/` - application logic, controllers, models, policies, services, middleware, and support classes.
+- `config/` - Laravel and application configuration, including public maintenance-page settings.
+- `database/` - migrations, factories, seeders, and domain schema evolution.
+- `docs/` - architecture notes, module guides, roadmap, audits, setup, testing, and phase completion reports.
+- `resources/js/` - Vue pages, layouts, components, and composables.
+- `resources/views/` - Blade views, including the custom `503` maintenance page.
+- `routes/` - application routes.
+- `scripts/` - Playwright and workflow smoke scripts.
+- `tests/` - PHPUnit feature and unit tests.
 
-- `app/` - application logic, controllers, models, policies, services, and support classes
-- `config/` - application and deployment configuration, including maintenance page settings
-- `database/` - migrations, factories, and seeders
-- `docs/` - architecture notes, roadmap, completion reports, setup, and testing references
-- `resources/js/` - Vue pages, layouts, components, and composables
-- `resources/views/` - Blade views, including the maintenance `503` page
-- `routes/` - web and console routes
-- `tests/` - feature and unit tests
-
-## Local Development
+## Local Setup
 
 Requirements:
 
 - PHP 8.2+
 - Composer 2.x
 - Node.js and npm
-- MySQL for normal development use
+- MySQL for normal development, or SQLite for quick local setup
 
-Basic setup:
+Install dependencies and configure the app:
 
 ```bash
 composer install
@@ -120,11 +71,17 @@ php artisan migrate
 php artisan db:seed
 ```
 
-Run the application:
+Run the application locally:
 
 ```bash
 php artisan serve
 npm run dev
+```
+
+Or run the combined Laravel development process defined in Composer:
+
+```bash
+composer run dev
 ```
 
 Build frontend assets:
@@ -133,17 +90,23 @@ Build frontend assets:
 npm run build
 ```
 
-Run tests:
+Run the test suite:
 
 ```bash
 php artisan test
 ```
 
+Useful setup and verification references:
+
+- [Local development](docs/local-development.md)
+- [Testing](docs/testing.md)
+- [Hospital management roadmap](docs/roadmap/hospital-management-roadmap.md)
+- [Public website management](docs/admin/public-website-management.md)
+- [Frontend launch readiness audit](docs/public-site/frontend-launch-readiness-audit.md)
+
 ## Maintenance Mode
 
-This project includes a branded maintenance page that uses Laravel's native maintenance mode.
-
-Enable maintenance mode with the custom pre-rendered page:
+Enable Laravel maintenance mode with the custom branded page:
 
 ```bash
 php artisan down --render="errors::503"
@@ -161,8 +124,10 @@ Bring the application back online:
 php artisan up
 ```
 
-Environment values for the maintenance page are defined in `.env` / `.env.example`, including:
+Maintenance-page values are configured through `.env` / `.env.example`, including:
 
+- `MAINTENANCE_BRAND_NAME`
+- `MAINTENANCE_BRAND_TAGLINE`
 - `MAINTENANCE_LAUNCH_AT`
 - `MAINTENANCE_TIMEZONE`
 - `MAINTENANCE_PHONE`
@@ -172,38 +137,29 @@ Environment values for the maintenance page are defined in `.env` / `.env.exampl
 
 ## Public Branding
 
-The current default public branding is configured around:
+The default public branding currently uses:
 
 - Brand name: `Testimony`
 - Tagline: `Healthcare & Surgeries`
 
-This is currently implemented as a styled default text-based hospital identity in the public frontend and maintenance page. It is intended to remain deployable even before a future graphic-logo management feature exists.
-
-## Documentation
-
-Useful local references:
-
-- [docs/local-development.md](docs/local-development.md)
-- [docs/testing.md](docs/testing.md)
-- [docs/roadmap/hospital-management-roadmap.md](docs/roadmap/hospital-management-roadmap.md)
-- [docs/admin/public-website-management.md](docs/admin/public-website-management.md)
-- [docs/phase-1a-completion-report.md](docs/phase-1a-completion-report.md)
-- [docs/phase-1b-completion-report.md](docs/phase-1b-completion-report.md)
-- [docs/phase-1b1-completion-report.md](docs/phase-1b1-completion-report.md)
+This branding is implemented in the public frontend and maintenance page so the website can be deployed before a future logo and brand-management workflow is added.
 
 ## Development Direction
 
-This repository is being developed as a modular Laravel monolith for hospital operations.
+DigiHospitalHMS is being developed in controlled phases with an emphasis on hospital scoping, authorization, auditability, clinical safety boundaries, and test coverage.
 
-The near-term direction is:
+The public website is ready for launch. Backend HMS development continues toward a broader production-ready hospital platform with integrations, reporting, operational refinements, and installation-specific deployment work.
 
-1. keep the admin and public foundations stable
-2. ship a professional public-facing experience
-3. deploy safely with maintenance-mode support
-4. then add hospital workflows in controlled phases
+## License
 
-## Notes
+This project is released as open source under the MIT License. See the `license` field in [composer.json](composer.json) for the current package metadata.
 
-- The public website is real and styled for deployment.
-- The maintenance page is production-facing and intentionally branded.
-- The full hospital backend is still incomplete, so treat the current release as a foundation plus public website, not as a finished end-to-end HMS.
+## Author
+
+**Joshua Ekpe** - Senior Laravel/PHP Backend & Full-Stack Engineer, lead developer at Govware Solutions Limited.
+
+Experienced in Laravel, Vue.js, MySQL, REST APIs, SaaS/business systems, application architecture, security, deployment, and technical leadership. Based in Nigeria and open to remote and international software opportunities.
+
+- GitHub: [@joshualion](https://github.com/joshualion)
+- Repository: [DigiHospitalHMS](https://github.com/joshualion/DigiHospitalHMS)
+- Email: [Email the Author](mailto:joshuaekpe87@gmail.com)

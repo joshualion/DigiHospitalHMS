@@ -9,11 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BillableService extends Model
 {
-    protected $fillable = ['hospital_id', 'billable_service_category_id', 'department_id', 'public_site_item_id', 'code', 'name', 'description', 'is_tax_exempt', 'tax_rate_basis_points', 'is_discount_eligible', 'is_active'];
+    protected $fillable = ['hospital_id', 'billable_service_category_id', 'department_id', 'public_site_item_id', 'code', 'name', 'description', 'is_tax_exempt', 'tax_rate_basis_points', 'is_discount_eligible', 'is_active', 'public_is_visible', 'public_is_featured', 'public_slug', 'public_name', 'public_description', 'public_icon', 'public_image_path', 'public_display_order'];
 
     protected function casts(): array
     {
-        return ['is_tax_exempt' => 'boolean', 'is_discount_eligible' => 'boolean', 'is_active' => 'boolean'];
+        return ['is_tax_exempt' => 'boolean', 'is_discount_eligible' => 'boolean', 'is_active' => 'boolean', 'public_is_visible' => 'boolean', 'public_is_featured' => 'boolean', 'public_display_order' => 'integer'];
     }
 
     public function category(): BelongsTo

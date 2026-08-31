@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 
 const baseURL = process.env.PHASE1B3_BASE_URL || process.env.PHASE1B_BASE_URL || 'http://127.0.0.1:8000';
 const chromePath = process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+const editorPath = process.env.PUBLIC_WEBSITE_EDITOR_PATH || '/admin/public-website/pages/10';
+const widths = (process.env.PUBLIC_WEBSITE_EDITOR_WIDTHS || '375,768,1024,1440').split(',').map((width) => Number(width.trim())).filter(Boolean);
 const admin = {
     email: process.env.PHASE1B3_ADMIN_EMAIL || process.env.PHASE1B_ADMIN_EMAIL || process.env.PHASE1A_ADMIN_EMAIL,
     password: process.env.PHASE1B3_ADMIN_PASSWORD || process.env.PHASE1B_ADMIN_PASSWORD || process.env.PHASE1A_ADMIN_PASSWORD,
@@ -41,11 +43,15 @@ try {
     const indexResponse = await page.goto('/admin/public-website');
     assert.equal(indexResponse?.status(), 200, 'public website index status');
     await page.waitForLoadState('networkidle');
-    await page.getByRole('link', { name: 'Manage' }).first().click();
-    await page.waitForURL('**/admin/public-website/pages/**');
-    await page.waitForLoadState('networkidle');
-    await page.getByRole('button', { name: 'Sections' }).click();
-    await page.getByRole('button', { name: 'Branding & SEO' }).click();
+
+    for (const width of widths) {
+        await page.setViewportSize({ width, height: width < 768 ? 760 : 960 });
+        const editorResponse = await page.goto(editorPath);
+        assert.equal(editorResponse?.status(), 200, `${editorPath} status at ${width}px`);
+        await page.waitForLoadState('networkidle');
+        await page.getByRole('button', { name: 'Sections' }).click();
+        await page.getByRole('button', { name: 'Branding & SEO' }).click();
+    }
 
     const staleResponse = await page.goto('/admin/public-website/pages/999999');
     assert.ok([200, 302].includes(staleResponse?.status() ?? 0), 'stale editor response status');

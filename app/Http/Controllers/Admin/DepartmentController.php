@@ -7,6 +7,7 @@ use App\Models\Facility;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -39,6 +40,11 @@ class DepartmentController extends FoundationController
         $this->authorize('manage', Department::class);
         $hospital = $this->currentHospital();
         $validated = $request->validate($this->rules($hospital->id));
+        $validated['public_slug'] = $this->publicSlug(
+            $validated['public_slug'] ?? null,
+            $validated['public_name'] ?? $validated['name'],
+            (bool) ($validated['public_is_visible'] ?? false)
+        );
         $department = Department::create($validated + ['hospital_id' => $hospital->id]);
 
         $audit->record('departments.created', $department, null, $department->toArray());
@@ -50,6 +56,11 @@ class DepartmentController extends FoundationController
     {
         $this->authorize('manage', $department);
         $validated = $request->validate($this->rules($department->hospital_id, $department->id));
+        $validated['public_slug'] = $this->publicSlug(
+            $validated['public_slug'] ?? null,
+            $validated['public_name'] ?? $validated['name'],
+            (bool) ($validated['public_is_visible'] ?? false)
+        );
         $before = $department->only(array_keys($validated));
         $department->update($validated);
 
@@ -68,6 +79,27 @@ class DepartmentController extends FoundationController
             'category' => ['required', 'string', 'max:100'],
             'status' => ['required', 'in:active,inactive'],
             'display_order' => ['integer', 'min:0'],
+            'public_is_visible' => ['boolean'],
+            'public_is_featured' => ['boolean'],
+            'public_slug' => ['nullable', 'string', 'max:255', Rule::unique('departments', 'public_slug')->where('hospital_id', $hospitalId)->ignore($departmentId)],
+            'public_name' => ['nullable', 'string', 'max:255'],
+            'public_description' => ['nullable', 'string', 'max:2000'],
+            'public_icon' => ['nullable', 'string', 'max:80'],
+            'public_image_path' => ['nullable', 'string', 'max:255'],
+            'public_display_order' => ['integer', 'min:0'],
         ];
+    }
+
+    private function publicSlug(?string $slug, string $fallback, bool $isPublic): ?string
+    {
+        if (! $isPublic && blank($slug)) {
+            return null;
+        }
+
+        if (blank($slug) && blank($fallback)) {
+            return null;
+        }
+
+        return Str::slug($slug ?: $fallback);
     }
 }

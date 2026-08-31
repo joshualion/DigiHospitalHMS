@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\BillableService;
+use App\Models\BillableServiceCategory;
 use App\Models\Department;
 use App\Models\Facility;
 use App\Models\Hospital;
@@ -38,7 +40,17 @@ class Phase1BPublicSiteTest extends TestCase
         $this->hospital = Hospital::factory()->create(['display_name' => 'Phase 1B Hospital']);
         $facility = Facility::factory()->create(['hospital_id' => $this->hospital->id, 'is_primary' => true]);
         HospitalSetting::create(['hospital_id' => $this->hospital->id, 'default_facility_id' => $facility->id]);
-        Department::factory()->create(['hospital_id' => $this->hospital->id, 'name' => 'Cardiology', 'category' => 'clinical']);
+        Department::factory()->create([
+            'hospital_id' => $this->hospital->id,
+            'name' => 'Cardiology',
+            'category' => 'clinical',
+            'public_is_visible' => true,
+            'public_is_featured' => true,
+            'public_slug' => 'cardiology',
+            'public_name' => 'Cardiology',
+            'public_description' => 'Approved public department summary.',
+            'public_display_order' => 1,
+        ]);
 
         $this->seed(PublicSiteSeeder::class);
         $this->seedPublicItemFixtures();
@@ -182,7 +194,7 @@ class Phase1BPublicSiteTest extends TestCase
         $publisher = $this->userWithPermissions(['website.view', 'website.edit', 'website.publish']);
         $home = PublicSitePage::where('slug', 'home')->with('sections')->firstOrFail();
         $serviceSection = $home->sections->firstWhere('key', 'services');
-        $service = PublicSiteItem::where('type', 'service')->where('slug', 'general-consultation')->firstOrFail();
+        $service = BillableService::where('public_slug', 'general-consultation')->firstOrFail();
 
         $this->actingAs($publisher)->patch("/admin/public-website/pages/{$home->id}", [
             'title' => 'Draft-only home title',
@@ -197,18 +209,7 @@ class Phase1BPublicSiteTest extends TestCase
             'draft_content' => ['heading' => 'Draft-only services heading', 'description' => 'Draft-only service description'],
         ])->assertRedirect()->assertSessionHasNoErrors();
 
-        $this->actingAs($publisher)->patch("/admin/public-website/items/{$service->id}", [
-            'public_site_section_id' => $service->public_site_section_id,
-            'type' => 'service',
-            'slug' => 'draft-general-consultation',
-            'title' => 'Draft-only service title',
-            'summary' => 'Draft-only service summary',
-            'draft_content' => ['description' => 'Draft-only service body', 'photo' => '/draft.jpg'],
-            'status' => 'published',
-            'is_enabled' => false,
-            'is_featured' => false,
-            'sort_order' => 999,
-        ])->assertRedirect()->assertSessionHasNoErrors();
+        $service->update(['public_name' => 'Draft-only service title']);
 
         $this->get('/')
             ->assertOk()
@@ -216,26 +217,24 @@ class Phase1BPublicSiteTest extends TestCase
                 ->where('page.title', 'Home')
                 ->where('page.seo.canonical_url', 'http://localhost')
                 ->where('items.service.0.slug', 'general-consultation')
-                ->where('items.service.0.title', 'General consultation'));
+                ->where('items.service.0.title', 'Draft-only service title'));
 
         $this->actingAs($publisher)->post("/admin/public-website/pages/{$home->id}/publish")->assertRedirect();
-        $this->actingAs($publisher)->post("/admin/public-website/items/{$service->id}/publish")->assertRedirect();
-
         $this->get('/')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('page.title', 'Draft-only home title')
                 ->where('page.seo.canonical_url', 'http://localhost/draft-home')
                 ->missing('sections.services')
-                ->has('items.service', 1)
-                ->where('items.service.0.title', 'Emergency information'));
+                ->has('items.service', 2)
+                ->where('items.service.0.title', 'Draft-only service title'));
     }
 
     public function test_item_unpublish_removes_content_and_requires_permission(): void
     {
         $editor = $this->userWithPermissions(['website.view', 'website.edit']);
         $publisher = $this->userWithPermissions(['website.view', 'website.edit', 'website.publish', 'website.unpublish']);
-        $item = PublicSiteItem::where('type', 'service')->where('slug', 'general-consultation')->firstOrFail();
+        $item = PublicSiteItem::where('type', 'article')->firstOrFail();
 
         $this->actingAs($editor)->post("/admin/public-website/items/{$item->id}/unpublish")->assertForbidden();
         $this->actingAs($publisher)->post("/admin/public-website/items/{$item->id}/unpublish")->assertRedirect();
@@ -251,8 +250,7 @@ class Phase1BPublicSiteTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->has('items.service', 1)
-                ->where('items.service.0.slug', 'emergency-information'));
+                ->missing('items.article'));
     }
 
     public function test_structured_repeaters_map_to_draft_payload_and_publish_in_order(): void
@@ -298,12 +296,14 @@ class Phase1BPublicSiteTest extends TestCase
 
     public function test_detail_pages_render_published_item_content_and_media(): void
     {
-        $clinician = PublicSiteItem::where('type', 'clinician')->firstOrFail();
+        $clinician = StaffProfile::where('public_slug', 'published-clinician-fixture')->firstOrFail();
         $clinician->forceFill([
-            'published_title' => 'Published Clinician',
-            'published_slug' => 'published-clinician',
-            'published_summary' => 'Published clinician summary',
-            'published_content' => ['bio' => 'Published clinician biography', 'photo' => '/clinician.jpg', 'alt' => 'Clinician portrait'],
+            'public_display_name' => 'Published Clinician',
+            'public_slug' => 'published-clinician',
+            'public_specialty' => 'Published clinician summary',
+            'public_summary' => 'Published clinician biography',
+            'public_photo_path' => '/clinician.jpg',
+            'public_photo_alt' => 'Clinician portrait',
         ])->save();
 
         $article = PublicSiteItem::where('type', 'article')->firstOrFail();
@@ -333,15 +333,15 @@ class Phase1BPublicSiteTest extends TestCase
     {
         $home = PublicSitePage::where('slug', 'home')->with('sections')->firstOrFail();
         $section = $home->sections->firstWhere('type', 'services');
-        $service = PublicSiteItem::where('type', 'service')->firstOrFail();
-        $department = PublicSiteItem::where('type', 'department')->firstOrFail();
-        $clinician = PublicSiteItem::where('type', 'clinician')->firstOrFail();
+        $service = BillableService::where('public_slug', 'general-consultation')->firstOrFail();
+        $department = Department::where('public_slug', 'cardiology')->firstOrFail();
+        $clinician = StaffProfile::where('public_slug', 'published-clinician-fixture')->firstOrFail();
         $testimonial = PublicSiteItem::where('type', 'testimonial')->firstOrFail();
 
         $this->assertTrue($section->is_enabled);
-        $this->assertSame('published', $service->status);
-        $this->assertNotNull($department->presentable_id);
-        $this->assertArrayNotHasKey('personal_phone', $clinician->published_content ?? []);
+        $this->assertTrue($service->public_is_visible);
+        $this->assertTrue($department->public_is_visible);
+        $this->assertTrue($clinician->public_is_visible);
         $this->assertStringContainsString('approved', strtolower($testimonial->summary));
 
         $this->get('/')
@@ -349,9 +349,15 @@ class Phase1BPublicSiteTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->has('items.service', 2)
                 ->where('items.service.0.slug', 'general-consultation')
-                ->where('items.service.1.slug', 'emergency-information'));
+                ->where('items.service.1.slug', 'emergency-information')
+                ->where('items.clinician.0.source', 'staff_profile')
+                ->where('items.clinician.0.title', 'Published Clinician Fixture')
+                ->missing('items.clinician.0.email')
+                ->missing('items.clinician.0.content.email')
+                ->missing('items.service.0.code')
+                ->missing('items.service.0.prices'));
 
-        $service->update(['status' => 'draft', 'is_enabled' => false]);
+        $service->update(['public_is_visible' => false]);
 
         $this->get('/')
             ->assertOk()
@@ -360,10 +366,98 @@ class Phase1BPublicSiteTest extends TestCase
                 ->where('items.service.0.slug', 'emergency-information'));
     }
 
+    public function test_dynamic_public_records_respect_featured_private_active_and_listing_rules(): void
+    {
+        $category = BillableServiceCategory::where('hospital_id', $this->hospital->id)->firstOrFail();
+        BillableService::create([
+            'hospital_id' => $this->hospital->id,
+            'billable_service_category_id' => $category->id,
+            'code' => 'PRIVATE_SERVICE',
+            'name' => 'Private service',
+            'is_active' => true,
+            'public_is_visible' => false,
+            'public_is_featured' => true,
+            'public_slug' => 'private-service',
+        ]);
+        BillableService::create([
+            'hospital_id' => $this->hospital->id,
+            'billable_service_category_id' => $category->id,
+            'code' => 'PUBLIC_UNFEATURED',
+            'name' => 'Public unfeatured service',
+            'is_active' => true,
+            'public_is_visible' => true,
+            'public_is_featured' => false,
+            'public_slug' => 'public-unfeatured-service',
+            'public_description' => 'Public listing only service.',
+            'public_display_order' => 99,
+        ]);
+
+        Department::factory()->create([
+            'hospital_id' => $this->hospital->id,
+            'name' => 'Private Department',
+            'status' => 'active',
+            'public_is_visible' => false,
+            'public_is_featured' => true,
+            'public_slug' => 'private-department',
+        ]);
+        Department::factory()->create([
+            'hospital_id' => $this->hospital->id,
+            'name' => 'Public Listing Department',
+            'status' => 'active',
+            'public_is_visible' => true,
+            'public_is_featured' => false,
+            'public_slug' => 'public-listing-department',
+            'public_description' => 'Public listing only department.',
+            'public_display_order' => 99,
+        ]);
+
+        $doctor = User::factory()->create(['firstname' => 'Listing', 'lastname' => 'Doctor', 'status' => 'active']);
+        StaffProfile::factory()->create([
+            'user_id' => $doctor->id,
+            'hospital_id' => $this->hospital->id,
+            'staff_category' => 'clinical',
+            'job_title' => 'Doctor',
+            'public_is_visible' => true,
+            'public_is_featured' => false,
+            'public_slug' => 'listing-doctor',
+            'public_display_name' => 'Listing Doctor',
+            'public_display_order' => 99,
+        ]);
+        $privateUser = User::factory()->create(['firstname' => 'Private', 'lastname' => 'Admin', 'status' => 'active']);
+        StaffProfile::factory()->create([
+            'user_id' => $privateUser->id,
+            'hospital_id' => $this->hospital->id,
+            'staff_category' => 'administrative',
+            'job_title' => 'Administrator',
+            'public_is_visible' => true,
+            'public_is_featured' => true,
+            'public_slug' => 'private-admin',
+        ]);
+
+        $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('items.service', 2)
+            ->has('items.department', 1)
+            ->has('items.clinician', 1)
+            ->where('items.clinician.0.slug', 'published-clinician-fixture'));
+
+        $this->get('/services')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('items.service', 3)
+            ->where('items.service.2.slug', 'public-unfeatured-service')
+            ->missing('items.service.3'));
+
+        $this->get('/departments')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('items.department', 2)
+            ->where('items.department.1.slug', 'public-listing-department'));
+
+        $this->get('/doctors')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('items.clinician', 2)
+            ->where('items.clinician.1.slug', 'listing-doctor'));
+    }
+
     public function test_unsafe_rich_text_is_sanitized_and_section_idor_is_rejected(): void
     {
         $admin = $this->userWithPermissions(['website.view', 'website.edit']);
-        $item = PublicSiteItem::where('type', 'service')->firstOrFail();
+        $item = PublicSiteItem::where('type', 'testimonial')->firstOrFail();
         $otherHospital = Hospital::factory()->create();
         $otherPage = PublicSitePage::create([
             'hospital_id' => $otherHospital->id,
@@ -456,7 +550,7 @@ class Phase1BPublicSiteTest extends TestCase
         $this->seed(PublicSiteSeeder::class);
 
         $this->assertSame(1, PublicSitePage::where('hospital_id', $this->hospital->id)->where('slug', 'home')->count());
-        $this->assertSame(1, PublicSiteItem::where('hospital_id', $this->hospital->id)->where('slug', 'general-consultation')->count());
+        $this->assertSame(0, PublicSiteItem::where('hospital_id', $this->hospital->id)->where('slug', 'general-consultation')->count());
 
         $otherHospital = Hospital::factory()->create(['is_active' => false]);
         PublicSitePage::create([
@@ -605,13 +699,63 @@ class Phase1BPublicSiteTest extends TestCase
 
     private function seedPublicItemFixtures(): void
     {
+        $category = BillableServiceCategory::create([
+            'hospital_id' => $this->hospital->id,
+            'name' => 'Clinical services',
+            'code' => 'CLINICAL',
+            'is_active' => true,
+        ]);
+
+        foreach ([
+            ['slug' => 'general-consultation', 'name' => 'General consultation', 'description' => 'Approved public service details.', 'order' => 1],
+            ['slug' => 'emergency-information', 'name' => 'Emergency information', 'description' => 'Approved urgent-contact details.', 'order' => 2],
+        ] as $service) {
+            BillableService::create([
+                'hospital_id' => $this->hospital->id,
+                'billable_service_category_id' => $category->id,
+                'code' => strtoupper(str_replace('-', '_', $service['slug'])),
+                'name' => $service['name'],
+                'description' => 'Internal billing description.',
+                'is_active' => true,
+                'is_tax_exempt' => false,
+                'tax_rate_basis_points' => 0,
+                'is_discount_eligible' => true,
+                'public_is_visible' => true,
+                'public_is_featured' => true,
+                'public_slug' => $service['slug'],
+                'public_name' => $service['name'],
+                'public_description' => $service['description'],
+                'public_icon' => 'stethoscope',
+                'public_display_order' => $service['order'],
+            ]);
+        }
+
+        $clinicianUser = User::factory()->create([
+            'firstname' => 'Published',
+            'lastname' => 'Clinician',
+            'status' => 'active',
+        ]);
+        StaffProfile::factory()->create([
+            'user_id' => $clinicianUser->id,
+            'hospital_id' => $this->hospital->id,
+            'staff_category' => 'clinical',
+            'job_title' => 'Clinician',
+            'employment_status' => 'active',
+            'is_active' => true,
+            'public_is_visible' => true,
+            'public_is_featured' => true,
+            'public_slug' => 'published-clinician-fixture',
+            'public_display_name' => 'Published Clinician Fixture',
+            'public_specialty' => 'Clinician',
+            'public_summary' => 'Approved clinician biography.',
+            'public_photo_path' => '/frontend/images/doctors/prof.jpg',
+            'public_photo_alt' => 'Clinician portrait',
+            'public_display_order' => 1,
+        ]);
+
         $home = PublicSitePage::where('hospital_id', $this->hospital->id)->where('slug', 'home')->firstOrFail();
         $sections = $home->sections()->get()->keyBy('key');
         $fixtures = [
-            ['section_key' => 'services', 'type' => 'service', 'slug' => 'general-consultation', 'title' => 'General consultation', 'summary' => 'Approved public service summary.', 'content' => ['icon' => 'stethoscope', 'description' => 'Approved public service details.', 'cta_label' => 'Learn more', 'cta_url' => '/services'], 'sort_order' => 1],
-            ['section_key' => 'services', 'type' => 'service', 'slug' => 'emergency-information', 'title' => 'Emergency information', 'summary' => 'Approved urgent-contact information.', 'content' => ['icon' => 'siren', 'description' => 'Approved urgent-contact details.', 'cta_label' => 'Contact', 'cta_url' => '/contact'], 'sort_order' => 2],
-            ['section_key' => 'departments', 'type' => 'department', 'slug' => 'cardiology', 'title' => 'Cardiology', 'summary' => 'Approved public department summary.', 'content' => ['icon' => 'building-2', 'public_title' => 'Cardiology', 'summary' => 'Approved public department summary.'], 'sort_order' => 1],
-            ['section_key' => 'doctors', 'type' => 'clinician', 'slug' => 'published-clinician-fixture', 'title' => 'Published Clinician Fixture', 'summary' => 'Approved clinician summary.', 'content' => ['professional_title' => 'Clinician', 'bio' => 'Approved clinician biography.', 'photo' => '/frontend/images/doctors/prof.jpg', 'alt' => 'Clinician portrait'], 'sort_order' => 1],
             ['section_key' => 'testimonials', 'type' => 'testimonial', 'slug' => 'approved-testimonial-fixture', 'title' => 'Approved testimonial fixture', 'summary' => 'Approved testimonial summary.', 'content' => ['text' => 'Approved public statement.', 'approved' => true], 'sort_order' => 1],
             ['section_key' => 'news', 'type' => 'article', 'slug' => 'published-article-fixture', 'title' => 'Published article fixture', 'summary' => 'Approved article summary.', 'content' => ['body' => 'Approved article body.', 'author' => 'Communications'], 'sort_order' => 1],
         ];

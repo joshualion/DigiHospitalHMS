@@ -19,7 +19,24 @@ class Department extends Model
         'category',
         'status',
         'display_order',
+        'public_is_visible',
+        'public_is_featured',
+        'public_slug',
+        'public_name',
+        'public_description',
+        'public_icon',
+        'public_image_path',
+        'public_display_order',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'public_is_visible' => 'boolean',
+            'public_is_featured' => 'boolean',
+            'public_display_order' => 'integer',
+        ];
+    }
 
     public function hospital(): BelongsTo
     {

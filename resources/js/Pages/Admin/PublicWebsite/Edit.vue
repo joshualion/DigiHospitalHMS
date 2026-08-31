@@ -8,6 +8,8 @@ import { computed, ref } from 'vue';
 const props = defineProps({
     page: { type: Object, required: true },
     launch_warnings: { type: Array, default: () => [] },
+    media_warnings: { type: Array, default: () => [] },
+    homepage_sources: { type: Object, default: () => ({}) },
     preview_url: { type: String, required: true },
     media: { type: Array, required: true },
     item_types: { type: Array, required: true },
@@ -301,6 +303,12 @@ function toggleAccent(value) {
                                 <li v-for="warning in launch_warnings" :key="warning">{{ warning }}</li>
                             </ul>
                         </div>
+                        <div v-if="media_warnings.length" class="mt-4 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm font-semibold text-rose-900">
+                            <p>Media references need attention:</p>
+                            <ul class="mt-2 list-disc space-y-1 pl-5">
+                                <li v-for="warning in media_warnings" :key="warning">{{ warning }}</li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <a :href="preview_url" class="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold" target="_blank">Preview draft</a>
@@ -314,6 +322,15 @@ function toggleAccent(value) {
                 <button v-for="[key, label] in [['page', 'Branding & SEO'], ['sections', 'Sections'], ['items', 'Content items'], ['history', 'Publishing history']]" :key="key" class="rounded-md px-3 py-2 text-sm font-bold" :class="activePanel === key ? 'bg-slate-950 text-white' : 'border border-slate-200 text-slate-700'" type="button" @click="activePanel = key">{{ label }}</button>
                 <button v-if="can_view_json" class="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700" type="button" @click="showDiagnostics = !showDiagnostics">Diagnostics</button>
             </nav>
+
+            <section v-if="Object.keys(homepage_sources).length" class="grid gap-4 md:grid-cols-3">
+                <article v-for="(source, key) in homepage_sources" :key="key" class="rounded-md border border-slate-200 bg-white p-4">
+                    <p class="text-xs font-black uppercase tracking-wide text-slate-500">{{ key }}</p>
+                    <h3 class="mt-1 font-bold">{{ source.source }}</h3>
+                    <p class="mt-2 text-sm text-slate-600">{{ source.featured_count }} featured / {{ source.public_count }} public</p>
+                    <a :href="source.manage_url" class="mt-3 inline-flex text-sm font-bold text-teal-700">Manage source records</a>
+                </article>
+            </section>
 
             <section v-if="activePanel === 'page'" class="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
                 <form class="space-y-5 rounded-md border border-slate-200 bg-white p-5" @submit.prevent="saveBranding">
@@ -430,6 +447,7 @@ function toggleAccent(value) {
                         <span class="font-bold">{{ section.label }}</span>
                         <span class="mt-1 block text-xs" :class="statusClass(section)">{{ section.is_enabled ? statusLabel(section) : 'Draft disabled' }}</span>
                     </button>
+                    <p v-if="sectionTabs.length === 0" class="rounded-md border border-dashed border-slate-300 p-3 text-sm text-slate-500">No sections exist for this page. The editor is still available for page-level settings.</p>
                 </div>
 
                 <form v-if="activeSection" class="space-y-5 rounded-md border border-slate-200 bg-white p-5" @submit.prevent="saveSection(activeSection)">
@@ -541,6 +559,7 @@ function toggleAccent(value) {
 
                     <button class="rounded-md bg-slate-950 px-4 py-2 text-sm font-bold text-white" type="submit">Save section draft</button>
                 </form>
+                <div v-else class="rounded-md border border-slate-200 bg-white p-5 text-sm text-slate-600">Select a section to edit. If this page intentionally has no sections, use Branding & SEO for page-level content.</div>
             </section>
 
             <section v-if="activePanel === 'items'" class="space-y-6">

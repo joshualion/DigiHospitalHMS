@@ -57,7 +57,7 @@ class PublicSiteMedia extends Model
         }
 
         if ($this->disk === 'public') {
-            return asset(Storage::url($this->path));
+            return Storage::url($this->path);
         }
 
         return asset(Storage::disk($this->disk)->url($this->path));

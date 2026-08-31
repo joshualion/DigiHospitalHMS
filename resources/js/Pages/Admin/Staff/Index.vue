@@ -21,7 +21,7 @@ const permissions = computed(() => page.props.auth.permissions || []);
 const pageRoles = computed(() => page.props.auth.roles || []);
 const can = (permission) => pageRoles.value.includes('superadmin') || permissions.value.includes(permission);
 const search = useForm({ search: props.filters.search || '', status: props.filters.status || '' });
-const blankStaff = () => ({ firstname: '', lastname: '', email: '', staff_number: '', job_title: '', staff_category: 'administrative', professional_license_number: '', license_expires_at: '', work_phone: '', hire_date: '', roles: [], facility_ids: [], default_facility_id: '', notes: '' });
+const blankStaff = () => ({ firstname: '', lastname: '', email: '', staff_number: '', job_title: '', staff_category: 'administrative', professional_license_number: '', license_expires_at: '', work_phone: '', hire_date: '', roles: [], facility_ids: [], default_facility_id: '', notes: '', public_is_visible: false, public_is_featured: false, public_slug: '', public_display_name: '', public_specialty: '', public_summary: '', public_photo_path: '', public_photo_alt: '', public_display_order: 0 });
 const form = useForm(blankStaff());
 const statusForm = useForm({ status: 'active' });
 const showForm = ref(false);
@@ -55,6 +55,15 @@ function openEdit(entry) {
         work_phone: entry.work_phone || '',
         hire_date: entry.hire_date || '',
         notes: entry.notes || '',
+        public_is_visible: Boolean(entry.public_is_visible),
+        public_is_featured: Boolean(entry.public_is_featured),
+        public_slug: entry.public_slug || '',
+        public_display_name: entry.public_display_name || '',
+        public_specialty: entry.public_specialty || '',
+        public_summary: entry.public_summary || '',
+        public_photo_path: entry.public_photo_path || '',
+        public_photo_alt: entry.public_photo_alt || '',
+        public_display_order: entry.public_display_order || 0,
         roles: entry.user?.roles?.map((role) => role.name) || [],
         facility_ids: entry.memberships?.filter((membership) => membership.status === 'active').map((membership) => membership.facility_id) || [],
         default_facility_id: entry.memberships?.find((membership) => membership.is_default)?.facility_id || '',
@@ -99,13 +108,14 @@ function saveStatus() {
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-950">
-                        <tr><th class="p-4">Staff</th><th class="p-4">Role</th><th class="p-4">Facilities</th><th class="p-4">Status</th><th class="p-4">Actions</th></tr>
+                        <tr><th class="p-4">Staff</th><th class="p-4">Role</th><th class="p-4">Facilities</th><th class="p-4">Public</th><th class="p-4">Status</th><th class="p-4">Actions</th></tr>
                     </thead>
                     <tbody>
                         <tr v-for="entry in staff.data" :key="entry.id" class="border-b border-slate-100 dark:border-slate-800">
                             <td class="p-4"><strong>{{ entry.user.full_name }}</strong><br><span class="text-slate-500">{{ entry.staff_number }} - {{ entry.user.email }}</span></td>
                             <td class="p-4">{{ entry.user.roles.map((role) => role.name).join(', ') || entry.job_title || entry.staff_category }}</td>
                             <td class="p-4">{{ entry.memberships.map((membership) => membership.facility?.name).filter(Boolean).join(', ') || 'None' }}</td>
+                            <td class="p-4"><span class="rounded-full px-2 py-1 text-xs font-bold" :class="entry.public_is_visible ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'">{{ entry.public_is_visible ? (entry.public_is_featured ? 'Featured public' : 'Public') : 'Private' }}</span></td>
                             <td class="p-4">{{ entry.employment_status }}</td>
                             <td class="p-4">
                                 <ActionToolbar>
@@ -114,7 +124,7 @@ function saveStatus() {
                                 </ActionToolbar>
                             </td>
                         </tr>
-                        <tr v-if="staff.data.length === 0"><td class="p-4 text-slate-500" colspan="5">No staff found.</td></tr>
+                        <tr v-if="staff.data.length === 0"><td class="p-4 text-slate-500" colspan="6">No staff found.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -147,6 +157,17 @@ function saveStatus() {
                     <p v-if="form.errors.facility_ids" class="mt-1 text-xs text-red-700">{{ form.errors.facility_ids }}</p>
                 </div>
                 <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Default facility<select v-model="form.default_facility_id" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900"><option value="">Default facility</option><option v-for="facility in facilities" :key="facility.id" :value="facility.id">{{ facility.name }}</option></select><span v-if="form.errors.default_facility_id" class="text-xs text-red-700">{{ form.errors.default_facility_id }}</span></label>
+                <div class="grid gap-3 rounded-md border border-slate-200 p-4 sm:col-span-2 sm:grid-cols-2 dark:border-slate-800">
+                    <label class="flex items-center gap-2 text-sm font-semibold"><input v-model="form.public_is_visible" type="checkbox"> Show on public website</label>
+                    <label class="flex items-center gap-2 text-sm font-semibold"><input v-model="form.public_is_featured" type="checkbox"> Featured doctor</label>
+                    <TextInput id="staff_public_name" v-model="form.public_display_name" label="Public display name" :error="form.errors.public_display_name" />
+                    <TextInput id="staff_public_specialty" v-model="form.public_specialty" label="Specialty/designation" :error="form.errors.public_specialty" />
+                    <TextInput id="staff_public_slug" v-model="form.public_slug" label="Public slug" :error="form.errors.public_slug" />
+                    <TextInput id="staff_public_order" v-model="form.public_display_order" label="Public display order" type="number" :error="form.errors.public_display_order" />
+                    <TextInput id="staff_public_photo" v-model="form.public_photo_path" label="Profile photograph URL/path" :error="form.errors.public_photo_path" />
+                    <TextInput id="staff_public_photo_alt" v-model="form.public_photo_alt" label="Profile photograph alt text" :error="form.errors.public_photo_alt" />
+                    <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Professional summary<textarea v-model="form.public_summary" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" rows="3"></textarea><span v-if="form.errors.public_summary" class="text-xs text-red-700">{{ form.errors.public_summary }}</span></label>
+                </div>
                 <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Notes<textarea v-model="form.notes" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" rows="3"></textarea></label>
             </div>
         </FormModal>

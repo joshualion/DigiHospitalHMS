@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\BillableService;
+use App\Models\Department;
 use App\Models\PublicSiteItem;
 use App\Models\PublicSiteMedia;
 use App\Models\PublicSitePage;
 use App\Models\PublicSiteRevision;
 use App\Models\PublicSiteSection;
+use App\Models\StaffProfile;
 use App\Services\AuditService;
 use App\Services\PublicSiteMediaUsage;
 use App\Services\PublicSitePublisher;
@@ -58,6 +61,8 @@ class PublicWebsiteController extends FoundationController
         return Inertia::render('Admin/PublicWebsite/Edit', [
             'page' => $this->editorPagePayload($page),
             'launch_warnings' => $this->launchWarnings($page),
+            'media_warnings' => $this->mediaWarnings($page),
+            'homepage_sources' => $this->homepageSources($page),
             'preview_url' => URL::temporarySignedRoute('public.preview', now()->addMinutes(30), ['page' => $page]),
             'media' => PublicSiteMedia::where('hospital_id', $page->hospital_id)->latest()->get(),
             'item_types' => ['service', 'department', 'clinician', 'testimonial', 'article'],
@@ -569,6 +574,82 @@ class PublicWebsiteController extends FoundationController
         }
 
         return array_values(array_unique($warnings));
+    }
+
+    private function homepageSources(PublicSitePage $page): array
+    {
+        if ($page->slug !== 'home') {
+            return [];
+        }
+
+        return [
+            'services' => [
+                'source' => 'Service catalogue',
+                'manage_url' => route('admin.billing.catalogue'),
+                'public_count' => BillableService::where('hospital_id', $page->hospital_id)->where('is_active', true)->where('public_is_visible', true)->count(),
+                'featured_count' => BillableService::where('hospital_id', $page->hospital_id)->where('is_active', true)->where('public_is_visible', true)->where('public_is_featured', true)->count(),
+            ],
+            'departments' => [
+                'source' => 'Departments',
+                'manage_url' => route('admin.departments.index'),
+                'public_count' => Department::where('hospital_id', $page->hospital_id)->where('status', 'active')->where('public_is_visible', true)->count(),
+                'featured_count' => Department::where('hospital_id', $page->hospital_id)->where('status', 'active')->where('public_is_visible', true)->where('public_is_featured', true)->count(),
+            ],
+            'clinicians' => [
+                'source' => 'Staff profiles',
+                'manage_url' => route('admin.staff.index'),
+                'public_count' => StaffProfile::where('hospital_id', $page->hospital_id)->where('employment_status', 'active')->where('is_active', true)->where('public_is_visible', true)->count(),
+                'featured_count' => StaffProfile::where('hospital_id', $page->hospital_id)->where('employment_status', 'active')->where('is_active', true)->where('public_is_visible', true)->where('public_is_featured', true)->count(),
+            ],
+        ];
+    }
+
+    private function mediaWarnings(PublicSitePage $page): array
+    {
+        $page->loadMissing('sections.items');
+        $payloads = collect([$page->draft_content, $page->published_content, $page->draft_seo, $page->published_seo]);
+        $page->sections->each(fn (PublicSiteSection $section) => $payloads->push($section->draft_content, $section->published_content));
+        $page->sections->flatMap->items->each(fn (PublicSiteItem $item) => $payloads->push($item->draft_content, $item->published_content));
+
+        return $payloads
+            ->flatMap(fn ($payload) => $this->mediaReferences(is_array($payload) ? $payload : []))
+            ->unique()
+            ->filter(fn (string $path) => ! $this->mediaReferenceExists($path))
+            ->map(fn (string $path) => "Referenced media is missing: {$path}")
+            ->values()
+            ->all();
+    }
+
+    private function mediaReferences(array $payload): array
+    {
+        $references = [];
+
+        foreach ($payload as $key => $value) {
+            if (is_array($value)) {
+                array_push($references, ...$this->mediaReferences($value));
+            } elseif (is_string($value) && in_array($key, ['image', 'photo', 'primary_image', 'logo', 'social_image'], true) && filled($value)) {
+                $references[] = $value;
+            }
+        }
+
+        return $references;
+    }
+
+    private function mediaReferenceExists(string $path): bool
+    {
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return true;
+        }
+
+        if (Str::startsWith($path, '/storage/')) {
+            return Storage::disk('public')->exists(Str::after($path, '/storage/'));
+        }
+
+        if (Str::startsWith($path, 'public-site/')) {
+            return Storage::disk('public')->exists($path);
+        }
+
+        return file_exists(public_path(ltrim($path, '/')));
     }
 
     private function sanitizeText(string $value): string

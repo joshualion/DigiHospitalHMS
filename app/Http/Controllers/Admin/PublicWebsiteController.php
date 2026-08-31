@@ -627,7 +627,7 @@ class PublicWebsiteController extends FoundationController
         foreach ($payload as $key => $value) {
             if (is_array($value)) {
                 array_push($references, ...$this->mediaReferences($value));
-            } elseif (is_string($value) && in_array($key, ['image', 'photo', 'primary_image', 'logo', 'social_image'], true) && filled($value)) {
+            } elseif (is_string($value) && $this->isMediaKey((string) $key) && filled($value)) {
                 $references[] = $value;
             }
         }
@@ -635,10 +635,21 @@ class PublicWebsiteController extends FoundationController
         return $references;
     }
 
+    private function isMediaKey(string $key): bool
+    {
+        return Str::contains(Str::lower($key), ['image', 'photo', 'logo']);
+    }
+
     private function mediaReferenceExists(string $path): bool
     {
         if (filter_var($path, FILTER_VALIDATE_URL)) {
             return true;
+        }
+
+        if (preg_match('#^/public-site/media/(\\d+)(?:/|$)#', $path, $matches)) {
+            $media = PublicSiteMedia::find((int) $matches[1]);
+
+            return $media && Storage::disk($media->disk)->exists($media->path);
         }
 
         if (Str::startsWith($path, '/storage/')) {

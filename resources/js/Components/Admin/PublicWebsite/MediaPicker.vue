@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 
 const props = defineProps({
     modelValue: { type: String, default: '' },
@@ -17,7 +17,7 @@ const pendingFileName = ref('');
 const fileInput = ref(null);
 const brokenImages = ref({});
 
-const selected = computed(() => props.media.find((asset) => asset.url === props.modelValue || asset.path === props.modelValue));
+const selected = computed(() => props.media.find((asset) => [asset.url, asset.path, `/storage/${asset.path}`].includes(props.modelValue)));
 
 function choose(asset) {
     emit('update:modelValue', asset.url);
@@ -59,6 +59,10 @@ function uploadedHere(asset) {
 function markBroken(src) {
     if (src) brokenImages.value[src] = true;
 }
+
+watch(() => props.modelValue, (value) => {
+    if (value) delete brokenImages.value[value];
+});
 
 onBeforeUnmount(revokePendingPreview);
 </script>

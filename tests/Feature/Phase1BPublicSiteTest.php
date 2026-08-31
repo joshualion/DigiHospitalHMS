@@ -521,7 +521,24 @@ class Phase1BPublicSiteTest extends TestCase
         $media = PublicSiteMedia::firstOrFail();
         Storage::disk('public')->assertExists($media->path);
         $this->assertStringEndsWith('.jpg', $media->path);
-        $this->assertStringContainsString('/storage/public-site/', $media->url);
+        $this->assertStringContainsString("/public-site/media/{$media->id}/", $media->url);
+        $this->get($media->url)->assertOk()->assertHeader('content-type', 'image/jpeg');
+
+        $home = PublicSitePage::where('slug', 'home')->firstOrFail();
+        $draft = $home->draft_content;
+        $draft['footer']['referenced_image'] = "/storage/{$media->path}";
+        $home->update([
+            'draft_content' => $draft,
+            'published_content' => $draft,
+            'draft_seo' => ['title' => 'Home', 'description' => 'Home description', 'image' => "/storage/{$media->path}", 'image_alt' => 'Care team image'],
+            'published_seo' => ['title' => 'Home', 'description' => 'Home description', 'image' => "/storage/{$media->path}", 'image_alt' => 'Care team image'],
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('site.footer.referenced_image', $media->url)
+                ->where('page.seo.image', url($media->url)));
 
         $this->actingAs($manager)->post('/admin/public-website/media', [
             'title' => 'Unsafe',
@@ -529,16 +546,21 @@ class Phase1BPublicSiteTest extends TestCase
             'image' => UploadedFile::fake()->create('unsafe.svg', 8, 'image/svg+xml'),
         ])->assertSessionHasErrors('image');
 
-        $home = PublicSitePage::where('slug', 'home')->firstOrFail();
-        $draft = $home->draft_content;
         $draft['footer']['referenced_image'] = $media->url;
         $home->update(['draft_content' => $draft]);
 
         $this->actingAs($manager)->delete("/admin/public-website/media/{$media->id}")->assertForbidden();
-        $this->assertSame(1, $media->refresh()->usage_count);
+        $this->assertSame(4, $media->refresh()->usage_count);
 
         unset($draft['footer']['referenced_image']);
-        $home->update(['draft_content' => $draft]);
+        $published = $home->published_content;
+        unset($published['footer']['referenced_image']);
+        $home->update([
+            'draft_content' => $draft,
+            'published_content' => $published,
+            'draft_seo' => ['title' => 'Home', 'description' => 'Home description'],
+            'published_seo' => ['title' => 'Home', 'description' => 'Home description'],
+        ]);
         $this->actingAs($manager)->delete("/admin/public-website/media/{$media->id}")->assertRedirect();
         $this->assertDatabaseMissing('public_site_media', ['id' => $media->id]);
         $this->assertDatabaseHas('audit_events', ['action' => 'website.media_deleted']);

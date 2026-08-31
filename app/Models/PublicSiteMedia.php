@@ -57,6 +57,13 @@ class PublicSiteMedia extends Model
         }
 
         if ($this->disk === 'public') {
+            if ($this->exists && $this->getKey()) {
+                return route('public.media', [
+                    'media' => $this->getKey(),
+                    'filename' => basename($this->path),
+                ], false);
+            }
+
             return Storage::url($this->path);
         }
 

@@ -6,13 +6,16 @@ use App\Models\BillableService;
 use App\Models\Department;
 use App\Models\Hospital;
 use App\Models\PublicSiteItem;
+use App\Models\PublicSiteMedia;
 use App\Models\PublicSitePage;
 use App\Models\StaffProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PublicSiteController extends Controller
 {
@@ -149,14 +152,26 @@ class PublicSiteController extends Controller
         ]);
     }
 
+    public function media(PublicSiteMedia $media, ?string $filename = null): StreamedResponse
+    {
+        abort_unless(Storage::disk($media->disk)->exists($media->path), 404);
+
+        return Storage::disk($media->disk)->response($media->path, $filename ?: basename($media->path), [
+            'Cache-Control' => 'public, max-age=31536000, immutable',
+        ]);
+    }
+
     public function siteShell(Hospital $hospital, bool $preview = false): array
     {
         $hospital->loadMissing('settings');
         $home = PublicSitePage::where('hospital_id', $hospital->id)->where('slug', 'home')->first();
         $content = $preview ? ($home?->draft_content ?? []) : ($home?->published_content ?? []);
+        $contactSection = $home?->sections()->where('key', 'contact')->first();
+        $contactSectionContent = $contactSection ? ($preview ? ($contactSection->draft_content ?? []) : ($contactSection->published_content ?? [])) : [];
         $branding = $hospital->settings?->branding ?? [];
         $contactDetails = $hospital->settings?->contact_details ?? [];
         $tagline = $branding['tagline'] ?? $content['branding']['tagline'] ?? $content['footer']['tagline'] ?? null;
+        $hospitalPhone = $this->publicPhone($hospital->phone_numbers[0] ?? null);
 
         $theme = $content['theme'] ?? [];
         $accentMap = [
@@ -193,7 +208,7 @@ class PublicSiteController extends Controller
             ],
             'utility' => $content['utility'] ?? [],
             'navigation' => $navigation,
-            'footer' => $content['footer'] ?? [],
+            'footer' => $this->normalizeContentImages($content['footer'] ?? []),
             'theme' => [
                 'appearance' => in_array($theme['appearance'] ?? 'system', ['light', 'dark', 'system'], true) ? ($theme['appearance'] ?? 'system') : 'system',
                 'accent' => in_array($themeAccent, $accentOptions, true) ? $themeAccent : 'calm',
@@ -201,10 +216,10 @@ class PublicSiteController extends Controller
                 'switcherVisible' => ($theme['show_switcher'] ?? true) !== false,
             ],
             'contact' => [
-                'address' => $contactDetails['public_address'] ?? trim(collect([$hospital->address, $hospital->city, $hospital->state, $hospital->country])->filter()->implode(', ')),
-                'phone' => $contactDetails['public_phone'] ?? $hospital->phone_numbers[0] ?? null,
-                'email' => $contactDetails['public_email'] ?? $hospital->email,
-                'hours' => $content['utility']['hours'] ?? null,
+                'address' => $contactDetails['public_address'] ?? $contactSectionContent['address'] ?? trim(collect([$hospital->address, $hospital->city, $hospital->state, $hospital->country])->filter()->implode(', ')),
+                'phone' => $this->publicPhone($contactDetails['public_phone'] ?? $contactSectionContent['phone'] ?? $content['utility']['phone'] ?? $content['utility']['emergency_phone'] ?? $hospitalPhone),
+                'email' => $contactDetails['public_email'] ?? $contactSectionContent['email'] ?? $content['utility']['email'] ?? $hospital->email,
+                'hours' => $contactSectionContent['hours'] ?? $content['utility']['hours'] ?? null,
             ],
             'fallbacks' => [
                 'logo' => asset('logo.jpg'),
@@ -419,7 +434,7 @@ class PublicSiteController extends Controller
                 continue;
             }
 
-            if (is_string($value) && in_array($key, ['image', 'photo', 'primary_image', 'logo', 'social_image'], true)) {
+            if (is_string($value) && $this->isMediaKey((string) $key)) {
                 $content[$key] = $this->publicUrl($value);
             }
         }
@@ -427,10 +442,19 @@ class PublicSiteController extends Controller
         return $content;
     }
 
+    private function isMediaKey(string $key): bool
+    {
+        return Str::contains(Str::lower($key), ['image', 'photo', 'logo']);
+    }
+
     private function publicUrl(?string $path): ?string
     {
         if (! $path) {
             return null;
+        }
+
+        if ($media = $this->mediaFromReference($path)) {
+            return $media->url;
         }
 
         if (filter_var($path, FILTER_VALIDATE_URL) || Str::startsWith($path, '/')) {
@@ -446,10 +470,38 @@ class PublicSiteController extends Controller
             return null;
         }
 
+        if ($media = $this->mediaFromReference($path)) {
+            return url($media->url);
+        }
+
         if (filter_var($path, FILTER_VALIDATE_URL)) {
             return $path;
         }
 
         return url(Str::startsWith($path, '/') ? $path : "/{$path}");
+    }
+
+    private function mediaFromReference(string $path): ?PublicSiteMedia
+    {
+        if (preg_match('#^/public-site/media/(\d+)(?:/|$)#', $path, $matches)) {
+            return PublicSiteMedia::find((int) $matches[1]);
+        }
+
+        if (Str::startsWith($path, '/storage/public-site/')) {
+            return PublicSiteMedia::where('path', Str::after($path, '/storage/'))->first();
+        }
+
+        if (Str::startsWith($path, 'public-site/')) {
+            return PublicSiteMedia::where('path', $path)->first();
+        }
+
+        return null;
+    }
+
+    private function publicPhone(?string $phone): ?string
+    {
+        $normalized = preg_replace('/[^0-9+]/', '', (string) $phone);
+
+        return in_array($normalized, ['', '+2340000000000', '2340000000000'], true) ? null : $phone;
     }
 }

@@ -44,6 +44,7 @@ Route::get('/appointment', [PublicSiteController::class, 'page'])->defaults('slu
 Route::get('/appointment/request', [PublicAppointmentRequestController::class, 'create'])->name('appointment.request');
 Route::post('/appointment/request', [PublicAppointmentRequestController::class, 'store'])->name('appointment.request.store');
 Route::get('/policies', [PublicSiteController::class, 'page'])->defaults('slug', 'policies')->name('policies');
+Route::get('/public-site/media/{media}/{filename?}', [PublicSiteController::class, 'media'])->name('public.media');
 Route::get('/preview/public-site/{page}', [PublicSiteController::class, 'preview'])->name('public.preview');
 
 Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse|cashier|accountant|laboratory-scientist|radiology-staff|pharmacist|storekeeper|blood-bank-staff'])

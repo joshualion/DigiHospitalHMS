@@ -31,7 +31,7 @@ class PublicSitePublisher
             if ($model instanceof PublicSitePage) {
                 $published['title'] = $payload['title'];
                 $published['published_title'] = $payload['title'];
-                $published['published_seo'] = $payload['seo'] ?? [];
+                $published['published_seo'] = $this->mergeSeo($model->published_seo ?? $model->seo ?? [], $payload['seo'] ?? []);
             }
 
             if ($model instanceof PublicSiteSection) {
@@ -206,5 +206,16 @@ class PublicSitePublisher
         }
 
         return (int) $model->hospital_id;
+    }
+
+    private function mergeSeo(array $current, array $incoming): array
+    {
+        foreach ($incoming as $key => $value) {
+            if (filled($value) || ! array_key_exists($key, $current)) {
+                $current[$key] = $value;
+            }
+        }
+
+        return $current;
     }
 }

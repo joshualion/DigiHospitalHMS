@@ -31,6 +31,7 @@ const footer = computed(() => shell.value.footer || {});
 const navigation = computed(() => shell.value.navigation || []);
 const contact = computed(() => props.site?.contact || {});
 const themeDefaults = computed(() => shell.value.theme || { appearance: 'system', accent: 'calm', allowedAccents: ['calm', 'healing', 'alert', 'blood', 'seagrass'], switcherVisible: true });
+const showThemeSwitcher = computed(() => themeDefaults.value.switcherVisible !== false && themeDefaults.value.show_switcher !== false);
 const hospitalName = computed(() => props.site.hospital?.display_name || 'Hospital');
 const hospitalTagline = computed(() => props.site.hospital?.tagline || props.site.branding?.tagline || '');
 const hospitalLogoPath = computed(() => props.site.hospital?.logo_url || props.site.hospital?.logo_path || '');
@@ -85,12 +86,12 @@ onBeforeUnmount(() => {
                 </nav>
 
                 <div class="hidden items-center gap-3 lg:flex">
-                    <ThemeSwitcher :defaults="themeDefaults" />
+                    <ThemeSwitcher v-if="showThemeSwitcher" :defaults="themeDefaults" />
                     <Link :href="user ? '/dashboard' : '/login'" class="public-focus btn-public-secondary"><LogIn class="h-4 w-4" aria-hidden="true" />{{ user ? 'Dashboard' : 'Login' }}</Link>
                 </div>
 
                 <div class="flex items-center gap-2 lg:hidden">
-                    <ThemeSwitcher :defaults="themeDefaults" />
+                    <ThemeSwitcher v-if="showThemeSwitcher" :defaults="themeDefaults" />
                     <button class="public-focus grid h-11 w-11 place-items-center rounded-full border" style="border-color: var(--public-border); color: var(--public-text);" type="button" aria-label="Open menu" :aria-expanded="open" @click="open = true">
                         <Menu class="h-5 w-5" aria-hidden="true" />
                     </button>
@@ -110,7 +111,7 @@ onBeforeUnmount(() => {
             </nav>
             <div class="mt-8 border-t pt-6" style="border-color: var(--public-border);">
                 <p class="mb-3 text-sm font-black">Theme</p>
-                <ThemeSwitcher :defaults="themeDefaults" />
+                <ThemeSwitcher v-if="showThemeSwitcher" :defaults="themeDefaults" />
             </div>
         </aside>
 

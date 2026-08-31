@@ -78,7 +78,7 @@ class PublicWebsiteController extends FoundationController
         ]);
 
         $validated['draft_content'] = $this->sanitizePayload($validated['draft_content']);
-        $validated['seo'] = $this->normalizeSeo($this->sanitizePayload($validated['seo'] ?? []));
+        $validated['seo'] = $this->mergeSeo($page->draft_seo ?? $page->seo ?? [], $validated['seo'] ?? []);
         $before = $page->only(['draft_title', 'draft_content', 'draft_seo']);
         $page->update([
             'draft_title' => $validated['title'],
@@ -409,6 +409,20 @@ class PublicWebsiteController extends FoundationController
         unset($seo['canonical']);
 
         return $seo;
+    }
+
+    private function mergeSeo(array $current, array $incoming): array
+    {
+        $current = $this->normalizeSeo($this->sanitizePayload($current));
+        $incoming = $this->normalizeSeo($this->sanitizePayload($incoming));
+
+        foreach ($incoming as $key => $value) {
+            if (filled($value) || ! array_key_exists($key, $current)) {
+                $current[$key] = $value;
+            }
+        }
+
+        return $current;
     }
 
     private function editorPagePayload(PublicSitePage $page): array

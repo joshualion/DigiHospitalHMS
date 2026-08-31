@@ -122,6 +122,16 @@ function savePage() {
         .patch(`/admin/public-website/pages/${pageModel.value.id}`, { preserveScroll: true });
 }
 
+function saveBranding() {
+    useForm({ title: pageModel.value.title, draft_content: pageModel.value.draft_content || {} })
+        .patch(`/admin/public-website/pages/${pageModel.value.id}`, { preserveScroll: true });
+}
+
+function saveSeo() {
+    useForm({ title: pageModel.value.title, draft_content: pageModel.value.draft_content || {}, seo: pageModel.value.seo || {} })
+        .patch(`/admin/public-website/pages/${pageModel.value.id}`, { preserveScroll: true });
+}
+
 function saveTheme() {
     useForm({ appearance: theme.value.appearance, accent: theme.value.accent, allowed_accents: theme.value.allowed_accents, show_switcher: theme.value.show_switcher })
         .patch(`/admin/public-website/pages/${pageModel.value.id}/theme`, { preserveScroll: true });
@@ -306,7 +316,7 @@ function toggleAccent(value) {
             </nav>
 
             <section v-if="activePanel === 'page'" class="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
-                <form class="space-y-5 rounded-md border border-slate-200 bg-white p-5" @submit.prevent="savePage">
+                <form class="space-y-5 rounded-md border border-slate-200 bg-white p-5" @submit.prevent="saveBranding">
                     <h3 class="text-lg font-bold">Branding, Header and Footer</h3>
                     <label class="block text-sm font-semibold">Page title
                         <input v-model="pageModel.title" class="mt-1 w-full rounded-md border-slate-300" type="text" required>
@@ -371,7 +381,7 @@ function toggleAccent(value) {
                 </form>
 
                 <div class="space-y-6">
-                    <form class="space-y-4 rounded-md border border-slate-200 bg-white p-5" @submit.prevent="savePage">
+                    <form class="space-y-4 rounded-md border border-slate-200 bg-white p-5" @submit.prevent="saveSeo">
                         <h3 class="text-lg font-bold">SEO</h3>
                         <label class="block text-sm font-semibold">SEO title
                             <input v-model="seo.title" class="mt-1 w-full rounded-md border-slate-300" type="text">

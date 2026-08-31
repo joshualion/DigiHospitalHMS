@@ -17,6 +17,7 @@ use App\Services\InvoiceWorkflowService;
 use App\Services\ServicePricingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -57,6 +58,11 @@ class BillingController extends FoundationController
         $this->authorize('create', BillableService::class);
         $hospital = $this->currentHospital();
         $validated = $request->validate($this->serviceRules($hospital->id));
+        $validated['public_slug'] = $this->publicSlug(
+            $validated['public_slug'] ?? null,
+            $validated['public_name'] ?? $validated['name'],
+            (bool) ($validated['public_is_visible'] ?? false)
+        );
         $facilityIds = $validated['facility_ids'] ?? [];
         unset($validated['facility_ids']);
         $service = BillableService::create($validated + ['hospital_id' => $hospital->id]);
@@ -70,6 +76,11 @@ class BillingController extends FoundationController
     {
         $this->authorize('update', $service);
         $validated = $request->validate($this->serviceRules($service->hospital_id, $service));
+        $validated['public_slug'] = $this->publicSlug(
+            $validated['public_slug'] ?? null,
+            $validated['public_name'] ?? $validated['name'],
+            (bool) ($validated['public_is_visible'] ?? false)
+        );
         $facilityIds = $validated['facility_ids'] ?? [];
         unset($validated['facility_ids']);
         $before = $service->load('facilities')->toArray();
@@ -225,8 +236,29 @@ class BillingController extends FoundationController
             'tax_rate_basis_points' => ['required', 'integer', 'min:0', 'max:10000'],
             'is_discount_eligible' => ['boolean'],
             'is_active' => ['boolean'],
+            'public_is_visible' => ['boolean'],
+            'public_is_featured' => ['boolean'],
+            'public_slug' => ['nullable', 'string', 'max:255', Rule::unique('billable_services', 'public_slug')->where('hospital_id', $hospitalId)->ignore($service)],
+            'public_name' => ['nullable', 'string', 'max:255'],
+            'public_description' => ['nullable', 'string', 'max:2000'],
+            'public_icon' => ['nullable', 'string', 'max:80'],
+            'public_image_path' => ['nullable', 'string', 'max:255'],
+            'public_display_order' => ['integer', 'min:0'],
             'facility_ids' => ['array'],
             'facility_ids.*' => [Rule::exists('facilities', 'id')->where('hospital_id', $hospitalId)],
         ];
+    }
+
+    private function publicSlug(?string $slug, string $fallback, bool $isPublic): ?string
+    {
+        if (! $isPublic && blank($slug)) {
+            return null;
+        }
+
+        if (blank($slug) && blank($fallback)) {
+            return null;
+        }
+
+        return Str::slug($slug ?: $fallback);
     }
 }

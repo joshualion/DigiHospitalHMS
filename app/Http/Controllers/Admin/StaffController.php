@@ -78,6 +78,19 @@ class StaffController extends FoundationController
                 'hire_date' => $validated['hire_date'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'is_active' => true,
+                'public_is_visible' => (bool) ($validated['public_is_visible'] ?? false),
+                'public_is_featured' => (bool) ($validated['public_is_featured'] ?? false),
+                'public_slug' => $this->publicSlug(
+                    $validated['public_slug'] ?? null,
+                    trim("{$validated['firstname']} {$validated['lastname']}"),
+                    (bool) ($validated['public_is_visible'] ?? false)
+                ),
+                'public_display_name' => $validated['public_display_name'] ?? null,
+                'public_specialty' => $validated['public_specialty'] ?? null,
+                'public_summary' => $validated['public_summary'] ?? null,
+                'public_photo_path' => $validated['public_photo_path'] ?? null,
+                'public_photo_alt' => $validated['public_photo_alt'] ?? null,
+                'public_display_order' => (int) ($validated['public_display_order'] ?? 0),
             ]);
 
             $this->syncMemberships($staff, $validated['facility_ids'] ?? [], $validated['default_facility_id'] ?? null);
@@ -111,6 +124,15 @@ class StaffController extends FoundationController
                 'work_phone',
                 'hire_date',
                 'notes',
+                'public_is_visible',
+                'public_is_featured',
+                'public_slug',
+                'public_display_name',
+                'public_specialty',
+                'public_summary',
+                'public_photo_path',
+                'public_photo_alt',
+                'public_display_order',
             ]);
 
             $user->update([
@@ -128,6 +150,19 @@ class StaffController extends FoundationController
                 'work_phone' => $validated['work_phone'] ?? null,
                 'hire_date' => $validated['hire_date'] ?? null,
                 'notes' => $validated['notes'] ?? null,
+                'public_is_visible' => (bool) ($validated['public_is_visible'] ?? false),
+                'public_is_featured' => (bool) ($validated['public_is_featured'] ?? false),
+                'public_slug' => $this->publicSlug(
+                    $validated['public_slug'] ?? null,
+                    $user->full_name,
+                    (bool) ($validated['public_is_visible'] ?? false)
+                ),
+                'public_display_name' => $validated['public_display_name'] ?? null,
+                'public_specialty' => $validated['public_specialty'] ?? null,
+                'public_summary' => $validated['public_summary'] ?? null,
+                'public_photo_path' => $validated['public_photo_path'] ?? null,
+                'public_photo_alt' => $validated['public_photo_alt'] ?? null,
+                'public_display_order' => (int) ($validated['public_display_order'] ?? 0),
             ]);
 
             $user->syncRoles($validated['roles'] ?? []);
@@ -192,6 +227,15 @@ class StaffController extends FoundationController
             'work_phone' => ['nullable', 'string', 'max:50'],
             'hire_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'public_is_visible' => ['boolean'],
+            'public_is_featured' => ['boolean'],
+            'public_slug' => ['nullable', 'string', 'max:255', Rule::unique('staff_profiles', 'public_slug')->where('hospital_id', $hospitalId)->ignore($staffProfileId)],
+            'public_display_name' => ['nullable', 'string', 'max:255'],
+            'public_specialty' => ['nullable', 'string', 'max:255'],
+            'public_summary' => ['nullable', 'string', 'max:2000'],
+            'public_photo_path' => ['nullable', 'string', 'max:255'],
+            'public_photo_alt' => ['nullable', 'string', 'max:255'],
+            'public_display_order' => ['integer', 'min:0'],
             'roles' => ['array'],
             'roles.*' => ['string', Rule::exists('roles', 'name')->where('guard_name', 'web')],
             'facility_ids' => ['required', 'array', 'min:1'],
@@ -245,5 +289,18 @@ class StaffController extends FoundationController
         $count = User::role('superadmin')->where('status', 'active')->count();
 
         abort_if($count <= 1, 422, 'The final active superadministrator cannot be suspended.');
+    }
+
+    private function publicSlug(?string $slug, string $fallback, bool $isPublic): ?string
+    {
+        if (! $isPublic && blank($slug)) {
+            return null;
+        }
+
+        if (blank($slug) && blank($fallback)) {
+            return null;
+        }
+
+        return Str::slug($slug ?: $fallback);
     }
 }

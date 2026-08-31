@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BillableService;
+use App\Models\Department;
 use App\Models\Hospital;
 use App\Models\PublicSiteItem;
 use App\Models\PublicSitePage;
+use App\Models\StaffProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
@@ -27,6 +30,35 @@ class PublicSiteController extends Controller
     {
         $hospital = Hospital::primary();
         abort_unless($hospital, 404);
+
+        $profile = StaffProfile::with(['user:id,firstname,lastname,status', 'hospital:id,display_name'])
+            ->where('hospital_id', $hospital->id)
+            ->where('public_is_visible', true)
+            ->where('public_slug', $slug)
+            ->where('is_active', true)
+            ->where('employment_status', 'active')
+            ->whereHas('user', fn ($query) => $query->where('status', 'active'))
+            ->where(fn ($query) => $this->qualifiedClinicianScope($query))
+            ->first();
+
+        if ($profile) {
+            $item = $this->clinicianPayload($profile);
+            $page = [
+                'slug' => 'doctor-profile',
+                'title' => $item['title'],
+                'content' => $item['content'],
+                'seo' => ['title' => $item['title'], 'description' => $item['summary']],
+            ];
+            $page['seo'] = $this->seoPayload($hospital, $page, $request, $page['content']['photo'] ?? null);
+
+            return Inertia::render('Public/WebsitePage', [
+                'mode' => 'published',
+                'site' => $this->siteShell($hospital),
+                'page' => $page,
+                'sections' => [],
+                'items' => ['clinician' => [$item]],
+            ]);
+        }
 
         $item = PublicSiteItem::published()
             ->where('hospital_id', $hospital->id)
@@ -218,15 +250,131 @@ class PublicSiteController extends Controller
 
     private function items(PublicSitePage $page, bool $draft = false): array
     {
-        $items = PublicSiteItem::query()
+        $cmsItems = PublicSiteItem::query()
             ->where('hospital_id', $page->hospital_id)
+            ->whereIn($draft ? 'draft_type' : 'published_type', ['testimonial', 'article'])
             ->when(! $draft, fn ($query) => $query->published())
             ->orderBy($draft ? 'draft_sort_order' : 'published_sort_order')
             ->get()
             ->map(fn (PublicSiteItem $item) => $this->itemPayload($item, $draft))
-            ->groupBy('type');
+            ->groupBy('type')
+            ->map(fn ($group) => $group->values()->all())
+            ->all();
 
-        return $items->map(fn ($group) => $group->values())->all();
+        return array_replace($cmsItems, [
+            'service' => $this->servicePayloads($page),
+            'department' => $this->departmentPayloads($page),
+            'clinician' => $this->clinicianPayloads($page),
+        ]);
+    }
+
+    private function servicePayloads(PublicSitePage $page): array
+    {
+        return BillableService::with('department:id,name')
+            ->where('hospital_id', $page->hospital_id)
+            ->where('is_active', true)
+            ->where('public_is_visible', true)
+            ->when($page->slug === 'home', fn ($query) => $query->where('public_is_featured', true))
+            ->orderBy('public_display_order')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (BillableService $service) => [
+                'id' => $service->id,
+                'type' => 'service',
+                'slug' => $service->public_slug ?: Str::slug($service->public_name ?: $service->name),
+                'title' => $service->public_name ?: $service->name,
+                'summary' => $service->public_description ?: $service->description,
+                'is_featured' => $service->public_is_featured,
+                'source' => 'billable_service',
+                'content' => $this->normalizeContentImages([
+                    'icon' => $service->public_icon ?: 'stethoscope',
+                    'description' => $service->public_description ?: $service->description,
+                    'image' => $service->public_image_path,
+                    'department' => $service->department?->name,
+                    'cta_label' => 'Learn more',
+                    'cta_url' => '/services',
+                ]),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function departmentPayloads(PublicSitePage $page): array
+    {
+        return Department::query()
+            ->where('hospital_id', $page->hospital_id)
+            ->where('status', 'active')
+            ->where('public_is_visible', true)
+            ->when($page->slug === 'home', fn ($query) => $query->where('public_is_featured', true))
+            ->orderBy('public_display_order')
+            ->orderBy('display_order')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Department $department) => [
+                'id' => $department->id,
+                'type' => 'department',
+                'slug' => $department->public_slug ?: Str::slug($department->public_name ?: $department->name),
+                'title' => $department->public_name ?: $department->name,
+                'summary' => $department->public_description ?: $department->description,
+                'is_featured' => $department->public_is_featured,
+                'source' => 'department',
+                'content' => $this->normalizeContentImages([
+                    'icon' => $department->public_icon ?: 'building-2',
+                    'summary' => $department->public_description ?: $department->description,
+                    'image' => $department->public_image_path,
+                ]),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function clinicianPayloads(PublicSitePage $page): array
+    {
+        return StaffProfile::with(['user:id,firstname,lastname,status'])
+            ->where('hospital_id', $page->hospital_id)
+            ->where('is_active', true)
+            ->where('employment_status', 'active')
+            ->where('public_is_visible', true)
+            ->when($page->slug === 'home', fn ($query) => $query->where('public_is_featured', true))
+            ->whereHas('user', fn ($query) => $query->where('status', 'active'))
+            ->where(fn ($query) => $this->qualifiedClinicianScope($query))
+            ->orderBy('public_display_order')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (StaffProfile $profile) => $this->clinicianPayload($profile))
+            ->values()
+            ->all();
+    }
+
+    private function clinicianPayload(StaffProfile $profile): array
+    {
+        $name = $profile->public_display_name ?: $profile->user?->full_name ?: 'Clinician';
+
+        return [
+            'id' => $profile->id,
+            'type' => 'clinician',
+            'slug' => $profile->public_slug ?: Str::slug($name),
+            'title' => $name,
+            'summary' => $profile->public_specialty ?: $profile->job_title,
+            'is_featured' => $profile->public_is_featured,
+            'source' => 'staff_profile',
+            'content' => $this->normalizeContentImages([
+                'display_name' => $name,
+                'professional_title' => $profile->public_specialty ?: $profile->job_title,
+                'specialty' => $profile->public_specialty,
+                'bio' => $profile->public_summary,
+                'photo' => $profile->public_photo_path,
+                'alt' => $profile->public_photo_alt ?: "{$name} profile photograph",
+            ]),
+        ];
+    }
+
+    private function qualifiedClinicianScope($query): void
+    {
+        $query->whereIn('staff_category', ['clinical', 'doctor', 'nurse'])
+            ->orWhere('job_title', 'like', '%doctor%')
+            ->orWhere('job_title', 'like', '%clinician%')
+            ->orWhereHas('user.roles', fn ($roles) => $roles->whereIn('name', ['doctor', 'nurse', 'laboratory-scientist', 'radiology-staff', 'pharmacist']));
     }
 
     private function itemPayload(PublicSiteItem $item, bool $draft = false): array

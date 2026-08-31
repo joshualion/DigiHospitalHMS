@@ -24,6 +24,15 @@ class StaffProfile extends Model
         'hire_date',
         'notes',
         'is_active',
+        'public_is_visible',
+        'public_is_featured',
+        'public_slug',
+        'public_display_name',
+        'public_specialty',
+        'public_summary',
+        'public_photo_path',
+        'public_photo_alt',
+        'public_display_order',
     ];
 
     protected function casts(): array
@@ -32,6 +41,9 @@ class StaffProfile extends Model
             'license_expires_at' => 'date',
             'hire_date' => 'date',
             'is_active' => 'boolean',
+            'public_is_visible' => 'boolean',
+            'public_is_featured' => 'boolean',
+            'public_display_order' => 'integer',
         ];
     }
 

@@ -429,7 +429,8 @@ function toggleAccent(value) {
                                 </select>
                             </label>
                         </div>
-                        <label class="flex items-center gap-2 text-sm font-semibold"><input v-model="theme.show_switcher" type="checkbox"> Show visitor theme switcher</label>
+                        <label class="flex items-center gap-2 text-sm font-semibold"><input v-model="theme.show_switcher" type="checkbox"> Show full visitor theme switcher with accent choices</label>
+                        <p class="text-xs text-slate-500">When disabled, visitors can still choose light, dark, or system mode, but the accent remains the admin-selected default.</p>
                         <div>
                             <p class="text-sm font-semibold">Allowed accents</p>
                             <div class="mt-2 flex flex-wrap gap-2">

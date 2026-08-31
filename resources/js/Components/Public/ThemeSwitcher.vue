@@ -3,10 +3,14 @@ import { usePublicTheme } from '@/Composables/usePublicTheme';
 import { Check, Monitor, Moon, Palette, Sun } from '@lucide/vue';
 import { computed, onBeforeUnmount, ref } from 'vue';
 
-const props = defineProps({ defaults: { type: Object, default: () => ({}) } });
+const props = defineProps({
+    defaults: { type: Object, default: () => ({}) },
+    allowAccent: { type: Boolean, default: true },
+    label: { type: String, default: 'Open theme settings' },
+});
 const open = ref(false);
 const root = ref(null);
-const theme = usePublicTheme(props.defaults);
+const theme = usePublicTheme({ ...props.defaults, allowAccentSwitching: props.allowAccent });
 const appearanceOptions = [
     { value: 'light', label: 'Light', icon: Sun },
     { value: 'dark', label: 'Dark', icon: Moon },
@@ -19,7 +23,9 @@ const accentLabels = {
     blood: 'Blood',
     seagrass: 'Seagrass',
 };
-const currentLabel = computed(() => `${appearanceOptions.find((item) => item.value === theme.appearance.value)?.label || 'System'}, ${accentLabels[theme.accent.value]}`);
+const currentLabel = computed(() => props.allowAccent
+    ? `${appearanceOptions.find((item) => item.value === theme.appearance.value)?.label || 'System'}, ${accentLabels[theme.accent.value]}`
+    : `${appearanceOptions.find((item) => item.value === theme.appearance.value)?.label || 'System'} mode`);
 
 function close() {
     open.value = false;
@@ -51,9 +57,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div v-if="theme.switcherVisible.value" ref="root" class="relative">
-        <button type="button" class="public-focus grid h-11 w-11 place-items-center rounded-full border text-sm font-bold transition" style="border-color: var(--public-border); background: var(--public-surface); color: var(--public-text);" :aria-expanded="open" aria-label="Open theme settings" @click="toggle">
-            <Palette class="h-4 w-4" aria-hidden="true" />
+    <div ref="root" class="relative">
+        <button type="button" class="public-focus grid h-11 w-11 place-items-center rounded-full border text-sm font-bold transition" style="border-color: var(--public-border); background: var(--public-surface); color: var(--public-text);" :aria-expanded="open" :aria-label="label" @click="toggle">
+            <Palette v-if="allowAccent" class="h-4 w-4" aria-hidden="true" />
+            <component :is="theme.resolvedAppearance.value === 'dark' ? Moon : Sun" v-else class="h-4 w-4" aria-hidden="true" />
             <span class="sr-only">{{ currentLabel }}</span>
         </button>
         <div v-if="open" class="absolute right-0 z-50 mt-3 w-72 rounded-2xl border p-4 shadow-2xl" style="background: var(--public-surface-elevated); border-color: var(--public-border); color: var(--public-text);">
@@ -64,8 +71,8 @@ onBeforeUnmount(() => {
                     {{ option.label }}
                 </button>
             </div>
-            <p class="mt-5 text-sm font-black">Accent</p>
-            <div class="mt-3 grid gap-2">
+            <p v-if="allowAccent" class="mt-5 text-sm font-black">Accent</p>
+            <div v-if="allowAccent" class="mt-3 grid gap-2">
                 <button v-for="value in theme.allowedAccents.value" :key="value" type="button" class="public-focus flex items-center justify-between rounded-xl border px-3 py-2 text-sm font-bold" :style="theme.accent.value === value ? 'border-color: var(--public-accent); background: var(--public-accent-soft); color: var(--public-text);' : 'border-color: var(--public-border);'" @click="theme.setAccent(value)">
                     <span>{{ accentLabels[value] }}</span>
                     <Check v-if="theme.accent.value === value" class="h-4 w-4" aria-hidden="true" />

@@ -630,7 +630,7 @@ class PublicWebsiteController extends FoundationController
         return [
             'services' => [
                 'source' => 'Service catalogue',
-                'manage_url' => route('admin.billing.catalogue'),
+                'manage_url' => route('admin.services.index'),
                 'public_count' => BillableService::where('hospital_id', $page->hospital_id)->where('is_active', true)->where('public_is_visible', true)->count(),
                 'featured_count' => BillableService::where('hospital_id', $page->hospital_id)->where('is_active', true)->where('public_is_visible', true)->where('public_is_featured', true)->count(),
             ],

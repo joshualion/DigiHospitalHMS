@@ -683,6 +683,54 @@ class Phase1BPublicSiteTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('can_view_json', true));
     }
 
+    public function test_admin_services_cms_page_creates_public_featured_services(): void
+    {
+        $admin = $this->userWithPermissions(['billing.catalogue.view', 'billing.catalogue.manage']);
+        $department = Department::where('hospital_id', $this->hospital->id)->where('name', 'Cardiology')->firstOrFail();
+
+        $this->actingAs($admin)->get('/admin/services')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Services/Index')
+                ->has('services')
+                ->has('categories')
+                ->has('departments'));
+
+        $this->actingAs($admin)->post('/admin/services', [
+            'department_id' => $department->id,
+            'name' => 'Public physiotherapy',
+            'description' => 'Internal physiotherapy description.',
+            'is_active' => true,
+            'public_is_visible' => true,
+            'public_is_featured' => true,
+            'public_name' => 'Physiotherapy',
+            'public_description' => 'Movement and rehabilitation support.',
+            'public_icon' => 'stethoscope',
+            'public_display_order' => 3,
+            'facility_ids' => [],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('billable_service_categories', [
+            'hospital_id' => $this->hospital->id,
+            'code' => 'PUBLIC',
+        ]);
+        $this->assertDatabaseHas('billable_services', [
+            'hospital_id' => $this->hospital->id,
+            'code' => 'PUBLIC_PHYSIOTHERAPY',
+            'public_slug' => 'physiotherapy',
+            'public_is_visible' => true,
+            'public_is_featured' => true,
+        ]);
+
+        $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('items.service', 3)
+            ->where('items.service.2.slug', 'physiotherapy'));
+
+        $this->get('/services')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('items.service', 3)
+            ->where('items.service.2.title', 'Physiotherapy'));
+    }
+
     public function test_admin_public_website_editor_handles_page_with_no_sections_items_or_media(): void
     {
         $admin = $this->userWithPermissions(['website.view', 'website.edit']);

@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\ProcurementController;
 use App\Http\Controllers\Admin\PublicWebsiteController;
 use App\Http\Controllers\Admin\RadiologyController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicAppointmentRequestController;
@@ -67,6 +68,9 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::get('departments', [DepartmentController::class, 'index'])->name('admin.departments.index');
         Route::post('departments', [DepartmentController::class, 'store'])->name('admin.departments.store');
         Route::patch('departments/{department}', [DepartmentController::class, 'update'])->name('admin.departments.update');
+        Route::get('services', [ServiceController::class, 'index'])->name('admin.services.index');
+        Route::post('services', [ServiceController::class, 'store'])->name('admin.services.store');
+        Route::patch('services/{service}', [ServiceController::class, 'update'])->name('admin.services.update');
 
         Route::get('staff', [StaffController::class, 'index'])->name('admin.staff.index');
         Route::post('staff', [StaffController::class, 'store'])->name('admin.staff.store');

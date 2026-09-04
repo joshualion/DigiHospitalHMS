@@ -1,5 +1,6 @@
 <script setup>
 import ActionToolbar from '@/Components/Admin/ActionToolbar.vue';
+import ConfirmDialog from '@/Components/Admin/ConfirmDialog.vue';
 import FormModal from '@/Components/Admin/FormModal.vue';
 import PageHeader from '@/Components/Admin/PageHeader.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -39,8 +40,10 @@ const blankService = () => ({
     public_display_order: 0,
 });
 const form = useForm(blankService());
+const deleteForm = useForm({});
 const showForm = ref(false);
 const editing = ref(null);
+const deleteTarget = ref(null);
 
 function filter() {
     router.get('/admin/services', search.data(), { preserveState: true, replace: true });
@@ -72,6 +75,19 @@ function openEdit(service) {
 function saveService() {
     const options = { preserveScroll: true, onSuccess: () => { showForm.value = false; editing.value = null; form.defaults(blankService()); form.reset(); } };
     editing.value ? form.patch(`/admin/services/${editing.value.id}`, options) : form.post('/admin/services', options);
+}
+
+function confirmDelete(service) {
+    deleteTarget.value = service;
+}
+
+function deleteService() {
+    if (!deleteTarget.value) return;
+
+    deleteForm.delete(`/admin/services/${deleteTarget.value.id}`, {
+        preserveScroll: true,
+        onSuccess: () => { deleteTarget.value = null; },
+    });
 }
 </script>
 
@@ -108,7 +124,12 @@ function saveService() {
                             <td class="p-4"><span class="rounded-full px-2 py-1 text-xs font-bold" :class="service.public_is_visible ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'">{{ service.public_is_visible ? (service.public_is_featured ? 'Featured public' : 'Public') : 'Private' }}</span></td>
                             <td class="p-4">{{ service.is_active ? 'active' : 'inactive' }}</td>
                             <td class="p-4">{{ service.public_display_order }}</td>
-                            <td class="p-4"><button v-if="can('billing.catalogue.manage')" class="rounded-md border px-3 py-2 text-xs font-bold" type="button" @click="openEdit(service)">Edit</button></td>
+                            <td class="p-4">
+                                <div v-if="can('billing.catalogue.manage')" class="flex flex-wrap gap-2">
+                                    <button class="rounded-md border px-3 py-2 text-xs font-bold" type="button" @click="openEdit(service)">Edit</button>
+                                    <button class="rounded-md border border-rose-300 px-3 py-2 text-xs font-bold text-rose-700" type="button" @click="confirmDelete(service)">Delete</button>
+                                </div>
+                            </td>
                         </tr>
                         <tr v-if="services.data.length === 0"><td class="p-4 text-slate-500" colspan="6">No services found.</td></tr>
                     </tbody>
@@ -137,5 +158,15 @@ function saveService() {
                 </div>
             </div>
         </FormModal>
+
+        <ConfirmDialog
+            :show="Boolean(deleteTarget)"
+            title="Delete Service"
+            :message="deleteTarget ? `Delete '${deleteTarget.public_name || deleteTarget.name}' from services? This removes it from the public website and admin service list.` : ''"
+            confirm-label="Delete"
+            :form="deleteForm"
+            @close="deleteTarget = null"
+            @confirm="deleteService"
+        />
     </AppLayout>
 </template>

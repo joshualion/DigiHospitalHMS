@@ -24,4 +24,9 @@ class BillableServicePolicy
     {
         return $this->allowed($user, 'billing.catalogue.manage', $service);
     }
+
+    public function delete(User $user, BillableService $service): bool
+    {
+        return $this->allowed($user, 'billing.catalogue.manage', $service);
+    }
 }

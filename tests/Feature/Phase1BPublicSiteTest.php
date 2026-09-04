@@ -12,6 +12,8 @@ use App\Models\PublicSiteItem;
 use App\Models\PublicSiteMedia;
 use App\Models\PublicSitePage;
 use App\Models\PublicSiteRevision;
+use App\Models\Patient;
+use App\Models\ServicePrice;
 use App\Models\StaffProfile;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
@@ -729,6 +731,85 @@ class Phase1BPublicSiteTest extends TestCase
         $this->get('/services')->assertOk()->assertInertia(fn (Assert $page) => $page
             ->has('items.service', 3)
             ->where('items.service.2.title', 'Physiotherapy'));
+    }
+
+    public function test_admin_services_cms_can_delete_services_with_prices_without_losing_invoice_snapshots(): void
+    {
+        $admin = $this->userWithPermissions(['billing.catalogue.view', 'billing.catalogue.manage']);
+        $category = BillableServiceCategory::where('hospital_id', $this->hospital->id)->firstOrFail();
+
+        $service = BillableService::create([
+            'hospital_id' => $this->hospital->id,
+            'billable_service_category_id' => $category->id,
+            'code' => 'DELETE_ME',
+            'name' => 'Delete me',
+            'description' => 'Snapshotted service description.',
+            'is_tax_exempt' => true,
+            'tax_rate_basis_points' => 0,
+            'is_discount_eligible' => true,
+            'is_active' => true,
+            'public_is_visible' => true,
+            'public_is_featured' => true,
+            'public_slug' => 'delete-me',
+        ]);
+        ServicePrice::create([
+            'hospital_id' => $this->hospital->id,
+            'billable_service_id' => $service->id,
+            'currency' => 'NGN',
+            'amount_minor' => 1000,
+            'effective_from' => today(),
+            'is_active' => true,
+            'created_by' => $admin->id,
+            'reason' => 'Cascade deletion test',
+        ]);
+        $invoice = \App\Models\Invoice::create([
+            'hospital_id' => $this->hospital->id,
+            'patient_id' => Patient::create([
+                'hospital_id' => $this->hospital->id,
+                'registration_facility_id' => Facility::where('hospital_id', $this->hospital->id)->value('id'),
+                'registered_by' => $admin->id,
+                'hospital_number' => 'SVC-DELETE-001',
+                'status' => 'active',
+                'first_name' => 'Service',
+                'last_name' => 'Delete',
+                'sex' => 'female',
+            ])->id,
+            'currency' => 'NGN',
+            'status' => 'draft',
+            'created_by' => $admin->id,
+        ]);
+        \App\Models\InvoiceLine::create([
+            'invoice_id' => $invoice->id,
+            'hospital_id' => $this->hospital->id,
+            'billable_service_id' => $service->id,
+            'service_code' => $service->code,
+            'service_name' => $service->name,
+            'service_description' => $service->description,
+            'quantity' => 1,
+            'unit_price_minor' => 1000,
+            'subtotal_minor' => 1000,
+            'discount_minor' => 0,
+            'tax_minor' => 0,
+            'total_minor' => 1000,
+            'tax_rate_basis_points' => 0,
+            'tax_exempt' => true,
+            'discount_eligible' => true,
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)->delete("/admin/services/{$service->id}")
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseMissing('billable_services', ['id' => $service->id]);
+        $this->assertDatabaseMissing('service_prices', ['billable_service_id' => $service->id]);
+        $this->assertDatabaseHas('invoice_lines', [
+            'billable_service_id' => null,
+            'service_code' => 'DELETE_ME',
+            'service_name' => 'Delete me',
+            'service_description' => 'Snapshotted service description.',
+        ]);
+        $this->assertDatabaseHas('audit_events', ['action' => 'services.deleted']);
     }
 
     public function test_admin_public_website_editor_handles_page_with_no_sections_items_or_media(): void

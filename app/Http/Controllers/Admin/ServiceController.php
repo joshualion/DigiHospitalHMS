@@ -80,6 +80,19 @@ class ServiceController extends FoundationController
         return back()->with('success', 'Service updated.');
     }
 
+    public function destroy(BillableService $service, AuditService $audit): RedirectResponse
+    {
+        $this->authorize('delete', $service);
+
+        $before = $service->load(['facilities', 'prices'])->toArray();
+        $service->facilities()->detach();
+        $service->delete();
+
+        $audit->record('services.deleted', null, $before, null, actor: request()->user());
+
+        return back()->with('success', 'Service deleted.');
+    }
+
     private function rules(int $hospitalId, ?BillableService $service = null): array
     {
         return [

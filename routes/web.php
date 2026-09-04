@@ -71,6 +71,7 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::get('services', [ServiceController::class, 'index'])->name('admin.services.index');
         Route::post('services', [ServiceController::class, 'store'])->name('admin.services.store');
         Route::patch('services/{service}', [ServiceController::class, 'update'])->name('admin.services.update');
+        Route::delete('services/{service}', [ServiceController::class, 'destroy'])->name('admin.services.destroy');
 
         Route::get('staff', [StaffController::class, 'index'])->name('admin.staff.index');
         Route::post('staff', [StaffController::class, 'store'])->name('admin.staff.store');

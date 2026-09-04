@@ -253,6 +253,74 @@ class Phase1BPublicSiteTest extends TestCase
                 ->missing('items.article'));
     }
 
+    public function test_repeated_public_website_service_creation_generates_unique_slugs(): void
+    {
+        $editor = $this->userWithPermissions(['website.view', 'website.edit']);
+        $servicesPage = PublicSitePage::where('slug', 'services')->with('sections')->firstOrFail();
+        $section = $servicesPage->sections->firstWhere('key', 'services');
+        $payload = [
+            'public_site_section_id' => $section?->id,
+            'type' => 'service',
+            'slug' => '',
+            'title' => 'New service',
+            'summary' => '',
+            'draft_content' => ['icon' => 'stethoscope', 'description' => null, 'cta_label' => 'Learn more', 'cta_url' => '/services'],
+            'status' => 'draft',
+            'is_enabled' => true,
+            'is_featured' => true,
+            'sort_order' => 1,
+        ];
+
+        $this->actingAs($editor)->post("/admin/public-website/pages/{$servicesPage->id}/items", $payload)
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($editor)->post("/admin/public-website/pages/{$servicesPage->id}/items", $payload)
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('public_site_items', ['hospital_id' => $this->hospital->id, 'type' => 'service', 'slug' => 'new-service']);
+        $this->assertDatabaseHas('public_site_items', ['hospital_id' => $this->hospital->id, 'type' => 'service', 'slug' => 'new-service-2']);
+    }
+
+    public function test_published_cms_service_items_render_on_services_page(): void
+    {
+        $publisher = $this->userWithPermissions(['website.view', 'website.edit', 'website.publish']);
+        $servicesPage = PublicSitePage::where('slug', 'services')->with('sections')->firstOrFail();
+        $section = $servicesPage->sections->firstWhere('key', 'services');
+
+        $item = PublicSiteItem::create([
+            'hospital_id' => $this->hospital->id,
+            'public_site_section_id' => null,
+            'draft_public_site_section_id' => $section?->id,
+            'type' => 'service',
+            'draft_type' => 'service',
+            'slug' => 'patient-education',
+            'draft_slug' => 'patient-education',
+            'title' => 'Patient education',
+            'draft_title' => 'Patient education',
+            'summary' => 'Classes and guidance for patients.',
+            'draft_summary' => 'Classes and guidance for patients.',
+            'draft_content' => ['icon' => 'stethoscope', 'description' => 'Classes and guidance for patients.', 'cta_label' => 'Learn more', 'cta_url' => '/services'],
+            'status' => 'draft',
+            'is_enabled' => false,
+            'draft_is_enabled' => true,
+            'is_featured' => false,
+            'draft_is_featured' => true,
+            'sort_order' => 3,
+            'draft_sort_order' => 3,
+        ]);
+
+        $this->actingAs($publisher)->post("/admin/public-website/items/{$item->id}/publish")
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->get('/services')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('items.service', 3)
+            ->where('items.service.2.slug', 'patient-education')
+            ->where('items.service.2.source', 'public_site_item'));
+    }
+
     public function test_structured_repeaters_map_to_draft_payload_and_publish_in_order(): void
     {
         $publisher = $this->userWithPermissions(['website.view', 'website.edit', 'website.publish']);

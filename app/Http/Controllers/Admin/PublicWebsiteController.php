@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -128,7 +129,8 @@ class PublicWebsiteController extends FoundationController
         $validated = $request->validate($this->itemRules($item));
         $this->ensureSectionBelongsToHospital($validated['public_site_section_id'] ?? null, $item->hospital_id);
         $validated['draft_content'] = $this->sanitizePayload($validated['draft_content']);
-        $validated['slug'] = $validated['slug'] ?: Str::slug($validated['title']);
+        $validated['slug'] = $this->normalizeItemSlug($validated['slug'] ?? null, $validated['title']);
+        $this->ensureItemSlugIsUnique($item->hospital_id, $validated['type'], $validated['slug'], $item->id);
         $before = $item->only([
             'draft_public_site_section_id',
             'draft_type',
@@ -178,7 +180,7 @@ class PublicWebsiteController extends FoundationController
         $this->ensureSectionBelongsToPage($validated['public_site_section_id'] ?? null, $page);
         $validated['hospital_id'] = $page->hospital_id;
         $validated['draft_content'] = $this->sanitizePayload($validated['draft_content']);
-        $validated['slug'] = $validated['slug'] ?: Str::slug($validated['title']);
+        $validated['slug'] = $this->uniqueItemSlug($validated['hospital_id'], $validated['type'], $this->normalizeItemSlug($validated['slug'] ?? null, $validated['title']));
         $validated['status'] = 'draft';
 
         $item = PublicSiteItem::create([
@@ -361,6 +363,49 @@ class PublicWebsiteController extends FoundationController
             'is_featured' => ['required', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0'],
         ];
+    }
+
+    private function normalizeItemSlug(?string $slug, string $title): string
+    {
+        return Str::slug($slug ?: $title) ?: 'item';
+    }
+
+    private function uniqueItemSlug(int $hospitalId, string $type, string $slug, ?int $ignoreItemId = null): string
+    {
+        $candidate = $slug;
+        $suffix = 2;
+
+        while ($this->itemSlugExists($hospitalId, $type, $candidate, $ignoreItemId)) {
+            $candidate = "{$slug}-{$suffix}";
+            $suffix++;
+        }
+
+        return $candidate;
+    }
+
+    private function ensureItemSlugIsUnique(int $hospitalId, string $type, string $slug, ?int $ignoreItemId = null): void
+    {
+        if (! $this->itemSlugExists($hospitalId, $type, $slug, $ignoreItemId)) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'slug' => 'This slug is already used by another public website item of the same type.',
+        ]);
+    }
+
+    private function itemSlugExists(int $hospitalId, string $type, string $slug, ?int $ignoreItemId = null): bool
+    {
+        return PublicSiteItem::query()
+            ->where('hospital_id', $hospitalId)
+            ->where(function ($query) use ($type, $slug): void {
+                $query
+                    ->where(fn ($query) => $query->where('type', $type)->where('slug', $slug))
+                    ->orWhere(fn ($query) => $query->where('draft_type', $type)->where('draft_slug', $slug))
+                    ->orWhere(fn ($query) => $query->where('published_type', $type)->where('published_slug', $slug));
+            })
+            ->when($ignoreItemId, fn ($query) => $query->whereKeyNot($ignoreItemId))
+            ->exists();
     }
 
     private function ensureSectionBelongsToPage(?int $sectionId, PublicSitePage $page): void

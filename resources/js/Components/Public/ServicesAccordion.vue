@@ -16,7 +16,7 @@ function serviceContent(service) { return service.content || {}; }
 <template>
     <div v-if="services.length" class="mx-auto mt-12 grid max-w-6xl gap-4 lg:grid-cols-2">
         <div v-for="(column, columnIndex) in columns" :key="columnIndex" class="grid content-start gap-4">
-            <article v-for="service in column" :key="service.slug" class="public-card overflow-hidden rounded-3xl transition hover:-translate-y-0.5">
+            <article v-for="service in column" :key="`${service.source || service.type}-${service.id}-${service.slug}`" class="public-card overflow-hidden rounded-3xl transition hover:-translate-y-0.5">
                 <h3>
                     <button :id="buttonId(service)" type="button" class="public-focus flex w-full items-center gap-4 p-5 text-left" :aria-expanded="openSlug === service.slug" :aria-controls="panelId(service)" @click="toggle(service)">
                         <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl" style="background: var(--public-accent-soft); color: var(--public-accent);">

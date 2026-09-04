@@ -277,15 +277,15 @@ class PublicSiteController extends Controller
             ->all();
 
         return array_replace($cmsItems, [
-            'service' => $this->servicePayloads($page),
+            'service' => $this->servicePayloads($page, $draft),
             'department' => $this->departmentPayloads($page),
             'clinician' => $this->clinicianPayloads($page),
         ]);
     }
 
-    private function servicePayloads(PublicSitePage $page): array
+    private function servicePayloads(PublicSitePage $page, bool $draft = false): array
     {
-        return BillableService::with('department:id,name')
+        $billableServices = BillableService::with('department:id,name')
             ->where('hospital_id', $page->hospital_id)
             ->where('is_active', true)
             ->where('public_is_visible', true)
@@ -310,8 +310,32 @@ class PublicSiteController extends Controller
                     'cta_url' => '/services',
                 ]),
             ])
+            ->values();
+
+        return $billableServices
+            ->concat($this->cmsServicePayloads($page, $draft))
             ->values()
             ->all();
+    }
+
+    private function cmsServicePayloads(PublicSitePage $page, bool $draft = false)
+    {
+        return PublicSiteItem::query()
+            ->where('hospital_id', $page->hospital_id)
+            ->where($draft ? 'draft_type' : 'published_type', 'service')
+            ->when($draft, fn ($query) => $query->where('draft_is_enabled', true))
+            ->when(! $draft, fn ($query) => $query->published())
+            ->when(
+                $page->slug === 'home',
+                fn ($query) => $query->where($draft ? 'draft_is_featured' : 'published_is_featured', true)
+            )
+            ->orderBy($draft ? 'draft_sort_order' : 'published_sort_order')
+            ->orderBy('title')
+            ->get()
+            ->map(fn (PublicSiteItem $item) => array_merge($this->itemPayload($item, $draft), [
+                'source' => 'public_site_item',
+            ]))
+            ->values();
     }
 
     private function departmentPayloads(PublicSitePage $page): array

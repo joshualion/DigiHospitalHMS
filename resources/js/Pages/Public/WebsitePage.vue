@@ -260,7 +260,6 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         <p v-if="doctors.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">No clinician profiles are published yet.</p>
                     </div>
                     <div v-else-if="page.slug === 'services'">
-                        <SectionHeading kicker="Services" title="Services" />
                         <ServicesAccordion :services="services" />
                     </div>
                     <div v-else-if="page.slug === 'departments'" class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">

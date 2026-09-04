@@ -66,7 +66,7 @@ class PublicWebsiteController extends FoundationController
             'homepage_sources' => $this->homepageSources($page),
             'preview_url' => URL::temporarySignedRoute('public.preview', now()->addMinutes(30), ['page' => $page]),
             'media' => PublicSiteMedia::where('hospital_id', $page->hospital_id)->latest()->get(),
-            'item_types' => ['service', 'department', 'clinician', 'testimonial', 'article'],
+            'item_types' => ['department', 'clinician', 'testimonial', 'article'],
             'can_manage_media' => request()->user()->can('website.manage_media') || request()->user()->hasRole('superadmin'),
             'can_view_json' => request()->user()->hasRole('superadmin'),
         ]);
@@ -353,7 +353,7 @@ class PublicWebsiteController extends FoundationController
     {
         return [
             'public_site_section_id' => ['nullable', 'exists:public_site_sections,id'],
-            'type' => ['required', Rule::in(['service', 'department', 'clinician', 'testimonial', 'article'])],
+            'type' => ['required', Rule::in(['department', 'clinician', 'testimonial', 'article'])],
             'slug' => ['nullable', 'string', 'max:255'],
             'title' => ['required', 'string', 'max:255'],
             'summary' => ['nullable', 'string', 'max:1000'],

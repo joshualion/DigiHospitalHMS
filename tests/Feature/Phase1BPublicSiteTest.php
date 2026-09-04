@@ -255,7 +255,7 @@ class Phase1BPublicSiteTest extends TestCase
                 ->missing('items.article'));
     }
 
-    public function test_repeated_public_website_service_creation_generates_unique_slugs(): void
+    public function test_public_website_editor_no_longer_creates_legacy_service_items(): void
     {
         $editor = $this->userWithPermissions(['website.view', 'website.edit']);
         $servicesPage = PublicSitePage::where('slug', 'services')->with('sections')->firstOrFail();
@@ -275,52 +275,52 @@ class Phase1BPublicSiteTest extends TestCase
 
         $this->actingAs($editor)->post("/admin/public-website/pages/{$servicesPage->id}/items", $payload)
             ->assertRedirect()
-            ->assertSessionHasNoErrors();
+            ->assertSessionHasErrors(['type']);
 
-        $this->actingAs($editor)->post("/admin/public-website/pages/{$servicesPage->id}/items", $payload)
-            ->assertRedirect()
-            ->assertSessionHasNoErrors();
-
-        $this->assertDatabaseHas('public_site_items', ['hospital_id' => $this->hospital->id, 'type' => 'service', 'slug' => 'new-service']);
-        $this->assertDatabaseHas('public_site_items', ['hospital_id' => $this->hospital->id, 'type' => 'service', 'slug' => 'new-service-2']);
+        $this->assertDatabaseMissing('public_site_items', ['hospital_id' => $this->hospital->id, 'type' => 'service', 'slug' => 'new-service']);
     }
 
-    public function test_published_cms_service_items_render_on_services_page(): void
+    public function test_legacy_cms_service_items_do_not_render_on_services_page(): void
     {
-        $publisher = $this->userWithPermissions(['website.view', 'website.edit', 'website.publish']);
         $servicesPage = PublicSitePage::where('slug', 'services')->with('sections')->firstOrFail();
         $section = $servicesPage->sections->firstWhere('key', 'services');
 
-        $item = PublicSiteItem::create([
+        PublicSiteItem::create([
             'hospital_id' => $this->hospital->id,
-            'public_site_section_id' => null,
+            'public_site_section_id' => $section?->id,
             'draft_public_site_section_id' => $section?->id,
+            'published_public_site_section_id' => $section?->id,
             'type' => 'service',
             'draft_type' => 'service',
+            'published_type' => 'service',
             'slug' => 'patient-education',
             'draft_slug' => 'patient-education',
+            'published_slug' => 'patient-education',
             'title' => 'Patient education',
             'draft_title' => 'Patient education',
+            'published_title' => 'Patient education',
             'summary' => 'Classes and guidance for patients.',
             'draft_summary' => 'Classes and guidance for patients.',
+            'published_summary' => 'Classes and guidance for patients.',
             'draft_content' => ['icon' => 'stethoscope', 'description' => 'Classes and guidance for patients.', 'cta_label' => 'Learn more', 'cta_url' => '/services'],
-            'status' => 'draft',
-            'is_enabled' => false,
+            'published_content' => ['icon' => 'stethoscope', 'description' => 'Classes and guidance for patients.', 'cta_label' => 'Learn more', 'cta_url' => '/services'],
+            'status' => 'published',
+            'is_enabled' => true,
             'draft_is_enabled' => true,
-            'is_featured' => false,
+            'published_is_enabled' => true,
+            'is_featured' => true,
             'draft_is_featured' => true,
+            'published_is_featured' => true,
             'sort_order' => 3,
             'draft_sort_order' => 3,
+            'published_sort_order' => 3,
+            'published_at' => now(),
         ]);
 
-        $this->actingAs($publisher)->post("/admin/public-website/items/{$item->id}/publish")
-            ->assertRedirect()
-            ->assertSessionHasNoErrors();
-
         $this->get('/services')->assertOk()->assertInertia(fn (Assert $page) => $page
-            ->has('items.service', 3)
-            ->where('items.service.2.slug', 'patient-education')
-            ->where('items.service.2.source', 'public_site_item'));
+            ->has('items.service', 2)
+            ->where('items.service.0.source', 'billable_service')
+            ->where('items.service.1.source', 'billable_service'));
     }
 
     public function test_structured_repeaters_map_to_draft_payload_and_publish_in_order(): void

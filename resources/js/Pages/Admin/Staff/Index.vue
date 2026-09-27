@@ -13,6 +13,7 @@ const props = defineProps({
     staff: { type: Object, required: true },
     facilities: { type: Array, default: () => [] },
     roles: { type: Array, default: () => [] },
+    departments: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
 });
 
@@ -21,12 +22,24 @@ const permissions = computed(() => page.props.auth.permissions || []);
 const pageRoles = computed(() => page.props.auth.roles || []);
 const can = (permission) => pageRoles.value.includes('superadmin') || permissions.value.includes(permission);
 const search = useForm({ search: props.filters.search || '', status: props.filters.status || '' });
-const blankStaff = () => ({ firstname: '', lastname: '', email: '', staff_number: '', job_title: '', staff_category: 'administrative', professional_license_number: '', license_expires_at: '', work_phone: '', hire_date: '', roles: [], facility_ids: [], default_facility_id: '', notes: '', public_is_visible: false, public_is_featured: false, public_slug: '', public_display_name: '', public_specialty: '', public_summary: '', public_photo_path: '', public_photo_alt: '', public_display_order: 0 });
+const blankStaff = () => ({ firstname: '', lastname: '', email: '', staff_number: '', job_title: '', staff_category: 'administrative', professional_license_number: '', license_expires_at: '', work_phone: '', hire_date: '', roles: [], facility_ids: [], facility_departments: {}, default_facility_id: '', notes: '', public_is_visible: false, public_is_featured: false, public_slug: '', public_display_name: '', public_specialty: '', public_summary: '', public_photo_path: '', public_photo_alt: '', public_display_order: 0 });
 const form = useForm(blankStaff());
 const statusForm = useForm({ status: 'active' });
 const showForm = ref(false);
 const editing = ref(null);
 const statusTarget = ref(null);
+const clinicalCategories = [
+    ['administrative', 'Administrative'],
+    ['clinical', 'Clinical / Other clinician'],
+    ['doctor', 'Doctor'],
+    ['nurse', 'Nurse'],
+    ['laboratory', 'Laboratory'],
+    ['radiology', 'Radiology'],
+    ['pharmacy', 'Pharmacy'],
+    ['support', 'Support'],
+];
+const isClinicalForm = computed(() => ['clinical', 'doctor', 'nurse', 'laboratory', 'radiology', 'pharmacy'].includes(form.staff_category));
+const departmentOptions = (facilityId) => props.departments.filter((department) => Number(department.facility_id) === Number(facilityId));
 
 function filter() {
     router.get('/admin/staff', search.data(), { preserveState: true, replace: true });
@@ -35,6 +48,21 @@ function filter() {
 function openCreate() {
     form.clearErrors();
     form.defaults(blankStaff());
+    form.reset();
+    editing.value = null;
+    showForm.value = true;
+}
+
+function openCreateClinician() {
+    const defaults = blankStaff();
+    defaults.staff_category = 'clinical';
+    defaults.public_is_visible = true;
+    if (props.facilities.length === 1) {
+        defaults.facility_ids = [props.facilities[0].id];
+        defaults.default_facility_id = props.facilities[0].id;
+    }
+    form.clearErrors();
+    form.defaults(defaults);
     form.reset();
     editing.value = null;
     showForm.value = true;
@@ -67,6 +95,11 @@ function openEdit(entry) {
         roles: entry.user?.roles?.map((role) => role.name) || [],
         facility_ids: entry.memberships?.filter((membership) => membership.status === 'active').map((membership) => membership.facility_id) || [],
         default_facility_id: entry.memberships?.find((membership) => membership.is_default)?.facility_id || '',
+        facility_departments: Object.fromEntries(
+            (entry.memberships || [])
+                .filter((membership) => membership.status === 'active' && membership.department_id)
+                .map((membership) => [membership.facility_id, membership.department_id])
+        ),
     });
     form.reset();
     editing.value = entry;
@@ -95,6 +128,7 @@ function saveStatus() {
         <PageHeader title="Staff And Users" description="Manage staff identities, roles and facility access.">
             <template #actions>
                 <ActionToolbar align="end">
+                    <button v-if="can('staff.invite')" class="rounded-md border border-teal-700 px-4 py-2 text-sm font-bold text-teal-700 dark:border-teal-400 dark:text-teal-300" type="button" @click="openCreateClinician">Add Clinician</button>
                     <PrimaryButton v-if="can('staff.invite')" type="button" @click="openCreate">Add Staff</PrimaryButton>
                 </ActionToolbar>
             </template>
@@ -114,7 +148,12 @@ function saveStatus() {
                         <tr v-for="entry in staff.data" :key="entry.id" class="border-b border-slate-100 dark:border-slate-800">
                             <td class="p-4"><strong>{{ entry.user.full_name }}</strong><br><span class="text-slate-500">{{ entry.staff_number }} - {{ entry.user.email }}</span></td>
                             <td class="p-4">{{ entry.user.roles.map((role) => role.name).join(', ') || entry.job_title || entry.staff_category }}</td>
-                            <td class="p-4">{{ entry.memberships.map((membership) => membership.facility?.name).filter(Boolean).join(', ') || 'None' }}</td>
+                            <td class="p-4">
+                                <div v-for="membership in entry.memberships.filter((membership) => membership.status === 'active')" :key="membership.id">
+                                    {{ membership.facility?.name }}<span v-if="membership.department"> · {{ membership.department.name }}</span><span v-if="membership.is_default"> · Default</span>
+                                </div>
+                                <span v-if="!entry.memberships.some((membership) => membership.status === 'active')" class="text-slate-500">None</span>
+                            </td>
                             <td class="p-4"><span class="rounded-full px-2 py-1 text-xs font-bold" :class="entry.public_is_visible ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'">{{ entry.public_is_visible ? (entry.public_is_featured ? 'Featured public' : 'Public') : 'Private' }}</span></td>
                             <td class="p-4">{{ entry.employment_status }}</td>
                             <td class="p-4">
@@ -137,7 +176,12 @@ function saveStatus() {
                 <TextInput id="staff_email" v-model="form.email" label="Email" type="email" :error="form.errors.email" />
                 <TextInput id="staff_number" v-model="form.staff_number" label="Staff number" :error="form.errors.staff_number" />
                 <TextInput id="job_title" v-model="form.job_title" label="Job title" :error="form.errors.job_title" />
-                <TextInput id="staff_category" v-model="form.staff_category" label="Category" :error="form.errors.staff_category" />
+                <label class="grid gap-1 text-sm font-semibold">Staff category
+                    <select v-model="form.staff_category" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900">
+                        <option v-for="[value, label] in clinicalCategories" :key="value" :value="value">{{ label }}</option>
+                    </select>
+                    <span v-if="form.errors.staff_category" class="text-xs text-red-700">{{ form.errors.staff_category }}</span>
+                </label>
                 <TextInput id="license_number" v-model="form.professional_license_number" label="Professional license" :error="form.errors.professional_license_number" />
                 <TextInput id="license_expires" v-model="form.license_expires_at" label="License expiry" type="date" :error="form.errors.license_expires_at" />
                 <TextInput id="work_phone" v-model="form.work_phone" label="Work phone" :error="form.errors.work_phone" />
@@ -150,14 +194,36 @@ function saveStatus() {
                     <p v-if="form.errors.roles" class="mt-1 text-xs text-red-700">{{ form.errors.roles }}</p>
                 </div>
                 <div class="sm:col-span-2">
-                    <p class="text-sm font-semibold">Facilities</p>
-                    <div class="mt-2 flex flex-wrap gap-3">
-                        <label v-for="facility in facilities" :key="facility.id" class="inline-flex items-center gap-2 text-sm"><input v-model="form.facility_ids" :value="facility.id" type="checkbox" class="rounded border-slate-300 text-red-800">{{ facility.name }}</label>
+                    <p class="text-sm font-semibold">Facility & department assignments</p>
+                    <p class="mt-1 text-xs text-slate-500">Assign the staff member only to real branches where they work. Clinical staff can also be linked to a department at each branch.</p>
+                    <div class="mt-3 grid gap-3">
+                        <div v-for="facility in facilities" :key="facility.id" class="rounded-md border border-slate-200 p-3 dark:border-slate-800">
+                            <label class="inline-flex items-center gap-2 text-sm font-semibold">
+                                <input v-model="form.facility_ids" :value="facility.id" type="checkbox" class="rounded border-slate-300 text-red-800">
+                                {{ facility.name }}
+                            </label>
+                            <div v-if="form.facility_ids.includes(facility.id)" class="mt-3 grid gap-3 md:grid-cols-2">
+                                <label class="grid gap-1 text-sm font-semibold">Department
+                                    <select v-model="form.facility_departments[facility.id]" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900">
+                                        <option value="">No department</option>
+                                        <option v-for="department in departmentOptions(facility.id)" :key="department.id" :value="department.id">{{ department.name }}</option>
+                                    </select>
+                                </label>
+                                <label class="inline-flex items-center gap-2 self-end pb-2 text-sm font-semibold">
+                                    <input v-model="form.default_facility_id" :value="facility.id" type="radio">
+                                    Default facility
+                                </label>
+                            </div>
+                        </div>
                     </div>
                     <p v-if="form.errors.facility_ids" class="mt-1 text-xs text-red-700">{{ form.errors.facility_ids }}</p>
+                    <p v-if="form.errors.default_facility_id" class="mt-1 text-xs text-red-700">{{ form.errors.default_facility_id }}</p>
                 </div>
-                <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Default facility<select v-model="form.default_facility_id" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900"><option value="">Default facility</option><option v-for="facility in facilities" :key="facility.id" :value="facility.id">{{ facility.name }}</option></select><span v-if="form.errors.default_facility_id" class="text-xs text-red-700">{{ form.errors.default_facility_id }}</span></label>
-                <div class="grid gap-3 rounded-md border border-slate-200 p-4 sm:col-span-2 sm:grid-cols-2 dark:border-slate-800">
+                <div v-if="isClinicalForm" class="grid gap-3 rounded-md border border-slate-200 p-4 sm:col-span-2 sm:grid-cols-2 dark:border-slate-800">
+                    <div class="sm:col-span-2">
+                        <h3 class="font-bold">Public clinician profile</h3>
+                        <p class="mt-1 text-xs text-slate-500">Use this section only when this clinician should appear on the hospital website.</p>
+                    </div>
                     <label class="flex items-center gap-2 text-sm font-semibold"><input v-model="form.public_is_visible" type="checkbox"> Show on public website</label>
                     <label class="flex items-center gap-2 text-sm font-semibold"><input v-model="form.public_is_featured" type="checkbox"> Featured doctor</label>
                     <TextInput id="staff_public_name" v-model="form.public_display_name" label="Public display name" :error="form.errors.public_display_name" />

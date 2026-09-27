@@ -40,7 +40,26 @@ const services = computed(() => props.items.service || []);
 const departments = computed(() => props.items.department || []);
 const doctors = computed(() => props.items.clinician || []);
 const testimonials = computed(() => props.items.testimonial || []);
-const articles = computed(() => props.items.article || []);
+const isPlaceholderCopy = (value) => {
+    const text = String(value || '').trim().toLowerCase();
+    if (!text) return false;
+    return [
+        'replace this placeholder',
+        'placeholder',
+        'approved hospital information',
+        'approved hospital news',
+        'publishing workflow',
+        'publishing is ready',
+        'informational only',
+        'marketing services',
+    ].some((marker) => text.includes(marker));
+};
+const articles = computed(() => (props.items.article || []).filter((article) => {
+    const content = article.content || {};
+    return ![article.title, article.summary, content.excerpt, content.body]
+        .filter(Boolean)
+        .some((value) => isPlaceholderCopy(value));
+}));
 const activeSlide = computed(() => slides.value[slideIndex.value] || slides.value[0] || {});
 const trustIcons = [ShieldCheck, Users, Activity];
 const hasHeroCopy = computed(() => slides.value.length > 0 || Boolean(pageTitle.value));
@@ -53,17 +72,33 @@ const hasCliniciansContent = computed(() => doctors.value.length > 0 || Boolean(
 const hasAppointmentContent = computed(() => Boolean(appointment.value.heading || appointment.value.text || appointment.value.button_label));
 const hasNewsContent = computed(() => articles.value.length > 0 || Boolean(newsSection.value.heading || newsSection.value.description));
 const hasContactDetails = computed(() => Boolean(contact.value.address || contact.value.phone || contact.value.email || contact.value.hours));
-const standardBody = computed(() => props.page.content?.body || props.page.content?.summary || '');
-const publicPageTitle = computed(() => {
-    if (props.page.slug === 'services') return 'Our Healthcare Services';
-    return props.page.title;
+const rawStandardBody = computed(() => props.page.content?.body || props.page.content?.summary || '');
+const standardBody = computed(() => isPlaceholderCopy(rawStandardBody.value) ? '' : rawStandardBody.value);
+const cleanPageSummary = computed(() => {
+    const value = props.page.content?.summary || '';
+    return isPlaceholderCopy(value) ? '' : value;
 });
-const publicPageSummary = computed(() => {
-    if (props.page.slug === 'services') {
-        return `Explore the healthcare services available at ${props.site.hospital?.display_name || 'our hospital'}, delivered by our clinical team with a focus on safe, respectful and patient-centred care.`;
-    }
-    return standardSummary();
-});
+const publicPageTitle = computed(() => ({
+    about: `About ${props.site.hospital?.display_name || 'Our Hospital'}`,
+    services: 'Our Healthcare Services',
+    doctors: 'Our Clinical Team',
+    departments: 'Hospital Departments',
+    news: 'News & Health Information',
+    contact: 'Contact Us',
+    appointment: 'Appointments',
+    policies: 'Hospital Policies',
+}[props.page.slug] || props.page.title));
+const defaultPageSummaries = computed(() => ({
+    about: `Learn more about ${props.site.hospital?.display_name || 'our hospital'}, our commitment to patient care, and the people and values behind our services.`,
+    services: `Explore the healthcare services available at ${props.site.hospital?.display_name || 'our hospital'}, delivered by our clinical team with a focus on safe, respectful and patient-centred care.`,
+    doctors: 'Meet the clinicians whose profiles are currently available on our website.',
+    departments: 'Explore the hospital departments currently available to patients and visitors.',
+    news: 'Hospital updates and health information for our patients, families and community.',
+    contact: 'Reach the hospital using the contact details below. Our team will guide you to the right department or service.',
+    appointment: 'Send an appointment request and our team will review your preferred date and contact details.',
+    policies: 'Public hospital policies and patient information will be provided here as they are approved.',
+}));
+const publicPageSummary = computed(() => cleanPageSummary.value || defaultPageSummaries.value[props.page.slug] || '');
 const pageEyebrow = computed(() => ({
     about: 'About us',
     services: 'Our services',
@@ -84,7 +119,8 @@ function showSlide(index) {
 }
 
 function standardSummary() {
-    return props.page.content?.summary || props.page.content?.body || '';
+    const value = props.page.content?.summary || props.page.content?.body || '';
+    return isPlaceholderCopy(value) ? '' : value;
 }
 
 onMounted(() => {
@@ -321,12 +357,43 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         <div v-if="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary" class="public-prose text-lg" v-html="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary"></div>
                         <p v-else class="text-center text-sm font-bold" style="color: var(--public-text-secondary);">This information is currently being updated. Please contact the hospital if you need assistance.</p>
                     </article>
-                    <div v-else class="public-card mx-auto max-w-4xl rounded-[2rem] p-8 text-center">
-                        <p v-if="standardBody" class="public-prose text-lg">{{ standardBody }}</p>
-                        <p v-else class="text-sm font-bold" style="color: var(--public-text-secondary);">This public page is unavailable because approved content has not been published.</p>
-                        <div v-if="page.slug === 'contact'" class="mt-8 rounded-3xl p-6 text-base" style="background: var(--public-accent-soft); color: var(--public-text);">
-                            <p v-if="contact.address">{{ contact.address }}</p><p v-if="contact.phone">{{ contact.phone }}</p><p v-if="contact.email">{{ contact.email }}</p><p v-if="contact.hours">{{ contact.hours }}</p>
-                        </div>
+                    <div v-else-if="page.slug === 'about'" class="mx-auto max-w-5xl">
+                        <article v-if="standardBody" class="public-card rounded-[2rem] p-8 sm:p-10">
+                            <div class="public-prose whitespace-pre-line text-left text-lg">{{ standardBody }}</div>
+                        </article>
+                        <div v-else class="min-h-24"></div>
+                    </div>
+                    <div v-else-if="page.slug === 'contact'" class="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
+                        <article class="public-card rounded-[2rem] p-8">
+                            <h2 class="text-2xl font-black" style="color: var(--public-text);">Hospital contact</h2>
+                            <div class="mt-6 space-y-4 text-base leading-7" style="color: var(--public-text-secondary);">
+                                <p v-if="contact.address"><strong style="color: var(--public-text);">Address:</strong> {{ contact.address }}</p>
+                                <p v-if="contact.phone"><strong style="color: var(--public-text);">Phone:</strong> {{ contact.phone }}</p>
+                                <p v-if="contact.email"><strong style="color: var(--public-text);">Email:</strong> {{ contact.email }}</p>
+                                <p v-if="contact.hours"><strong style="color: var(--public-text);">Opening hours:</strong> {{ contact.hours }}</p>
+                            </div>
+                        </article>
+                        <article class="public-card rounded-[2rem] p-8">
+                            <h2 class="text-2xl font-black" style="color: var(--public-text);">Need assistance?</h2>
+                            <p class="mt-4 leading-7" style="color: var(--public-text-secondary);">Contact the hospital and our team will direct you to the appropriate service or department.</p>
+                            <PublicButton class="mt-6" href="/appointment/request">Request an appointment</PublicButton>
+                        </article>
+                    </div>
+                    <div v-else-if="page.slug === 'appointment'" class="public-card mx-auto max-w-3xl rounded-[2rem] p-8 text-center sm:p-10">
+                        <h2 class="text-2xl font-black" style="color: var(--public-text);">Request an appointment</h2>
+                        <p class="mx-auto mt-4 max-w-2xl leading-7" style="color: var(--public-text-secondary);">Share your preferred date and contact details. The hospital team will review your request and follow up with you.</p>
+                        <PublicButton class="mt-7" href="/appointment/request">Start appointment request</PublicButton>
+                    </div>
+                    <div v-else-if="page.slug === 'policies'" class="mx-auto max-w-4xl">
+                        <article v-if="standardBody" class="public-card rounded-[2rem] p-8 sm:p-10">
+                            <div class="public-prose whitespace-pre-line text-left">{{ standardBody }}</div>
+                        </article>
+                        <div v-else class="min-h-24"></div>
+                    </div>
+                    <div v-else class="mx-auto max-w-4xl">
+                        <article v-if="standardBody" class="public-card rounded-[2rem] p-8 text-center">
+                            <div class="public-prose whitespace-pre-line text-lg">{{ standardBody }}</div>
+                        </article>
                     </div>
                 </div>
             </section>

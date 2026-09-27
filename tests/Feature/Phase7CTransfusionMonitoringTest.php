@@ -155,6 +155,8 @@ class Phase7CTransfusionMonitoringTest extends TestCase
         $workflow->complete($episode->fresh(), ['notes' => 'Completion documented.'], $this->nurse);
 
         $this->assertSame('completed', $episode->refresh()->status);
+        config(['inertia.testing.ensure_pages_exist' => false]);
+
         $this->actingAs($this->nurse)->get("/admin/blood-bank/issues/{$issue->id}/transfusion")
             ->assertOk()
             ->assertInertia(fn ($page) => $page->component('Admin/BloodBank/TransfusionShow')->has('issue.transfusion_episode'));

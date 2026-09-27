@@ -49,7 +49,7 @@ Route::get('/policies', [PublicSiteController::class, 'page'])->defaults('slug',
 Route::get('/public-site/media/{media}/{filename?}', [PublicSiteController::class, 'media'])->name('public.media');
 Route::get('/preview/public-site/{page}', [PublicSiteController::class, 'preview'])->name('public.preview');
 
-Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse|cashier|accountant|laboratory-scientist|radiology-staff|pharmacist|storekeeper|blood-bank-staff'])
+Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|doctor|nurse|cashier|accountant|laboratory-scientist|radiology-staff|pharmacist|storekeeper|blood-bank-staff|hmo-claims-officer'])
     ->prefix('admin')
     ->group(function () {
         Route::get('/dashboard', function () {

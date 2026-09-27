@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\EmarController;
 use App\Http\Controllers\Admin\FacilityController;
 use App\Http\Controllers\Admin\HospitalProfileController;
 use App\Http\Controllers\Admin\HospitalSettingController;
+use App\Http\Controllers\Admin\InsuranceController;
 use App\Http\Controllers\Admin\InpatientChartController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\LaboratoryController;
@@ -153,6 +154,15 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('billing/services', [BillingController::class, 'storeService'])->name('admin.billing.services.store');
         Route::patch('billing/services/{service}', [BillingController::class, 'updateService'])->name('admin.billing.services.update');
         Route::post('billing/services/{service}/prices', [BillingController::class, 'storePrice'])->name('admin.billing.prices.store');
+        Route::get('insurance', [InsuranceController::class, 'index'])->name('admin.insurance.index');
+        Route::post('insurance/organizations', [InsuranceController::class, 'storeOrganization'])->name('admin.insurance.organizations.store');
+        Route::patch('insurance/organizations/{organization}', [InsuranceController::class, 'updateOrganization'])->name('admin.insurance.organizations.update');
+        Route::post('insurance/plans', [InsuranceController::class, 'storePlan'])->name('admin.insurance.plans.store');
+        Route::post('insurance/plans/{plan}/tariffs', [InsuranceController::class, 'storeTariff'])->name('admin.insurance.tariffs.store');
+        Route::post('insurance/coverages', [InsuranceController::class, 'storeCoverage'])->name('admin.insurance.coverages.store');
+        Route::post('insurance/pre-authorizations', [InsuranceController::class, 'requestPreAuthorization'])->name('admin.insurance.preauthorizations.store');
+        Route::patch('insurance/pre-authorizations/{preAuthorization}/decision', [InsuranceController::class, 'decidePreAuthorization'])->name('admin.insurance.preauthorizations.decision');
+
         Route::get('billing/invoices', [BillingController::class, 'invoices'])->name('admin.invoices.index');
         Route::post('billing/invoices', [BillingController::class, 'storeInvoice'])->name('admin.invoices.store');
         Route::get('billing/invoices/{invoice}', [BillingController::class, 'showInvoice'])->name('admin.invoices.show');

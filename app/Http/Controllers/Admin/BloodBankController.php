@@ -18,6 +18,8 @@ use App\Models\BloodRequest;
 use App\Models\BloodScreeningResult;
 use App\Models\BloodScreeningTest;
 use App\Models\BloodStorageUnit;
+use App\Models\BloodTransfusionEpisode;
+use App\Models\BloodTransfusionReaction;
 use App\Models\ClinicalEncounter;
 use App\Models\Facility;
 use App\Models\LabTest;
@@ -27,6 +29,7 @@ use App\Models\StaffProfile;
 use App\Services\AuditService;
 use App\Services\BloodBankWorkflowService;
 use App\Services\BloodRequestWorkflowService;
+use App\Services\BloodTransfusionWorkflowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -236,7 +239,7 @@ class BloodBankController extends FoundationController
         $this->authorize('view', $bloodRequest);
 
         return Inertia::render('Admin/BloodBank/RequestShow', $this->shared($bloodRequest->hospital_id) + [
-            'bloodRequest' => $bloodRequest->load(['patient', 'encounter', 'admission', 'clinician.user', 'componentType', 'specimens', 'compatibilityTests.component.type', 'reservations.component.type', 'issues.component.type']),
+            'bloodRequest' => $bloodRequest->load(['patient', 'encounter', 'admission', 'clinician.user', 'componentType', 'specimens', 'compatibilityTests.component.type', 'reservations.component.type', 'issues.component.type', 'issues.transfusionEpisode.observations', 'issues.transfusionEpisode.reactions']),
             'availableComponents' => BloodComponent::with(['type', 'location', 'storageUnit'])->where('hospital_id', $bloodRequest->hospital_id)->where('blood_component_type_id', $bloodRequest->blood_component_type_id)->where('state', 'available')->where(function ($query): void {
                 $query->whereNull('expires_on')->orWhereDate('expires_on', '>=', today());
             })->latest()->get(),
@@ -344,6 +347,106 @@ class BloodBankController extends FoundationController
         $workflow->issue($bloodRequest, BloodComponentReservation::findOrFail($validated['blood_component_reservation_id']), $validated, $request->user());
 
         return back()->with('success', 'Component issued.');
+    }
+
+    public function showTransfusion(BloodComponentIssue $issue): Response
+    {
+        abort_unless(request()->user()->can('blood-transfusion.view') || request()->user()->hasRole('superadmin'), 403);
+        abort_unless($issue->hospital_id === $this->currentHospital()->id, 403);
+
+        return Inertia::render('Admin/BloodBank/TransfusionShow', [
+            'issue' => $issue->load([
+                'request.patient',
+                'request.componentType',
+                'component.type',
+                'transfusionEpisode.observations',
+                'transfusionEpisode.reactions',
+            ]),
+        ]);
+    }
+
+    public function startTransfusion(Request $request, BloodComponentIssue $issue, BloodTransfusionWorkflowService $workflow): RedirectResponse
+    {
+        abort_unless($request->user()->can('blood-transfusion.administer') || $request->user()->hasRole('superadmin'), 403);
+        $validated = $request->validate([
+            'started_at' => ['nullable', 'date'],
+            'destination' => ['nullable', 'string', 'max:255'],
+            'patient_identifier_checked' => ['required', 'string', 'max:255'],
+            'component_identifier_checked' => ['required', 'string', 'max:255'],
+            'identity_check_status' => ['required', Rule::in(['matched'])],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $workflow->start($issue, $validated, $request->user());
+
+        return back()->with('success', 'Transfusion episode started and identity checks recorded.');
+    }
+
+    public function recordTransfusionObservation(Request $request, BloodTransfusionEpisode $episode, BloodTransfusionWorkflowService $workflow): RedirectResponse
+    {
+        abort_unless($request->user()->can('blood-transfusion.observe') || $request->user()->hasRole('superadmin'), 403);
+        $validated = $request->validate([
+            'observed_at' => ['nullable', 'date'],
+            'temperature_c' => ['nullable', 'numeric', 'between:25,45'],
+            'pulse_bpm' => ['nullable', 'integer', 'min:1', 'max:350'],
+            'respiratory_rate' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'systolic_bp' => ['nullable', 'integer', 'min:1', 'max:350'],
+            'diastolic_bp' => ['nullable', 'integer', 'min:1', 'max:250'],
+            'spo2_percent' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $workflow->observe($episode, $validated, $request->user());
+
+        return back()->with('success', 'Transfusion observation recorded.');
+    }
+
+    public function completeTransfusion(Request $request, BloodTransfusionEpisode $episode, BloodTransfusionWorkflowService $workflow): RedirectResponse
+    {
+        abort_unless($request->user()->can('blood-transfusion.administer') || $request->user()->hasRole('superadmin'), 403);
+        $validated = $request->validate([
+            'completed_at' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $workflow->complete($episode, $validated, $request->user());
+
+        return back()->with('success', 'Transfusion episode completed.');
+    }
+
+    public function stopTransfusion(Request $request, BloodTransfusionEpisode $episode, BloodTransfusionWorkflowService $workflow): RedirectResponse
+    {
+        abort_unless($request->user()->can('blood-transfusion.administer') || $request->user()->hasRole('superadmin'), 403);
+        $validated = $request->validate([
+            'stopped_at' => ['nullable', 'date'],
+            'stop_reason' => ['required', 'string', 'max:2000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $workflow->stop($episode, $validated, $request->user());
+
+        return back()->with('success', 'Transfusion episode stopped.');
+    }
+
+    public function reportTransfusionReaction(Request $request, BloodTransfusionEpisode $episode, BloodTransfusionWorkflowService $workflow): RedirectResponse
+    {
+        abort_unless($request->user()->can('blood-transfusion.reactions.manage') || $request->user()->hasRole('superadmin'), 403);
+        $validated = $request->validate([
+            'occurred_at' => ['nullable', 'date'],
+            'reported_severity' => ['nullable', Rule::in(['mild', 'moderate', 'severe', 'unspecified'])],
+            'observed_signs' => ['required', 'string', 'max:4000'],
+            'immediate_actions' => ['nullable', 'string', 'max:4000'],
+            'clinician_notified_at' => ['nullable', 'date'],
+            'blood_bank_notified_at' => ['nullable', 'date'],
+        ]);
+        $workflow->reportReaction($episode, $validated, $request->user());
+
+        return back()->with('success', 'Transfusion reaction report recorded. The workflow does not make treatment decisions.');
+    }
+
+    public function resolveTransfusionReaction(Request $request, BloodTransfusionReaction $reaction, BloodTransfusionWorkflowService $workflow): RedirectResponse
+    {
+        abort_unless($request->user()->can('blood-transfusion.reactions.manage') || $request->user()->hasRole('superadmin'), 403);
+        $validated = $request->validate(['resolution_notes' => ['required', 'string', 'max:4000']]);
+        $workflow->resolveReaction($reaction, $validated['resolution_notes'], $request->user());
+
+        return back()->with('success', 'Reaction record resolved with an audit trail.');
     }
 
     public function returnIssue(Request $request, BloodComponentIssue $issue, BloodRequestWorkflowService $workflow): RedirectResponse

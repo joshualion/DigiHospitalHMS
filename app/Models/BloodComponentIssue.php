@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class BloodComponentIssue extends Model
 {
@@ -22,5 +23,10 @@ class BloodComponentIssue extends Model
     public function component(): BelongsTo
     {
         return $this->belongsTo(BloodComponent::class, 'blood_component_id');
+    }
+
+    public function transfusionEpisode(): HasOne
+    {
+        return $this->hasOne(BloodTransfusionEpisode::class, 'blood_component_issue_id');
     }
 }

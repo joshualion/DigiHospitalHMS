@@ -132,6 +132,10 @@ class PermissionSeeder extends Seeder
             'blood-bank.reservations.manage',
             'blood-bank.issues.manage',
             'blood-bank.emergency-release.authorize',
+            'blood-transfusion.view',
+            'blood-transfusion.administer',
+            'blood-transfusion.observe',
+            'blood-transfusion.reactions.manage',
             'inventory.view',
             'inventory.catalogue.manage',
             'inventory.stock.receive',
@@ -275,6 +279,10 @@ class PermissionSeeder extends Seeder
             'blood-bank.reservations.manage',
             'blood-bank.issues.manage',
             'blood-bank.emergency-release.authorize',
+            'blood-transfusion.view',
+            'blood-transfusion.administer',
+            'blood-transfusion.observe',
+            'blood-transfusion.reactions.manage',
             'inventory.view',
             'inventory.catalogue.manage',
             'inventory.stock.receive',
@@ -401,6 +409,10 @@ class PermissionSeeder extends Seeder
             ...($role->name === 'doctor' ? ['radiology.requests.order'] : []),
             'blood-bank.requests.view',
             ...($role->name === 'doctor' ? ['blood-bank.requests.order'] : []),
+            'blood-transfusion.view',
+            'blood-transfusion.administer',
+            'blood-transfusion.observe',
+            'blood-transfusion.reactions.manage',
         ]));
 
         Role::where('name', 'laboratory-scientist')->first()?->syncPermissions([
@@ -469,6 +481,8 @@ class PermissionSeeder extends Seeder
             'blood-bank.reservations.manage',
             'blood-bank.issues.manage',
             'blood-bank.emergency-release.authorize',
+            'blood-transfusion.view',
+            'blood-transfusion.reactions.manage',
         ]);
 
         Role::whereIn('name', ['pharmacist', 'storekeeper'])->get()->each(fn (Role $role) => $role->syncPermissions([

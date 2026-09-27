@@ -238,6 +238,13 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('blood-bank/issues/{issue}/reverse', [BloodBankController::class, 'reverseIssue'])->name('admin.blood-bank.issues.reverse');
         Route::post('blood-bank/requests/{bloodRequest}/emergency-release', [BloodBankController::class, 'emergencyRelease'])->name('admin.blood-bank.requests.emergency-release');
         Route::get('blood-bank/issues/{issue}/document', [BloodBankController::class, 'issueDocument'])->name('admin.blood-bank.issues.document');
+        Route::get('blood-bank/issues/{issue}/transfusion', [BloodBankController::class, 'showTransfusion'])->name('admin.blood-bank.transfusions.show');
+        Route::post('blood-bank/issues/{issue}/transfusion', [BloodBankController::class, 'startTransfusion'])->name('admin.blood-bank.transfusions.start');
+        Route::post('blood-bank/transfusions/{episode}/observations', [BloodBankController::class, 'recordTransfusionObservation'])->name('admin.blood-bank.transfusions.observations.store');
+        Route::post('blood-bank/transfusions/{episode}/complete', [BloodBankController::class, 'completeTransfusion'])->name('admin.blood-bank.transfusions.complete');
+        Route::post('blood-bank/transfusions/{episode}/stop', [BloodBankController::class, 'stopTransfusion'])->name('admin.blood-bank.transfusions.stop');
+        Route::post('blood-bank/transfusions/{episode}/reactions', [BloodBankController::class, 'reportTransfusionReaction'])->name('admin.blood-bank.transfusions.reactions.store');
+        Route::post('blood-bank/transfusion-reactions/{reaction}/resolve', [BloodBankController::class, 'resolveTransfusionReaction'])->name('admin.blood-bank.transfusions.reactions.resolve');
         Route::get('blood-bank/donations/{donation}', [BloodBankController::class, 'showDonation'])->name('admin.blood-bank.donations.show');
         Route::post('blood-bank/donations/{donation}/group-results', [BloodBankController::class, 'enterGroup'])->name('admin.blood-bank.group-results.store');
         Route::post('blood-bank/group-results/{result}/verify', [BloodBankController::class, 'verifyGroup'])->name('admin.blood-bank.group-results.verify');

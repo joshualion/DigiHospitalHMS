@@ -38,6 +38,6 @@ function serviceContent(service) { return service.content || {}; }
         </div>
     </div>
     <div v-else class="public-card mx-auto mt-10 max-w-2xl rounded-3xl p-8 text-center">
-        <p class="font-bold" style="color: var(--public-text-secondary);">No published services are available yet.</p>
+        <p class="font-bold" style="color: var(--public-text-secondary);">Service information is being updated. Please contact the hospital if you need assistance.</p>
     </div>
 </template>

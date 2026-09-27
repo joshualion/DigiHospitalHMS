@@ -64,6 +64,7 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('facilities', [FacilityController::class, 'store'])->name('admin.facilities.store');
         Route::patch('facilities/{facility}', [FacilityController::class, 'update'])->name('admin.facilities.update');
         Route::patch('facilities/{facility}/status', [FacilityController::class, 'status'])->name('admin.facilities.status');
+        Route::delete('facilities/{facility}', [FacilityController::class, 'destroy'])->name('admin.facilities.destroy');
 
         Route::get('departments', [DepartmentController::class, 'index'])->name('admin.departments.index');
         Route::post('departments', [DepartmentController::class, 'store'])->name('admin.departments.store');

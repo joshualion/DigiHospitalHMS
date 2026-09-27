@@ -54,6 +54,18 @@ const hasAppointmentContent = computed(() => Boolean(appointment.value.heading |
 const hasNewsContent = computed(() => articles.value.length > 0 || Boolean(newsSection.value.heading || newsSection.value.description));
 const hasContactDetails = computed(() => Boolean(contact.value.address || contact.value.phone || contact.value.email || contact.value.hours));
 const standardBody = computed(() => props.page.content?.body || props.page.content?.summary || '');
+const pageEyebrow = computed(() => ({
+    about: 'About us',
+    services: 'Our services',
+    departments: 'Departments',
+    doctors: 'Our clinicians',
+    news: 'Health news',
+    contact: 'Contact us',
+    appointment: 'Appointments',
+    policies: 'Policies',
+    'doctor-profile': 'Clinician profile',
+    article: 'Health update',
+}[props.page.slug] || 'Testimony Healthcare'));
 
 function showSlide(index) {
     if (!slides.value.length) return;
@@ -164,7 +176,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
                             <h3 class="mt-5 text-xl font-black" style="color: var(--public-text);">{{ department.title }}</h3>
                             <p class="mt-3 text-sm leading-7" style="color: var(--public-text-secondary);">{{ department.summary }}</p>
                         </article>
-                        <p v-if="departments.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-2 lg:col-span-3" style="color: var(--public-text-secondary);">No public department profiles are published yet.</p>
+                        <p v-if="departments.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-2 lg:col-span-3" style="color: var(--public-text-secondary);">Department information is being updated. Please contact the hospital if you need assistance.</p>
                     </div>
                 </div>
             </section>
@@ -195,14 +207,14 @@ onBeforeUnmount(() => window.clearInterval(timer));
                                 <Link :href="`/doctors/${doctor.slug}`" class="public-focus public-link mt-5 inline-flex text-sm font-black">View profile</Link>
                             </div>
                         </article>
-                        <p v-if="doctors.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3" style="color: var(--public-text-secondary);">No clinician profiles are published yet.</p>
+                        <p v-if="doctors.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3" style="color: var(--public-text-secondary);">Clinician information is being updated. Please contact the hospital if you need assistance.</p>
                     </div>
                 </div>
             </section>
 
             <section v-if="testimonials.length" class="public-section public-muted">
                 <div class="public-container">
-                    <SectionHeading kicker="Testimonials" :title="testimonialsSection.heading || 'Approved public statements'" :description="testimonialsSection.description || 'Placeholder statements remain visibly marked until replaced with consented, approved content.'" />
+                    <SectionHeading kicker="Testimonials" :title="testimonialsSection.heading || 'Patient experiences'" :description="testimonialsSection.description" />
                     <div class="mx-auto mt-10 grid max-w-5xl gap-5 md:grid-cols-2">
                         <blockquote v-for="testimonial in testimonials.slice(0, 2)" :key="testimonial.slug" class="public-card rounded-[2rem] p-8 text-center">
                             <Quote class="mx-auto h-9 w-9 public-accent" aria-hidden="true" />
@@ -231,7 +243,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
                                 <p class="mt-2 text-sm leading-7" style="color: var(--public-text-secondary);">{{ article.summary }}</p>
                                 <Link :href="`/news/${article.slug}`" class="public-focus public-link mt-4 inline-flex text-sm font-black">Read update</Link>
                             </article>
-                            <p v-if="articles.length === 0" class="public-card rounded-3xl p-8" style="color: var(--public-text-secondary);">No news articles are published yet.</p>
+                            <p v-if="articles.length === 0" class="public-card rounded-3xl p-8" style="color: var(--public-text-secondary);">Health news and hospital updates will appear here.</p>
                         </div>
                     </div>
                     <div v-if="hasContactDetails" class="public-card rounded-[2rem] p-8 text-center">
@@ -249,7 +261,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
         </template>
 
         <template v-else>
-            <PublicPageHero :page="page" :title="page.title" :summary="standardSummary()" />
+            <PublicPageHero :page="page" :eyebrow="pageEyebrow" :title="page.title" :summary="standardSummary()" />
             <section class="public-section">
                 <div class="public-container">
                     <div v-if="page.slug === 'doctors'" class="grid gap-6 md:grid-cols-3">
@@ -257,23 +269,23 @@ onBeforeUnmount(() => window.clearInterval(timer));
                             <PublicImage v-if="doctor.content.photo" :src="doctor.content.photo" :alt="doctor.content.alt || doctor.title" class="h-72 w-full" width="520" height="420" loading="lazy" sizes="(min-width: 768px) 33vw, 100vw" />
                             <div class="p-6 text-center"><h2 class="text-xl font-black">{{ doctor.title }}</h2><p class="mt-2 public-accent text-sm font-bold">{{ doctor.content.professional_title || doctor.summary }}</p><Link :href="`/doctors/${doctor.slug}`" class="public-focus public-link mt-4 inline-flex text-sm font-black">View profile</Link></div>
                         </article>
-                        <p v-if="doctors.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">No clinician profiles are published yet.</p>
+                        <p v-if="doctors.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">Clinician information is being updated. Please contact the hospital if you need assistance.</p>
                     </div>
                     <div v-else-if="page.slug === 'services'">
                         <ServicesAccordion :services="services" />
                     </div>
                     <div v-else-if="page.slug === 'departments'" class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                         <article v-for="department in departments" :key="department.slug" class="public-card rounded-3xl p-6"><Building2 class="h-8 w-8 public-accent" /><h2 class="mt-4 text-xl font-black">{{ department.title }}</h2><p class="mt-3 public-prose text-sm">{{ department.summary }}</p></article>
-                        <p v-if="departments.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">No public department profiles are published yet.</p>
+                        <p v-if="departments.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">Department information is being updated. Please contact the hospital if you need assistance.</p>
                     </div>
                     <div v-else-if="page.slug === 'news'" class="grid gap-5 md:grid-cols-3">
                         <article v-for="article in articles" :key="article.slug" class="public-card rounded-3xl p-6"><h2 class="text-xl font-black">{{ article.title }}</h2><p class="mt-3 public-prose text-sm">{{ article.summary }}</p><Link :href="`/news/${article.slug}`" class="public-focus public-link mt-4 inline-flex text-sm font-black">Read update</Link></article>
-                        <p v-if="articles.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">No news articles are published yet.</p>
+                        <p v-if="articles.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">Health news and hospital updates will appear here.</p>
                     </div>
                     <article v-else-if="page.slug === 'doctor-profile' || page.slug === 'article'" class="public-card mx-auto max-w-4xl rounded-[2rem] p-8">
                         <PublicImage v-if="page.content?.photo || page.content?.image" :src="page.content.photo || page.content.image" :alt="page.content.alt || page.title" class="mb-8 aspect-video w-full overflow-hidden rounded-3xl" width="900" height="520" loading="eager" sizes="(min-width: 1024px) 900px, 100vw" />
                         <div v-if="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary" class="public-prose text-lg" v-html="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary"></div>
-                        <p v-else class="text-center text-sm font-bold" style="color: var(--public-text-secondary);">This public page is unavailable because approved content has not been published.</p>
+                        <p v-else class="text-center text-sm font-bold" style="color: var(--public-text-secondary);">This information is currently being updated. Please contact the hospital if you need assistance.</p>
                     </article>
                     <div v-else class="public-card mx-auto max-w-4xl rounded-[2rem] p-8 text-center">
                         <p v-if="standardBody" class="public-prose text-lg">{{ standardBody }}</p>

@@ -22,7 +22,7 @@ Core HMS development is ongoing. The current backend includes tested foundations
 - Laboratory and radiology workflows with requests, catalogues, specimens/studies, reports, verification/approval, amendments, billing integration, critical communication, and private attachment handling.
 - Inventory, stock ledger, procurement, goods receipt, prescribing, pharmacist review, dispensing, returns, and FEFO/stock controls.
 - Admissions, bed management, inpatient clinical charting, nursing documentation, discharge summaries, eMAR scheduling, administration records, and medication audit trails.
-- Blood bank foundations for donors, donations, components, screening, storage, transfers, reservations, compatibility testing, patient blood requests, emergency release, issue, return, and reversal.
+- Blood bank workflows for donors, donations, components, screening, storage, transfers, reservations, compatibility testing, patient blood requests, emergency release, issue, return, reversal, bedside transfusion administration, observations, and reaction documentation.
 - Branded Laravel maintenance page with countdown, contact actions, emergency messaging, and native Laravel maintenance-mode support.
 
 ## Tech Stack

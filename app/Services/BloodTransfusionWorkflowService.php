@@ -17,11 +17,20 @@ class BloodTransfusionWorkflowService
         abort_unless($issue->status === 'issued', 422, 'Only an active issued component can begin transfusion.');
         abort_if($issue->transfusionEpisode()->exists(), 422, 'A transfusion episode already exists for this issued component.');
 
+        $issue->loadMissing(['request.patient', 'component']);
         $request = $issue->request;
         abort_unless($request && $request->patient_id === $issue->patient_id, 422, 'Issue and request patient identity do not match.');
         abort_unless(($data['identity_check_status'] ?? null) === 'matched', 422, 'Documented patient/component identity checks must match before transfusion starts.');
-        abort_unless(trim((string) ($data['patient_identifier_checked'] ?? '')) !== '', 422, 'Patient identifier confirmation is required.');
-        abort_unless(trim((string) ($data['component_identifier_checked'] ?? '')) !== '', 422, 'Component identifier confirmation is required.');
+        abort_unless(
+            hash_equals((string) $request->patient?->hospital_number, trim((string) ($data['patient_identifier_checked'] ?? ''))),
+            422,
+            'The confirmed patient identifier does not match the issued blood request.'
+        );
+        abort_unless(
+            hash_equals((string) $issue->component?->component_number, trim((string) ($data['component_identifier_checked'] ?? ''))),
+            422,
+            'The confirmed component identifier does not match the issued component.'
+        );
 
         return DB::transaction(function () use ($issue, $request, $data, $actor): BloodTransfusionEpisode {
             $episode = BloodTransfusionEpisode::create([

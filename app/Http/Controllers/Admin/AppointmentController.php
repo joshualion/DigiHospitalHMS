@@ -239,7 +239,19 @@ class AppointmentController extends FoundationController
         return [
             'facilities' => Facility::where('hospital_id', $hospitalId)->where('status', 'active')->orderBy('name')->get(['id', 'name', 'code']),
             'departments' => Department::where('hospital_id', $hospitalId)->where('status', 'active')->orderBy('name')->get(['id', 'name']),
-            'clinicians' => StaffProfile::with('user:id,firstname,lastname')->where('hospital_id', $hospitalId)->where('is_active', true)->orderBy('id')->get(['id', 'user_id', 'job_title']),
+            'clinicians' => StaffProfile::with('user:id,firstname,lastname')
+                ->where('hospital_id', $hospitalId)
+                ->where('is_active', true)
+                ->where('employment_status', 'active')
+                ->whereHas('user', fn ($query) => $query->where('status', 'active'))
+                ->where(function ($query): void {
+                    $query->whereIn('staff_category', ['clinical', 'doctor', 'nurse'])
+                        ->orWhere('job_title', 'like', '%doctor%')
+                        ->orWhere('job_title', 'like', '%clinician%')
+                        ->orWhereHas('user.roles', fn ($roles) => $roles->whereIn('name', ['doctor', 'nurse', 'laboratory-scientist', 'radiology-staff', 'pharmacist']));
+                })
+                ->orderBy('id')
+                ->get(['id', 'user_id', 'job_title', 'staff_category']),
             'appointmentTypes' => AppointmentType::where('hospital_id', $hospitalId)->where('is_active', true)->orderBy('name')->get(['id', 'name', 'duration_minutes']),
             'patients' => Patient::where('hospital_id', $hospitalId)->where('status', 'active')->latest()->limit(25)->get(['id', 'hospital_number', 'first_name', 'middle_name', 'last_name']),
         ];

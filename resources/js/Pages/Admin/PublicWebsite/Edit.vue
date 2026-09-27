@@ -56,6 +56,10 @@ function ensurePageContent() {
     pageModel.value.draft_content.navigation.items ||= [];
     pageModel.value.draft_content.footer ||= {};
     pageModel.value.draft_content.footer.badges ||= [];
+    if (pageModel.value.slug !== 'home') {
+        pageModel.value.draft_content.summary ||= '';
+        pageModel.value.draft_content.body ||= '';
+    }
     pageModel.value.draft_content.theme ||= { appearance: 'system', accent: 'calm', allowed_accents: ['calm', 'healing', 'alert', 'blood', 'seagrass'], show_switcher: true };
     pageModel.value.draft_content.theme.allowed_accents ||= ['calm', 'healing', 'alert', 'blood', 'seagrass'];
     pageModel.value.seo ||= {};
@@ -352,6 +356,17 @@ function toggleAccent(value) {
                             <input v-model="pageContent.utility.hours" class="mt-1 w-full rounded-md border-slate-300" type="text">
                         </label>
                     </div>
+                    <div v-if="pageModel.slug !== 'home'" class="rounded-md border border-slate-200 p-4">
+                        <h4 class="font-bold">Public page content</h4>
+                        <p class="mt-1 text-sm text-slate-600">This content appears on the public {{ pageModel.title }} page. Leave fields blank rather than publishing placeholder instructions.</p>
+                        <label class="mt-4 block text-sm font-semibold">Intro / summary
+                            <textarea v-model="pageContent.summary" class="mt-1 w-full rounded-md border-slate-300" rows="3" placeholder="Short public introduction"></textarea>
+                        </label>
+                        <label class="mt-4 block text-sm font-semibold">Main page content
+                            <textarea v-model="pageContent.body" class="mt-1 w-full rounded-md border-slate-300" rows="10" placeholder="Approved hospital information for this page"></textarea>
+                        </label>
+                    </div>
+
                     <label class="flex items-center gap-2 text-sm font-semibold"><input v-model="pageContent.utility.visible" type="checkbox"> Show top information bar</label>
 
                     <div class="rounded-md border border-slate-200 p-4">

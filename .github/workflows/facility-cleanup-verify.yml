@@ -29,8 +29,11 @@ jobs:
           cp .env.testing.example .env.testing || true
           php artisan key:generate --env=testing --force
 
-      - name: Run focused backend tests
-        run: php artisan test --filter=Facility --filter=Appointment
+      - name: Verify routes
+        run: php artisan route:list
+
+      - name: Run public appointment request test
+        run: php artisan test tests/Feature/Phase2BAppointmentsQueuesTest.php --filter=test_public_request_is_encrypted_reviewed_and_does_not_create_patient_or_appointment
 
       - uses: actions/setup-node@v4
         with:

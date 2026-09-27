@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Facility;
+use App\Models\Department;
 use App\Models\FacilityMembership;
 use App\Models\StaffProfile;
 use App\Models\User;
@@ -27,9 +28,10 @@ class StaffController extends FoundationController
 
         return Inertia::render('Admin/Staff/Index', [
             'filters' => $request->only(['search', 'status']),
-            'facilities' => Facility::where('hospital_id', $hospital->id)->orderBy('name')->get(['id', 'name', 'code']),
+            'facilities' => Facility::where('hospital_id', $hospital->id)->where('status', 'active')->orderBy('name')->get(['id', 'name', 'code']),
+            'departments' => Department::where('hospital_id', $hospital->id)->where('status', 'active')->orderBy('name')->get(['id', 'facility_id', 'name', 'code']),
             'roles' => $this->assignableRoles()->values(),
-            'staff' => StaffProfile::with(['user.roles:id,name', 'memberships.facility:id,name,code'])
+            'staff' => StaffProfile::with(['user.roles:id,name', 'memberships.facility:id,name,code', 'memberships.department:id,name,code'])
                 ->where('hospital_id', $hospital->id)
                 ->when($request->search, fn ($query, $search) => $query->where(function ($inner) use ($search): void {
                     $inner->where('staff_number', 'like', "%{$search}%")
@@ -93,7 +95,12 @@ class StaffController extends FoundationController
                 'public_display_order' => (int) ($validated['public_display_order'] ?? 0),
             ]);
 
-            $this->syncMemberships($staff, $validated['facility_ids'] ?? [], $validated['default_facility_id'] ?? null);
+            $this->syncMemberships(
+                $staff,
+                $validated['facility_ids'] ?? [],
+                $validated['default_facility_id'] ?? null,
+                $validated['facility_departments'] ?? []
+            );
 
             $audit->record('staff.invited', $staff, null, $staff->load('user.roles', 'memberships')->toArray());
             $audit->record('roles.assigned', $user, null, ['roles' => $user->getRoleNames()->all()]);
@@ -166,13 +173,19 @@ class StaffController extends FoundationController
             ]);
 
             $user->syncRoles($validated['roles'] ?? []);
-            $this->syncMemberships($staffProfile, $validated['facility_ids'] ?? [], $validated['default_facility_id'] ?? null);
+            $this->syncMemberships(
+                $staffProfile,
+                $validated['facility_ids'] ?? [],
+                $validated['default_facility_id'] ?? null,
+                $validated['facility_departments'] ?? []
+            );
 
             $audit->record('staff.updated', $staffProfile, $before, $staffProfile->only(array_keys($before)));
             $audit->record('roles.updated', $user, ['roles' => $beforeUserRoles], ['roles' => $user->getRoleNames()->all()]);
             $audit->record('facility_memberships.updated', $staffProfile, null, [
                 'facility_ids' => $validated['facility_ids'] ?? [],
                 'default_facility_id' => $validated['default_facility_id'] ?? null,
+                'facility_departments' => $validated['facility_departments'] ?? [],
             ]);
         });
 
@@ -221,7 +234,7 @@ class StaffController extends FoundationController
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
             'staff_number' => ['required', 'string', 'max:50', Rule::unique('staff_profiles', 'staff_number')->where('hospital_id', $hospitalId)->ignore($staffProfileId)],
             'job_title' => ['nullable', 'string', 'max:255'],
-            'staff_category' => ['required', 'string', 'max:100'],
+            'staff_category' => ['required', Rule::in(['administrative', 'clinical', 'doctor', 'nurse', 'laboratory', 'radiology', 'pharmacy', 'support'])],
             'professional_license_number' => ['nullable', 'string', 'max:255'],
             'license_expires_at' => ['nullable', 'date'],
             'work_phone' => ['nullable', 'string', 'max:50'],
@@ -239,28 +252,53 @@ class StaffController extends FoundationController
             'roles' => ['array'],
             'roles.*' => ['string', Rule::exists('roles', 'name')->where('guard_name', 'web')],
             'facility_ids' => ['required', 'array', 'min:1'],
-            'facility_ids.*' => [Rule::exists('facilities', 'id')->where('hospital_id', $hospitalId)],
-            'default_facility_id' => ['nullable', Rule::exists('facilities', 'id')->where('hospital_id', $hospitalId)],
+            'facility_ids.*' => [Rule::exists('facilities', 'id')->where(fn ($query) => $query->where('hospital_id', $hospitalId)->where('status', 'active'))],
+            'default_facility_id' => ['nullable', Rule::exists('facilities', 'id')->where(fn ($query) => $query->where('hospital_id', $hospitalId)->where('status', 'active'))],
+            'facility_departments' => ['array'],
+            'facility_departments.*' => ['nullable', Rule::exists('departments', 'id')->where(fn ($query) => $query->where('hospital_id', $hospitalId)->where('status', 'active'))],
         ];
     }
 
-    private function syncMemberships(StaffProfile $staff, array $facilityIds, ?int $defaultFacilityId): void
+    private function syncMemberships(StaffProfile $staff, array $facilityIds, ?int $defaultFacilityId, array $facilityDepartments = []): void
     {
-        abort_if($defaultFacilityId && ! in_array($defaultFacilityId, $facilityIds, true), 422, 'Default facility must be one of the assigned facilities.');
+        $facilityIds = array_map('intval', $facilityIds);
+        abort_if($defaultFacilityId && ! in_array((int) $defaultFacilityId, $facilityIds, true), 422, 'Default facility must be one of the assigned facilities.');
 
         FacilityMembership::where('staff_profile_id', $staff->id)
             ->whereNotIn('facility_id', $facilityIds)
-            ->update(['status' => 'inactive', 'is_default' => false]);
+            ->update(['status' => 'inactive', 'is_default' => false, 'department_id' => null]);
 
         foreach ($facilityIds as $facilityId) {
+            $departmentId = filled($facilityDepartments[$facilityId] ?? null)
+                ? (int) $facilityDepartments[$facilityId]
+                : null;
+
+            if ($departmentId) {
+                abort_unless(
+                    Department::whereKey($departmentId)
+                        ->where('hospital_id', $staff->hospital_id)
+                        ->where('facility_id', $facilityId)
+                        ->where('status', 'active')
+                        ->exists(),
+                    422,
+                    'The selected department must belong to its assigned facility.'
+                );
+            }
+
             FacilityMembership::updateOrCreate(
                 ['staff_profile_id' => $staff->id, 'facility_id' => $facilityId],
-                ['status' => 'active', 'is_default' => (int) $facilityId === (int) $defaultFacilityId]
+                [
+                    'status' => 'active',
+                    'department_id' => $departmentId,
+                    'is_default' => (int) $facilityId === (int) $defaultFacilityId,
+                ]
             );
         }
 
         if (! $defaultFacilityId && $facilityIds !== []) {
-            FacilityMembership::where('staff_profile_id', $staff->id)->where('facility_id', $facilityIds[0])->update(['is_default' => true]);
+            FacilityMembership::where('staff_profile_id', $staff->id)
+                ->where('facility_id', $facilityIds[0])
+                ->update(['is_default' => true]);
         }
     }
 

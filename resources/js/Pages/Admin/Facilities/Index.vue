@@ -26,6 +26,8 @@ const statusForm = useForm({ status: 'active' });
 const showForm = ref(false);
 const editing = ref(null);
 const statusTarget = ref(null);
+const deleteTarget = ref(null);
+const deleteForm = useForm({});
 
 function filter() {
     router.get('/admin/facilities', search.data(), { preserveState: true, replace: true });
@@ -60,6 +62,18 @@ function openStatus(facility) {
 
 function saveStatus() {
     statusForm.patch(`/admin/facilities/${statusTarget.value.id}/status`, { preserveScroll: true, onSuccess: () => { statusTarget.value = null; statusForm.reset(); } });
+}
+
+function openDelete(facility) {
+    deleteTarget.value = facility;
+}
+
+function deleteFacility() {
+    if (!deleteTarget.value) return;
+    deleteForm.delete(`/admin/facilities/${deleteTarget.value.id}`, {
+        preserveScroll: true,
+        onSuccess: () => { deleteTarget.value = null; },
+    });
 }
 </script>
 
@@ -98,6 +112,7 @@ function saveStatus() {
                                 <ActionToolbar>
                                     <button v-if="can('facilities.update')" class="rounded-md border px-3 py-2 text-xs font-bold" type="button" @click="openEdit(facility)">Edit</button>
                                     <button v-if="can('facilities.activate')" class="rounded-md border px-3 py-2 text-xs font-bold" type="button" @click="openStatus(facility)">{{ facility.status === 'active' ? 'Deactivate' : 'Activate' }}</button>
+                                    <button v-if="can('facilities.update') && !facility.is_primary" class="rounded-md border border-rose-300 px-3 py-2 text-xs font-bold text-rose-700" type="button" @click="openDelete(facility)">Delete</button>
                                 </ActionToolbar>
                             </td>
                         </tr>
@@ -125,5 +140,6 @@ function saveStatus() {
         </FormModal>
 
         <ConfirmDialog :show="Boolean(statusTarget)" :form="statusForm" :title="statusForm.status === 'active' ? 'Activate Facility' : 'Deactivate Facility'" :message="statusTarget ? `Update ${statusTarget.name} status?` : ''" confirm-label="Update status" @close="statusTarget = null" @confirm="saveStatus" />
+        <ConfirmDialog :show="Boolean(deleteTarget)" :form="deleteForm" title="Delete Facility" :message="deleteTarget ? `Permanently delete ${deleteTarget.name}? This is only allowed when the facility has no operational records.` : ''" confirm-label="Delete facility" @close="deleteTarget = null" @confirm="deleteFacility" />
     </AppLayout>
 </template>

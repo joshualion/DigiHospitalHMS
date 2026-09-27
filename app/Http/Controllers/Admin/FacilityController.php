@@ -6,6 +6,7 @@ use App\Models\Facility;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -85,6 +86,28 @@ class FacilityController extends FoundationController
 
         return back()->with('success', 'Facility status updated.');
     }
+
+    public function destroy(Facility $facility, AuditService $audit): RedirectResponse
+    {
+        $this->authorize('delete', $facility);
+
+        abort_if($facility->is_primary, 422, 'The primary facility cannot be deleted.');
+
+        $before = $facility->toArray();
+
+        try {
+            $facility->delete();
+        } catch (QueryException) {
+            return back()->withErrors([
+                'facility' => 'This facility is already linked to operational records and cannot be deleted safely. Deactivate it instead.',
+            ]);
+        }
+
+        $audit->record('facilities.deleted', null, $before, null);
+
+        return back()->with('success', 'Facility deleted.');
+    }
+
 
     private function rules(int $hospitalId, ?int $facilityId = null): array
     {

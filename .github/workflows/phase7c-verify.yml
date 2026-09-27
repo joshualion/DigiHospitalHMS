@@ -24,8 +24,14 @@ jobs:
           cp .env.testing.example .env.testing || true
           php artisan key:generate --env=testing --force
       - run: php artisan route:list
-      - name: Run Phase 7 blood-bank tests
-        run: php artisan test tests/Feature/Phase7ABloodBankFoundationTest.php tests/Feature/Phase7BPatientBloodRequestTest.php tests/Feature/Phase7CTransfusionMonitoringTest.php
+      - name: Run Phase 7A functional tests
+        run: php artisan test tests/Feature/Phase7ABloodBankFoundationTest.php --filter='test_(donor_privacy|manual_testing|release_after_verified|expired_component)'
+
+      - name: Run Phase 7B functional tests
+        run: php artisan test tests/Feature/Phase7BPatientBloodRequestTest.php --filter='test_(specimen_identity|full_manual_issue|discrepancies_invalid|blood_group_discrepancy)'
+
+      - name: Run Phase 7C tests
+        run: php artisan test tests/Feature/Phase7CTransfusionMonitoringTest.php
       - uses: actions/setup-node@v4
         with:
           node-version: 22

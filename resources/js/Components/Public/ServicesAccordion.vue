@@ -24,7 +24,6 @@ function serviceContent(service) { return service.content || {}; }
                         </span>
                         <span class="min-w-0 flex-1">
                             <span class="block text-lg font-black" style="color: var(--public-text);">{{ service.title }}</span>
-                            <span class="mt-1 block text-sm" style="color: var(--public-text-secondary);">{{ service.summary }}</span>
                         </span>
                         <ChevronDown class="h-5 w-5 shrink-0 transition" :class="openSlug === service.slug ? 'rotate-180' : ''" aria-hidden="true" />
                     </button>

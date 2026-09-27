@@ -54,6 +54,16 @@ const hasAppointmentContent = computed(() => Boolean(appointment.value.heading |
 const hasNewsContent = computed(() => articles.value.length > 0 || Boolean(newsSection.value.heading || newsSection.value.description));
 const hasContactDetails = computed(() => Boolean(contact.value.address || contact.value.phone || contact.value.email || contact.value.hours));
 const standardBody = computed(() => props.page.content?.body || props.page.content?.summary || '');
+const publicPageTitle = computed(() => {
+    if (props.page.slug === 'services') return 'Our Healthcare Services';
+    return props.page.title;
+});
+const publicPageSummary = computed(() => {
+    if (props.page.slug === 'services') {
+        return `Explore the healthcare services available at ${props.site.hospital?.display_name || 'our hospital'}, delivered by our clinical team with a focus on safe, respectful and patient-centred care.`;
+    }
+    return standardSummary();
+});
 const pageEyebrow = computed(() => ({
     about: 'About us',
     services: 'Our services',
@@ -261,7 +271,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
         </template>
 
         <template v-else>
-            <PublicPageHero :page="page" :eyebrow="pageEyebrow" :title="page.title" :summary="standardSummary()" />
+            <PublicPageHero :page="page" :eyebrow="pageEyebrow" :title="publicPageTitle" :summary="publicPageSummary" />
             <section class="public-section">
                 <div class="public-container">
                     <div v-if="page.slug === 'doctors'" class="grid gap-6 md:grid-cols-3">
@@ -272,7 +282,31 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         <p v-if="doctors.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">Clinician information is being updated. Please contact the hospital if you need assistance.</p>
                     </div>
                     <div v-else-if="page.slug === 'services'">
-                        <ServicesAccordion :services="services" />
+                        <div v-if="services.length" class="grid gap-6 md:grid-cols-2">
+                            <article
+                                v-for="service in services"
+                                :key="`${service.source || service.type}-${service.id}-${service.slug}`"
+                                class="public-card rounded-[2rem] p-7 transition hover:-translate-y-1"
+                            >
+                                <div class="flex items-start gap-4">
+                                    <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl" style="background: var(--public-accent-soft); color: var(--public-accent);">
+                                        <Activity class="h-6 w-6" aria-hidden="true" />
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p v-if="service.content?.department" class="text-xs font-black uppercase tracking-[0.14em] public-accent">{{ service.content.department }}</p>
+                                        <h2 class="mt-1 text-xl font-black" style="color: var(--public-text);">{{ service.title }}</h2>
+                                    </div>
+                                </div>
+                                <p class="mt-5 text-sm leading-7" style="color: var(--public-text-secondary);">
+                                    {{ service.content?.description || service.summary || 'Please contact the hospital for more information about this service.' }}
+                                </p>
+                                <PublicButton class="mt-6" href="/appointment/request" variant="secondary">Request an appointment</PublicButton>
+                            </article>
+                        </div>
+                        <div v-else class="public-card mx-auto max-w-2xl rounded-3xl p-8 text-center">
+                            <p class="font-bold" style="color: var(--public-text-secondary);">Service information is being updated. Please contact the hospital if you need assistance.</p>
+                            <PublicButton class="mt-6" href="/contact">Contact us</PublicButton>
+                        </div>
                     </div>
                     <div v-else-if="page.slug === 'departments'" class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                         <article v-for="department in departments" :key="department.slug" class="public-card rounded-3xl p-6"><Building2 class="h-8 w-8 public-accent" /><h2 class="mt-4 text-xl font-black">{{ department.title }}</h2><p class="mt-3 public-prose text-sm">{{ department.summary }}</p></article>

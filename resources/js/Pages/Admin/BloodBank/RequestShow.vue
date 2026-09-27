@@ -191,6 +191,7 @@ function submitVerify() {
                             </div>
                             <ActionToolbar align="end">
                                 <Link class="rounded-md border px-3 py-2 font-bold" style="border-color: var(--admin-border);" :href="`/admin/blood-bank/issues/${issue.id}/document`">Print</Link>
+                                <Link v-if="!['returned', 'reversed'].includes(issue.status)" class="rounded-md border px-3 py-2 font-bold" style="border-color: var(--admin-border);" :href="`/admin/blood-bank/issues/${issue.id}/transfusion`">{{ issue.transfusion_episode ? 'Transfusion record' : 'Start transfusion' }}</Link>
                                 <button class="rounded-md border px-3 py-2 font-bold" style="border-color: var(--admin-border);" type="button" @click="openIssueAction('return', issue)">Return</button>
                                 <button class="rounded-md border px-3 py-2 font-bold" style="border-color: var(--admin-border);" type="button" @click="openIssueAction('reverse', issue)">Reverse</button>
                             </ActionToolbar>

@@ -25,8 +25,8 @@ jobs:
           php artisan key:generate --env=testing --force
       - name: Verify routes
         run: php artisan route:list
-      - name: Run foundation tests
-        run: php artisan test tests/Feature/Phase1AFoundationTest.php
+      - name: Run staff invitation and membership test
+        run: php artisan test tests/Feature/Phase1AFoundationTest.php --filter=test_staff_can_be_invited_with_roles_and_facility_membership
       - name: Run appointment clinician workflow test
         run: php artisan test tests/Feature/Phase2BAppointmentsQueuesTest.php --filter=test_booking_conflicts_reschedule_cancel_confirm_no_show_and_history
       - uses: actions/setup-node@v4

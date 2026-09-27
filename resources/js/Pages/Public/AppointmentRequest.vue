@@ -5,14 +5,15 @@ import PublicButton from '../../Components/Public/PublicButton.vue';
 import TextInput from '../../Components/TextInput.vue';
 import { computed, nextTick, ref } from 'vue';
 
-defineProps({
+const props = defineProps({
     site: { type: Object, required: true },
     facilities: { type: Array, default: () => [] },
     departments: { type: Array, default: () => [] },
 });
 
 const page = usePage();
-const form = useForm({ name: '', phone: '', email: '', preferred_facility_id: '', preferred_department_id: '', preferred_date: '', consent: false, website: '' });
+const singleFacilityId = computed(() => props.facilities.length === 1 ? props.facilities[0].id : '');
+const form = useForm({ name: '', phone: '', email: '', preferred_facility_id: singleFacilityId.value, preferred_department_id: '', preferred_date: '', consent: false, website: '' });
 const feedback = ref(null);
 const feedbackPanel = ref(null);
 const successMessage = computed(() => page.props.flash?.success || '');
@@ -34,6 +35,7 @@ function submit() {
         onSuccess: () => {
             feedback.value = 'success';
             form.reset();
+            form.preferred_facility_id = singleFacilityId.value;
             focusFeedback();
         },
         onError: () => {
@@ -80,7 +82,7 @@ function submit() {
                     <TextInput id="request_phone" v-model="form.phone" label="Phone" :error="form.errors.phone" />
                     <TextInput id="request_email" v-model="form.email" label="Email" type="email" :error="form.errors.email" />
                     <label class="grid gap-1 text-sm font-semibold" style="color: var(--public-text-secondary);">Preferred date<input v-model="form.preferred_date" class="rounded-md border" style="background: var(--public-input); border-color: var(--public-border); color: var(--public-text);" type="date"><span v-if="form.errors.preferred_date" class="text-sm font-medium" style="color: var(--public-danger);">{{ form.errors.preferred_date }}</span></label>
-                    <label class="grid gap-1 text-sm font-semibold" style="color: var(--public-text-secondary);">Facility<select v-model="form.preferred_facility_id" class="rounded-md border" style="background: var(--public-input); border-color: var(--public-border); color: var(--public-text);"><option value="">Any facility</option><option v-for="facility in facilities" :key="facility.id" :value="facility.id">{{ facility.name }}</option></select><span v-if="form.errors.preferred_facility_id" class="text-sm font-medium" style="color: var(--public-danger);">{{ form.errors.preferred_facility_id }}</span></label>
+                    <label v-if="facilities.length > 1" class="grid gap-1 text-sm font-semibold" style="color: var(--public-text-secondary);">Facility<select v-model="form.preferred_facility_id" class="rounded-md border" style="background: var(--public-input); border-color: var(--public-border); color: var(--public-text);"><option value="">Any facility</option><option v-for="facility in facilities" :key="facility.id" :value="facility.id">{{ facility.name }}</option></select><span v-if="form.errors.preferred_facility_id" class="text-sm font-medium" style="color: var(--public-danger);">{{ form.errors.preferred_facility_id }}</span></label>
                     <label class="grid gap-1 text-sm font-semibold" style="color: var(--public-text-secondary);">Department<select v-model="form.preferred_department_id" class="rounded-md border" style="background: var(--public-input); border-color: var(--public-border); color: var(--public-text);"><option value="">Any department</option><option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }}</option></select><span v-if="form.errors.preferred_department_id" class="text-sm font-medium" style="color: var(--public-danger);">{{ form.errors.preferred_department_id }}</span></label>
                 </div>
                 <label class="mt-5 flex gap-3 text-sm font-semibold" style="color: var(--public-text-secondary);"><input v-model="form.consent" class="mt-1 rounded" type="checkbox"> I consent to being contacted about this appointment request.</label>

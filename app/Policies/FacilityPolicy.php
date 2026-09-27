@@ -34,4 +34,9 @@ class FacilityPolicy
     {
         return $this->allowed($user, 'facilities.activate', $facility);
     }
+
+    public function delete(User $user, Facility $facility): bool
+    {
+        return $this->allowed($user, 'facilities.update', $facility);
+    }
 }

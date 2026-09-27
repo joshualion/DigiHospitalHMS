@@ -78,6 +78,12 @@ class PermissionSeeder extends Seeder
             'inpatient.orders',
             'inpatient.handover',
             'inpatient.discharge-summary.sign',
+            'insurance.view',
+            'insurance.manage',
+            'insurance.tariffs.manage',
+            'insurance.coverage.manage',
+            'insurance.preauthorizations.manage',
+            'insurance.preauthorizations.decide',
             'billing.catalogue.view',
             'billing.catalogue.manage',
             'invoices.view',
@@ -225,6 +231,12 @@ class PermissionSeeder extends Seeder
             'inpatient.orders',
             'inpatient.handover',
             'inpatient.discharge-summary.sign',
+            'insurance.view',
+            'insurance.manage',
+            'insurance.tariffs.manage',
+            'insurance.coverage.manage',
+            'insurance.preauthorizations.manage',
+            'insurance.preauthorizations.decide',
             'billing.catalogue.view',
             'billing.catalogue.manage',
             'invoices.view',
@@ -326,6 +338,21 @@ class PermissionSeeder extends Seeder
             'facilities.view',
             'departments.view',
         ]));
+
+        Role::where('name', 'hmo-claims-officer')->first()?->syncPermissions([
+            'hospital.view',
+            'facilities.view',
+            'departments.view',
+            'patients.view',
+            'billing.catalogue.view',
+            'invoices.view',
+            'insurance.view',
+            'insurance.manage',
+            'insurance.tariffs.manage',
+            'insurance.coverage.manage',
+            'insurance.preauthorizations.manage',
+            'insurance.preauthorizations.decide',
+        ]);
 
         Role::whereIn('name', ['cashier', 'accountant'])->get()->each(fn (Role $role) => $role->syncPermissions([
             'hospital.view',

@@ -2,7 +2,7 @@
 import ThemeSwitcher from '@/Components/Public/ThemeSwitcher.vue';
 import ToastHost from '@/Components/Admin/ToastHost.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { Activity, Bed, Building2, ClipboardList, Droplets, FileClock, FlaskConical, Gauge, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, Pill, ScanLine, Settings, ShieldCheck, ShoppingCart, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
+import { Activity, Bed, Building2, ClipboardList, Droplets, FileClock, FlaskConical, Gauge, HandCoins, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, Pill, ScanLine, Settings, ShieldCheck, ShoppingCart, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 
 defineProps({
@@ -52,6 +52,7 @@ const navItems = computed(() => [
     { label: 'eMAR', href: '/admin/emar', icon: Pill, show: can('emar.view') },
     { label: 'Billing', href: '/admin/billing/invoices', icon: FileClock, show: can('invoices.view') },
     { label: 'Payments', href: '/admin/payments/workbench', icon: WalletCards, show: can('payments.view') },
+    { label: 'Insurance / HMO', href: '/admin/insurance', icon: HandCoins, show: can('insurance.view') },
     { label: 'Laboratory', href: '/admin/laboratory/requests', icon: FlaskConical, show: can('lab.requests.view') },
     { label: 'Radiology', href: '/admin/radiology/requests', icon: ScanLine, show: can('radiology.requests.view') },
     { label: 'Blood Bank', href: '/admin/blood-bank', icon: Droplets, show: can('blood-bank.view') || can('blood-bank.requests.view') },

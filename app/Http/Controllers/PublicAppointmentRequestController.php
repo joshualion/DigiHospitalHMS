@@ -40,7 +40,7 @@ class PublicAppointmentRequestController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'required_without:email', 'string', 'max:50'],
             'email' => ['nullable', 'required_without:phone', 'email', 'max:255'],
-            'preferred_facility_id' => ['nullable', Rule::exists('facilities', 'id')->where('hospital_id', $hospital->id)],
+            'preferred_facility_id' => ['nullable', Rule::exists('facilities', 'id')->where(fn ($query) => $query->where('hospital_id', $hospital->id)->where('status', 'active'))],
             'preferred_department_id' => ['nullable', Rule::exists('departments', 'id')->where('hospital_id', $hospital->id)],
             'preferred_date' => ['nullable', 'date', 'after_or_equal:today'],
             'consent' => ['accepted'],

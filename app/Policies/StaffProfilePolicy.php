@@ -44,4 +44,9 @@ class StaffProfilePolicy
     {
         return $this->allowed($user, 'staff.delete', $staffProfile);
     }
+
+    public function purgeDemo(User $user, StaffProfile $staffProfile): bool
+    {
+        return $this->allowed($user, 'staff.purge-demo', $staffProfile);
+    }
 }

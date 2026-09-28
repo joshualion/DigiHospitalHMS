@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Facility;
 use App\Services\AuditService;
+use App\Services\FacilityDeletionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
@@ -21,6 +22,12 @@ class FacilityController extends FoundationController
 
         return Inertia::render('Admin/Facilities/Index', [
             'filters' => $request->only(['search', 'status']),
+            'replacementFacilities' => Facility::query()
+                ->where('hospital_id', $hospital->id)
+                ->where('status', 'active')
+                ->orderByDesc('is_primary')
+                ->orderBy('name')
+                ->get(['id', 'name', 'code', 'is_primary']),
             'facilities' => Facility::query()
                 ->where('hospital_id', $hospital->id)
                 ->when($request->search, fn ($query, $search) => $query->where(fn ($inner) => $inner
@@ -77,7 +84,9 @@ class FacilityController extends FoundationController
         $this->authorize('activate', $facility);
         $validated = $request->validate(['status' => ['required', 'in:active,inactive']]);
 
-        abort_if($facility->is_primary && $validated['status'] !== 'active', 422, 'The primary facility cannot be deactivated.');
+        if ($facility->is_primary && $validated['status'] !== 'active') {
+            return back()->withErrors(['facility' => 'The primary facility cannot be deactivated. Set another facility as primary first.']);
+        }
 
         $before = $facility->only(['status']);
         $facility->update(['status' => $validated['status']]);
@@ -87,19 +96,53 @@ class FacilityController extends FoundationController
         return back()->with('success', 'Facility status updated.');
     }
 
-    public function destroy(Facility $facility, AuditService $audit): RedirectResponse
+    public function destroy(Request $request, Facility $facility, AuditService $audit, FacilityDeletionService $deletion): RedirectResponse
     {
         $this->authorize('delete', $facility);
 
-        abort_if($facility->is_primary, 422, 'The primary facility cannot be deleted.');
+        if ($facility->is_primary) {
+            return back()->withErrors(['facility' => 'The primary facility cannot be deleted. Set another facility as primary first.']);
+        }
+
+        $validated = $request->validate([
+            'replacement_facility_id' => [
+                'nullable',
+                Rule::exists('facilities', 'id')->where(fn ($query) => $query
+                    ->where('hospital_id', $facility->hospital_id)
+                    ->where('status', 'active')),
+            ],
+        ]);
 
         $before = $facility->toArray();
+        $dependencies = $deletion->dependencyCount($facility);
+
+        if ($dependencies > 0 && empty($validated['replacement_facility_id'])) {
+            return back()->withErrors([
+                'facility' => "This facility has {$dependencies} linked record(s). Choose an active replacement facility to reassign those records before deletion.",
+            ]);
+        }
+
+        if (! empty($validated['replacement_facility_id'])) {
+            $replacement = Facility::where('hospital_id', $facility->hospital_id)
+                ->where('status', 'active')
+                ->findOrFail($validated['replacement_facility_id']);
+
+            $moved = $deletion->reassignAndDelete($facility, $replacement);
+
+            $audit->record('facilities.deleted_with_reassignment', null, $before, [
+                'replacement_facility_id' => $replacement->id,
+                'replacement_facility_name' => $replacement->name,
+                'moved_records' => $moved,
+            ]);
+
+            return back()->with('success', "Facility deleted and linked records reassigned to {$replacement->name}.");
+        }
 
         try {
             $facility->delete();
         } catch (QueryException) {
             return back()->withErrors([
-                'facility' => 'This facility is already linked to operational records and cannot be deleted safely. Deactivate it instead.',
+                'facility' => 'This facility still has linked records and cannot be deleted directly. Choose a replacement facility and try Delete & Reassign.',
             ]);
         }
 

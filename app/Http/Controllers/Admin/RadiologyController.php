@@ -33,7 +33,7 @@ class RadiologyController extends FoundationController
         $hospital = $this->currentHospital();
 
         return Inertia::render('Admin/Radiology/Catalogue', array_merge($this->shared($hospital->id), [
-            'modalities' => RadiologyModality::where('hospital_id', $hospital->id)->orderBy('name')->get(),
+            'modalities' => RadiologyModality::with('facility:id,name')->where('hospital_id', $hospital->id)->orderBy('name')->get(),
             'studies' => RadiologyStudy::with(['modality', 'billableService:id,code,name'])->where('hospital_id', $hospital->id)->orderBy('name')->get(),
         ]));
     }
@@ -62,7 +62,7 @@ class RadiologyController extends FoundationController
 
     public function updateModality(Request $request, RadiologyModality $modality): RedirectResponse
     {
-        $this->authorize('update', new RadiologyStudy(['hospital_id' => $modality->hospital_id]));
+        abort_unless($request->user()->can('radiology.catalogue.manage') || $request->user()->hasRole('superadmin'), 403);
         abort_unless($modality->hospital_id === $this->currentHospital()->id, 403);
 
         $validated = $request->validate([

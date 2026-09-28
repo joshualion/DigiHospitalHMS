@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\SensitiveLookup;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 
@@ -16,6 +17,11 @@ class PublicAppointmentRequest extends Model
     protected function casts(): array
     {
         return ['preferred_date' => 'date', 'consent' => 'boolean', 'reviewed_at' => 'datetime'];
+    }
+
+    public function preferredClinician(): BelongsTo
+    {
+        return $this->belongsTo(StaffProfile::class, 'preferred_clinician_id');
     }
 
     public function setPhoneAttribute(?string $value): void

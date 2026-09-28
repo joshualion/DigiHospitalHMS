@@ -8,6 +8,7 @@ use App\Models\FacilityMembership;
 use App\Models\StaffProfile;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\DemoStaffPurgeService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -259,6 +260,68 @@ class StaffController extends FoundationController
         $audit->record('staff.deleted', null, $before, null, actor: $request->user());
 
         return back()->with('success', 'Staff account deleted.');
+    }
+
+    public function purgeDemo(
+        Request $request,
+        StaffProfile $staffProfile,
+        DemoStaffPurgeService $purger,
+        AuditService $audit
+    ): RedirectResponse {
+        $this->authorize('purgeDemo', $staffProfile);
+
+        abort_unless(
+            $request->user()->hasAnyRole(['superadmin', 'hospital-admin']),
+            403,
+            'Only a hospital administrator can permanently purge linked demo data.'
+        );
+
+        $validated = $request->validate([
+            'confirmation' => ['required', 'in:PURGE'],
+        ]);
+
+        $user = $staffProfile->user;
+
+        if (! $user) {
+            return back()->withErrors(['staff' => 'This staff profile no longer has a user account.']);
+        }
+
+        if ($request->user()->is($user)) {
+            return back()->withErrors(['staff' => 'You cannot purge the account you are currently signed in with.']);
+        }
+
+        if ($user->hasRole('superadmin')) {
+            $this->ensureNotLastSuperadmin($user);
+        }
+
+        $before = [
+            'staff_profile_id' => $staffProfile->id,
+            'user_id' => $user->id,
+            'staff_number' => $staffProfile->staff_number,
+            'name' => $user->full_name,
+            'email' => $user->email,
+            'roles' => $user->getRoleNames()->all(),
+        ];
+
+        try {
+            $summary = $purger->purge($staffProfile, $request->user());
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->withErrors([
+                'staff' => 'The demo purge could not be completed safely. No partial deletion was kept. Review the linked records and try again.',
+            ]);
+        }
+
+        $audit->record('staff.demo_purged', null, $before, [
+            'deleted_rows' => $summary['deleted_rows'],
+            'nulled_references' => $summary['nulled_references'],
+        ], actor: $request->user(), reason: 'Explicit demo/test data purge');
+
+        return back()->with(
+            'success',
+            "Demo staff account purged with {$summary['deleted_rows']} linked rows removed and {$summary['nulled_references']} non-owning references cleared."
+        );
     }
 
     private function rules(int $hospitalId, ?int $staffProfileId = null, ?int $userId = null): array

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BillingController;
 use App\Http\Controllers\Admin\BloodBankController;
 use App\Http\Controllers\Admin\ClinicalEncounterController;
+use App\Http\Controllers\Admin\CommercialAdminController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\EmarController;
 use App\Http\Controllers\Admin\FacilityController;
@@ -87,6 +88,10 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
 
         Route::get('audit-logs', [AuditLogController::class, 'index'])->name('admin.audit.index');
         Route::get('reports', [ReportingController::class, 'index'])->name('admin.reports.index');
+        Route::get('commercial', [CommercialAdminController::class, 'index'])->name('admin.commercial.index');
+        Route::patch('commercial/license', [CommercialAdminController::class, 'updateLicense'])->name('admin.commercial.license.update');
+        Route::patch('commercial/integrations/{integration}', [CommercialAdminController::class, 'updateIntegration'])->name('admin.commercial.integrations.update');
+        Route::post('commercial/backups', [CommercialAdminController::class, 'recordBackup'])->name('admin.commercial.backups.store');
         Route::get('reports/export', [ReportingController::class, 'export'])->name('admin.reports.export');
         Route::get('settings', [HospitalSettingController::class, 'edit'])->name('admin.settings.edit');
         Route::patch('settings', [HospitalSettingController::class, 'update'])->name('admin.settings.update');

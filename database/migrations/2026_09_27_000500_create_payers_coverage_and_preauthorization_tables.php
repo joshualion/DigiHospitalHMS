@@ -64,7 +64,7 @@ return new class extends Migration
             $table->foreignId('patient_id')->constrained()->restrictOnDelete();
             $table->foreignId('payer_organization_id')->constrained()->restrictOnDelete();
             $table->foreignId('payer_plan_id')->constrained()->restrictOnDelete();
-            $table->string('member_number');
+            $table->string('member_number', 191);
             $table->string('policy_number')->nullable();
             $table->string('principal_member_name')->nullable();
             $table->string('relationship_to_principal')->nullable();

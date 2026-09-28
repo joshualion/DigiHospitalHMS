@@ -12,9 +12,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('hospital_id')->constrained()->restrictOnDelete();
             $table->foreignId('payer_organization_id')->constrained()->restrictOnDelete();
-            $table->string('reference');
+            $table->string('reference', 120);
             $table->string('currency', 3)->default('NGN');
-            $table->string('status')->default('draft')->index();
+            $table->string('status', 32)->default('draft')->index();
             $table->bigInteger('claimed_minor')->default(0);
             $table->bigInteger('approved_minor')->default(0);
             $table->bigInteger('paid_minor')->default(0);
@@ -38,9 +38,9 @@ return new class extends Migration
             $table->foreignId('invoice_id')->constrained()->restrictOnDelete();
             $table->foreignId('payer_pre_authorization_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('resubmission_of_claim_id')->nullable()->constrained('payer_claims')->nullOnDelete();
-            $table->string('claim_number');
-            $table->string('payer_reference')->nullable();
-            $table->string('status')->default('draft')->index();
+            $table->string('claim_number', 120);
+            $table->string('payer_reference', 120)->nullable();
+            $table->string('status', 32)->default('draft')->index();
             $table->string('currency', 3)->default('NGN');
             $table->bigInteger('claimed_minor');
             $table->bigInteger('approved_minor')->nullable();

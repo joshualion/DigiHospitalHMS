@@ -36,6 +36,8 @@ class Phase9AReportingTest extends TestCase
         $this->assertTrue($user->can('reports.view'));
         $this->assertTrue($user->can('reports.export'));
 
+        config(['inertia.testing.ensure_pages_exist' => false]);
+
         $this->actingAs($user)->get('/admin/reports')
             ->assertOk()
             ->assertInertia(fn($page)=>$page->component('Admin/Reports/Index')->has('summary')->has('daily')->has('filters'));

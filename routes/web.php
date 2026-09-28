@@ -164,6 +164,7 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::patch('insurance/pre-authorizations/{preAuthorization}/decision', [InsuranceController::class, 'decidePreAuthorization'])->name('admin.insurance.preauthorizations.decision');
         Route::post('insurance/claims', [InsuranceController::class, 'storeClaim'])->name('admin.insurance.claims.store');
         Route::post('insurance/claim-batches', [InsuranceController::class, 'storeClaimBatch'])->name('admin.insurance.claim-batches.store');
+        Route::patch('insurance/claim-batches/{batch}/submit', [InsuranceController::class, 'submitClaimBatch'])->name('admin.insurance.claim-batches.submit');
         Route::patch('insurance/claims/{claim}/submit', [InsuranceController::class, 'submitClaim'])->name('admin.insurance.claims.submit');
         Route::patch('insurance/claims/{claim}/decision', [InsuranceController::class, 'decideClaim'])->name('admin.insurance.claims.decision');
         Route::post('insurance/claims/{claim}/resubmit', [InsuranceController::class, 'resubmitClaim'])->name('admin.insurance.claims.resubmit');

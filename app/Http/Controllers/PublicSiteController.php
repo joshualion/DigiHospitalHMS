@@ -375,6 +375,7 @@ class PublicSiteController extends Controller
             'is_featured' => $profile->public_is_featured,
             'source' => 'staff_profile',
             'content' => $this->normalizeContentImages([
+                'staff_profile_id' => $profile->id,
                 'display_name' => $name,
                 'professional_title' => $profile->public_specialty ?: $profile->job_title,
                 'specialty' => $profile->public_specialty,
@@ -387,10 +388,9 @@ class PublicSiteController extends Controller
 
     private function qualifiedClinicianScope($query): void
     {
-        $query->whereIn('staff_category', ['clinical', 'doctor', 'nurse'])
+        $query->where('staff_category', 'doctor')
             ->orWhere('job_title', 'like', '%doctor%')
-            ->orWhere('job_title', 'like', '%clinician%')
-            ->orWhereHas('user.roles', fn ($roles) => $roles->whereIn('name', ['doctor', 'nurse', 'laboratory-scientist', 'radiology-staff', 'pharmacist']));
+            ->orWhereHas('user.roles', fn ($roles) => $roles->where('name', 'doctor'));
     }
 
     private function itemPayload(PublicSiteItem $item, bool $draft = false): array

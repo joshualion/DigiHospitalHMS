@@ -4,18 +4,24 @@ namespace App\Models;
 
 use App\Services\SensitiveLookup;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 
 class PublicAppointmentRequest extends Model
 {
-    protected $fillable = ['hospital_id', 'preferred_facility_id', 'preferred_department_id', 'name', 'phone_encrypted', 'phone_hash', 'email_encrypted', 'email_hash', 'preferred_date', 'consent', 'status', 'patient_id', 'appointment_id', 'reviewed_by', 'reviewed_at', 'review_reason', 'ip_hash'];
+    protected $fillable = ['hospital_id', 'preferred_facility_id', 'preferred_department_id', 'preferred_clinician_id', 'name', 'phone_encrypted', 'phone_hash', 'email_encrypted', 'email_hash', 'preferred_date', 'consent', 'status', 'patient_id', 'appointment_id', 'reviewed_by', 'reviewed_at', 'review_reason', 'ip_hash'];
 
     protected $appends = ['phone', 'email'];
 
     protected function casts(): array
     {
         return ['preferred_date' => 'date', 'consent' => 'boolean', 'reviewed_at' => 'datetime'];
+    }
+
+    public function preferredClinician(): BelongsTo
+    {
+        return $this->belongsTo(StaffProfile::class, 'preferred_clinician_id');
     }
 
     public function setPhoneAttribute(?string $value): void

@@ -28,14 +28,16 @@ const statusForm = useForm({ status: 'active' });
 const showForm = ref(false);
 const editing = ref(null);
 const statusTarget = ref(null);
+const deleteTarget = ref(null);
+const deleteForm = useForm({});
 const clinicalCategories = [
     ['administrative', 'Administrative'],
-    ['clinical', 'Clinical / Other clinician'],
+    ['clinical', 'Other clinical staff'],
     ['doctor', 'Doctor'],
     ['nurse', 'Nurse'],
-    ['laboratory', 'Laboratory'],
-    ['radiology', 'Radiology'],
-    ['pharmacy', 'Pharmacy'],
+    ['laboratory', 'Laboratory scientist / technician'],
+    ['radiology', 'Radiology staff'],
+    ['pharmacy', 'Pharmacist / pharmacy staff'],
     ['support', 'Support'],
 ];
 const isClinicalForm = computed(() => ['clinical', 'doctor', 'nurse', 'laboratory', 'radiology', 'pharmacy'].includes(form.staff_category));
@@ -53,9 +55,10 @@ function openCreate() {
     showForm.value = true;
 }
 
-function openCreateClinician() {
+function openCreateDoctor() {
     const defaults = blankStaff();
-    defaults.staff_category = 'clinical';
+    defaults.staff_category = 'doctor';
+    defaults.roles = ['doctor'];
     defaults.public_is_visible = true;
     if (props.facilities.length === 1) {
         defaults.facility_ids = [props.facilities[0].id];
@@ -120,6 +123,19 @@ function openStatus(entry) {
 function saveStatus() {
     statusForm.patch(`/admin/staff/${statusTarget.value.id}/status`, { preserveScroll: true, onSuccess: () => { statusTarget.value = null; statusForm.reset(); } });
 }
+
+function openDelete(entry) {
+    deleteForm.clearErrors();
+    deleteTarget.value = entry;
+}
+
+function deleteStaff() {
+    if (!deleteTarget.value) return;
+    deleteForm.delete(`/admin/staff/${deleteTarget.value.id}`, {
+        preserveScroll: true,
+        onSuccess: () => { deleteTarget.value = null; },
+    });
+}
 </script>
 
 <template>
@@ -128,7 +144,7 @@ function saveStatus() {
         <PageHeader title="Staff And Users" description="Manage staff identities, roles and facility access.">
             <template #actions>
                 <ActionToolbar align="end">
-                    <button v-if="can('staff.invite')" class="rounded-md border border-teal-700 px-4 py-2 text-sm font-bold text-teal-700 dark:border-teal-400 dark:text-teal-300" type="button" @click="openCreateClinician">Add Clinician</button>
+                    <button v-if="can('staff.invite')" class="rounded-md border border-teal-700 px-4 py-2 text-sm font-bold text-teal-700 dark:border-teal-400 dark:text-teal-300" type="button" @click="openCreateDoctor">Add Doctor</button>
                     <PrimaryButton v-if="can('staff.invite')" type="button" @click="openCreate">Add Staff</PrimaryButton>
                 </ActionToolbar>
             </template>
@@ -160,6 +176,7 @@ function saveStatus() {
                                 <ActionToolbar>
                                     <button v-if="can('staff.update')" class="rounded-md border px-3 py-2 text-xs font-bold" type="button" @click="openEdit(entry)">Edit</button>
                                     <button v-if="can('staff.suspend')" class="rounded-md border px-3 py-2 text-xs font-bold" type="button" @click="openStatus(entry)">{{ entry.employment_status === 'active' ? 'Suspend' : 'Activate' }}</button>
+                                    <button v-if="can('staff.delete')" class="rounded-md border border-rose-300 px-3 py-2 text-xs font-bold text-rose-700" type="button" @click="openDelete(entry)">Delete</button>
                                 </ActionToolbar>
                             </td>
                         </tr>
@@ -221,8 +238,8 @@ function saveStatus() {
                 </div>
                 <div v-if="isClinicalForm" class="grid gap-3 rounded-md border border-slate-200 p-4 sm:col-span-2 sm:grid-cols-2 dark:border-slate-800">
                     <div class="sm:col-span-2">
-                        <h3 class="font-bold">Public clinician profile</h3>
-                        <p class="mt-1 text-xs text-slate-500">Use this section only when this clinician should appear on the hospital website.</p>
+                        <h3 class="font-bold">Public professional profile</h3>
+                        <p class="mt-1 text-xs text-slate-500">The public Doctors page displays doctor-category staff only. Other clinical staff can remain private for internal workflows.</p>
                     </div>
                     <label class="flex items-center gap-2 text-sm font-semibold"><input v-model="form.public_is_visible" type="checkbox"> Show on public website</label>
                     <label class="flex items-center gap-2 text-sm font-semibold"><input v-model="form.public_is_featured" type="checkbox"> Featured doctor</label>
@@ -239,5 +256,14 @@ function saveStatus() {
         </FormModal>
 
         <ConfirmDialog :show="Boolean(statusTarget)" :form="statusForm" :title="statusForm.status === 'active' ? 'Activate Staff' : 'Suspend Staff'" :message="statusTarget ? `Update ${statusTarget.user?.full_name}?` : ''" confirm-label="Update status" @close="statusTarget = null" @confirm="saveStatus" />
+        <ConfirmDialog
+            :show="Boolean(deleteTarget)"
+            :form="deleteForm"
+            title="Delete Staff Account"
+            :message="deleteTarget ? `Permanently delete ${deleteTarget.user?.full_name}? Unused/test accounts can be removed completely. Accounts linked to historical hospital records will be blocked and should be suspended instead.` : ''"
+            confirm-label="Delete staff"
+            @close="deleteTarget = null"
+            @confirm="deleteStaff"
+        />
     </AppLayout>
 </template>

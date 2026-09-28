@@ -29,18 +29,26 @@ class AppointmentController extends FoundationController
     {
         $this->authorize('viewAny', Appointment::class);
         $hospital = $this->currentHospital();
+        $doctorProfileId = $request->user()->hasRole('doctor') ? $request->user()->staffProfile?->id : null;
 
         return Inertia::render('Admin/Appointments/Index', $this->shared($hospital->id) + [
             'filters' => $request->only(['date', 'status', 'clinician_id']),
             'appointments' => Appointment::with(['patient:id,hospital_number,first_name,middle_name,last_name', 'clinician.user:id,firstname,lastname', 'facility:id,name', 'department:id,name', 'type:id,name'])
                 ->where('hospital_id', $hospital->id)
+                ->when($doctorProfileId, fn ($query, $id) => $query->where('clinician_id', $id))
                 ->when($request->date, fn ($query, $date) => $query->whereDate('starts_at', $date))
                 ->when($request->status, fn ($query, $status) => $query->where('status', $status))
                 ->when($request->clinician_id, fn ($query, $id) => $query->where('clinician_id', $id))
                 ->orderBy('starts_at')
                 ->paginate(12)
                 ->withQueryString(),
-            'requests' => PublicAppointmentRequest::where('hospital_id', $hospital->id)->where('status', 'pending')->latest()->limit(8)->get(),
+            'requests' => PublicAppointmentRequest::with(['preferredClinician.user:id,firstname,lastname'])
+                ->where('hospital_id', $hospital->id)
+                ->where('status', 'pending')
+                ->when($doctorProfileId, fn ($query, $id) => $query->where('preferred_clinician_id', $id))
+                ->latest()
+                ->limit(20)
+                ->get(),
         ]);
     }
 
@@ -166,6 +174,10 @@ class AppointmentController extends FoundationController
     {
         abort_unless($request->user()->can('appointment-requests.review') || $request->user()->hasRole('superadmin'), 403);
         abort_unless($request->user()->hospitalId() === $appointmentRequest->hospital_id || $request->user()->hasRole('superadmin'), 403);
+
+        if ($request->user()->hasRole('doctor')) {
+            abort_unless((int) $request->user()->staffProfile?->id === (int) $appointmentRequest->preferred_clinician_id, 403);
+        }
         $validated = $request->validate([
             'status' => ['required', Rule::in(['accepted', 'declined'])],
             'patient_id' => ['nullable', Rule::exists('patients', 'id')->where('hospital_id', $appointmentRequest->hospital_id)],
@@ -245,10 +257,9 @@ class AppointmentController extends FoundationController
                 ->where('employment_status', 'active')
                 ->whereHas('user', fn ($query) => $query->where('status', 'active'))
                 ->where(function ($query): void {
-                    $query->whereIn('staff_category', ['clinical', 'doctor', 'nurse'])
+                    $query->where('staff_category', 'doctor')
                         ->orWhere('job_title', 'like', '%doctor%')
-                        ->orWhere('job_title', 'like', '%clinician%')
-                        ->orWhereHas('user.roles', fn ($roles) => $roles->whereIn('name', ['doctor', 'nurse', 'laboratory-scientist', 'radiology-staff', 'pharmacist']));
+                        ->orWhereHas('user.roles', fn ($roles) => $roles->where('name', 'doctor'));
                 })
                 ->orderBy('id')
                 ->get(['id', 'user_id', 'job_title', 'staff_category']),

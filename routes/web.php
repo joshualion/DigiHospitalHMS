@@ -82,6 +82,7 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('staff', [StaffController::class, 'store'])->name('admin.staff.store');
         Route::patch('staff/{staffProfile}', [StaffController::class, 'update'])->name('admin.staff.update');
         Route::patch('staff/{staffProfile}/status', [StaffController::class, 'status'])->name('admin.staff.status');
+        Route::delete('staff/{staffProfile}', [StaffController::class, 'destroy'])->name('admin.staff.destroy');
 
         Route::get('roles', [RoleController::class, 'index'])->name('admin.roles');
         Route::patch('roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');

@@ -9,11 +9,13 @@ const props = defineProps({
     site: { type: Object, required: true },
     facilities: { type: Array, default: () => [] },
     departments: { type: Array, default: () => [] },
+    doctors: { type: Array, default: () => [] },
+    selectedDoctorId: { type: [Number, String], default: '' },
 });
 
 const page = usePage();
 const singleFacilityId = computed(() => props.facilities.length === 1 ? props.facilities[0].id : '');
-const form = useForm({ name: '', phone: '', email: '', preferred_facility_id: singleFacilityId.value, preferred_department_id: '', preferred_date: '', consent: false, website: '' });
+const form = useForm({ name: '', phone: '', email: '', preferred_facility_id: singleFacilityId.value, preferred_department_id: '', preferred_clinician_id: props.selectedDoctorId || '', preferred_date: '', consent: false, website: '' });
 const feedback = ref(null);
 const feedbackPanel = ref(null);
 const successMessage = computed(() => page.props.flash?.success || '');
@@ -36,6 +38,7 @@ function submit() {
             feedback.value = 'success';
             form.reset();
             form.preferred_facility_id = singleFacilityId.value;
+            form.preferred_clinician_id = props.selectedDoctorId || '';
             focusFeedback();
         },
         onError: () => {
@@ -84,6 +87,7 @@ function submit() {
                     <label class="grid gap-1 text-sm font-semibold" style="color: var(--public-text-secondary);">Preferred date<input v-model="form.preferred_date" class="rounded-md border" style="background: var(--public-input); border-color: var(--public-border); color: var(--public-text);" type="date"><span v-if="form.errors.preferred_date" class="text-sm font-medium" style="color: var(--public-danger);">{{ form.errors.preferred_date }}</span></label>
                     <label v-if="facilities.length > 1" class="grid gap-1 text-sm font-semibold" style="color: var(--public-text-secondary);">Facility<select v-model="form.preferred_facility_id" class="rounded-md border" style="background: var(--public-input); border-color: var(--public-border); color: var(--public-text);"><option value="">Any facility</option><option v-for="facility in facilities" :key="facility.id" :value="facility.id">{{ facility.name }}</option></select><span v-if="form.errors.preferred_facility_id" class="text-sm font-medium" style="color: var(--public-danger);">{{ form.errors.preferred_facility_id }}</span></label>
                     <label class="grid gap-1 text-sm font-semibold" style="color: var(--public-text-secondary);">Department<select v-model="form.preferred_department_id" class="rounded-md border" style="background: var(--public-input); border-color: var(--public-border); color: var(--public-text);"><option value="">Any department</option><option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }}</option></select><span v-if="form.errors.preferred_department_id" class="text-sm font-medium" style="color: var(--public-danger);">{{ form.errors.preferred_department_id }}</span></label>
+                    <label class="grid gap-1 text-sm font-semibold" style="color: var(--public-text-secondary);">Preferred doctor<select v-model="form.preferred_clinician_id" class="rounded-md border" style="background: var(--public-input); border-color: var(--public-border); color: var(--public-text);"><option value="">Any available doctor</option><option v-for="doctor in doctors" :key="doctor.id" :value="doctor.id">{{ doctor.public_display_name || doctor.user?.full_name || doctor.job_title }}<template v-if="doctor.public_specialty"> — {{ doctor.public_specialty }}</template></option></select><span v-if="form.errors.preferred_clinician_id" class="text-sm font-medium" style="color: var(--public-danger);">{{ form.errors.preferred_clinician_id }}</span></label>
                 </div>
                 <label class="mt-5 flex gap-3 text-sm font-semibold" style="color: var(--public-text-secondary);"><input v-model="form.consent" class="mt-1 rounded" type="checkbox"> I consent to being contacted about this appointment request.</label>
                 <p v-if="form.errors.consent" class="mt-2 text-sm" style="color: var(--public-danger);">{{ form.errors.consent }}</p>

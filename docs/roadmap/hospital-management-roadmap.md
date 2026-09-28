@@ -766,6 +766,39 @@ Acceptance criteria:
 - Backups are restorable.
 - Critical workflows pass tests.
 
+## Phase 11: Production Completion And Data Integrity
+
+Objective: Convert implemented modules that still contain development artefacts, incomplete master-data CRUD, or stale-state assumptions into clean production operations.
+
+Status: Phase 11A admissions production completion is in implementation.
+
+Work:
+
+- Remove development/demo artefacts from production-facing modules.
+- Complete CRUD for operational master data where safe.
+- Add explicit protected purge/reset tools for pre-production demo data.
+- Derive dashboard/census values from authoritative workflow records instead of stale flags.
+- Reconcile inconsistent operational state with auditable repair actions.
+- Clarify role-specific workflows and user-facing terminology.
+- Continue module-by-module production acceptance until no phase/test fixtures appear in normal UI.
+
+Phase 11A:
+
+- Admissions, wards, rooms, bed classes and beds.
+- Real-admission-backed bed occupancy.
+- Stale occupancy detection/reconciliation.
+- Admissions setup CRUD.
+- Pre-production admissions demo reset.
+- Plain-language bed-state workflow.
+
+Acceptance criteria:
+
+- No Phase/test/demo data is required for a fresh production installation.
+- Production dashboards do not report activity without authoritative underlying records.
+- Master data can be created, updated and deleted where safe.
+- Destructive demo cleanup is explicit, privileged, confirmed and audited.
+- Full application tests and production frontend build remain green.
+
 ## First Recommended Implementation Milestone
 
 Phase 0, Session 1-4:

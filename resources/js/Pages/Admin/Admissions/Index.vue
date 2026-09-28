@@ -222,10 +222,6 @@ function purgeAdmissionsDemo() {
             <template #actions>
                 <ActionToolbar align="end">
                     <PrimaryButton v-if="can('admissions.request')" type="button" @click="requestModal = true">Request Admission</PrimaryButton>
-                    <button v-if="can('admissions.manage')" class="rounded-md border px-4 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="openSetup('class')">Add Bed Class</button>
-                    <button v-if="can('admissions.manage')" class="rounded-md border px-4 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="openSetup('ward')">Add Ward</button>
-                    <button v-if="can('admissions.manage')" class="rounded-md border px-4 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="openSetup('room')">Add Room</button>
-                    <button v-if="can('admissions.manage')" class="rounded-md border px-4 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="openSetup('bed')">Add Bed</button>
                 </ActionToolbar>
             </template>
         </PageHeader>

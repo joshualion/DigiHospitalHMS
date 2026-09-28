@@ -14,6 +14,7 @@ const props = defineProps({
     beds: { type: Array, default: () => [] },
     wards: { type: Array, default: () => [] },
     census: { type: Array, default: () => [] },
+    bedIntegrityIssues: { type: Array, default: () => [] },
     facilities: { type: Array, default: () => [] },
     departments: { type: Array, default: () => [] },
     patients: { type: Array, default: () => [] },
@@ -29,14 +30,20 @@ const page = usePage();
 const permissions = computed(() => page.props.auth.permissions || []);
 const roles = computed(() => page.props.auth.roles || []);
 const can = (permission) => roles.value.includes('superadmin') || permissions.value.includes(permission);
-const classForm = useForm({ code: '', name: '', billable_service_id: '', description: '' });
-const wardForm = useForm({ facility_id: props.facilities[0]?.id || '', department_id: '', code: '', name: '', notes: '' });
-const roomForm = useForm({ ward_id: '', code: '', name: '' });
+const classForm = useForm({ code: '', name: '', billable_service_id: '', description: '', is_active: true });
+const wardForm = useForm({ facility_id: props.facilities[0]?.id || '', department_id: '', code: '', name: '', notes: '', status: 'active' });
+const roomForm = useForm({ ward_id: '', code: '', name: '', status: 'active' });
 const bedForm = useForm({ ward_id: '', ward_room_id: '', bed_class_id: '', code: '', label: '' });
 const requestForm = useForm({ facility_id: props.facilities[0]?.id || '', patient_id: '', visit_id: '', clinical_encounter_id: '', attending_clinician_id: '', department_id: '', reason: '', provisional_diagnosis: '', notes: '', administrative_clearance_required: false });
 const actionForm = useForm({ action: '', bed_id: '', reason: '', discharge_destination: '', discharge_outcome: '', discharge_notes: '', override: false, override_reason: '' });
 const bedStateForm = useForm({ state: 'available', reason: '' });
 const setupModal = ref(null);
+const setupEditing = ref(null);
+const setupDeleteTarget = ref(null);
+const setupDeleteForm = useForm({});
+const reconcileForm = useForm({});
+const resetForm = useForm({ confirmation: '' });
+const resetModal = ref(false);
 const actionTarget = ref(null);
 const bedTarget = ref(null);
 const requestModal = ref(false);
@@ -46,7 +53,31 @@ function fullName(patient) {
 }
 
 function availableBed(except = null) {
-    return props.beds.find((bed) => ['available', 'reserved'].includes(bed.state) && bed.id !== except)?.id || '';
+    return props.beds.find((bed) => ['available', 'reserved'].includes(bed.effective_state || bed.state) && bed.id !== except)?.id || '';
+}
+
+const bedStateLabels = {
+    available: 'Ready',
+    reserved: 'Reserved',
+    occupied: 'Occupied',
+    cleaning: 'Needs cleaning',
+    maintenance: 'Maintenance',
+    blocked: 'Blocked',
+    inactive: 'Inactive',
+};
+
+const bedStateHelp = {
+    available: 'Ready for a patient.',
+    reserved: 'Temporarily held for an approved admission.',
+    occupied: 'Backed by an active admitted patient.',
+    cleaning: 'Patient has left; housekeeping turnover is required.',
+    maintenance: 'Unavailable while repair or technical work is in progress.',
+    blocked: 'Unavailable for an operational reason.',
+    inactive: 'No longer in service.',
+};
+
+function effectiveBedState(bed) {
+    return bed.effective_state || bed.state;
 }
 
 function openAction(admission, actionName) {
@@ -82,8 +113,105 @@ function submitRequest() {
     requestForm.post('/admin/admissions/requests', { preserveScroll: true, onSuccess: () => { requestModal.value = false; requestForm.reset(); } });
 }
 
-function submitSetup(form, url) {
-    form.post(url, { preserveScroll: true, onSuccess: () => { setupModal.value = null; form.reset(); } });
+function openSetup(type, item = null) {
+    setupEditing.value = item ? { type, item } : null;
+    setupModal.value = type;
+
+    if (type === 'class') {
+        classForm.defaults(item ? {
+            code: item.code,
+            name: item.name,
+            billable_service_id: item.billable_service_id || '',
+            description: item.description || '',
+            is_active: Boolean(item.is_active),
+        } : { code: '', name: '', billable_service_id: '', description: '', is_active: true });
+        classForm.reset();
+    }
+
+    if (type === 'ward') {
+        wardForm.defaults(item ? {
+            facility_id: item.facility_id,
+            department_id: item.department_id || '',
+            code: item.code,
+            name: item.name,
+            notes: item.notes || '',
+            status: item.status || 'active',
+        } : { facility_id: props.facilities[0]?.id || '', department_id: '', code: '', name: '', notes: '', status: 'active' });
+        wardForm.reset();
+    }
+
+    if (type === 'room') {
+        roomForm.defaults(item ? {
+            ward_id: item.ward_id,
+            code: item.code,
+            name: item.name,
+            status: item.status || 'active',
+        } : { ward_id: '', code: '', name: '', status: 'active' });
+        roomForm.reset();
+    }
+
+    if (type === 'bed') {
+        bedForm.defaults(item ? {
+            ward_id: item.ward_id,
+            ward_room_id: item.ward_room_id || '',
+            bed_class_id: item.bed_class_id,
+            code: item.code,
+            label: item.label,
+        } : { ward_id: '', ward_room_id: '', bed_class_id: '', code: '', label: '' });
+        bedForm.reset();
+    }
+}
+
+function submitSetup(type, form) {
+    const editing = setupEditing.value?.type === type ? setupEditing.value.item : null;
+    const base = {
+        class: '/admin/admissions/bed-classes',
+        ward: '/admin/admissions/wards',
+        room: '/admin/admissions/rooms',
+        bed: '/admin/admissions/beds',
+    }[type];
+
+    const options = {
+        preserveScroll: true,
+        onSuccess: () => {
+            setupModal.value = null;
+            setupEditing.value = null;
+            form.reset();
+        },
+    };
+
+    editing ? form.patch(`${base}/${editing.id}`, options) : form.post(base, options);
+}
+
+function openSetupDelete(type, item) {
+    setupDeleteForm.clearErrors();
+    setupDeleteTarget.value = { type, item };
+}
+
+function deleteSetup() {
+    if (!setupDeleteTarget.value) return;
+    const { type, item } = setupDeleteTarget.value;
+    const plural = { class: 'bed-classes', ward: 'wards', room: 'rooms', bed: 'beds' }[type];
+
+    setupDeleteForm.delete(`/admin/admissions/${plural}/${item.id}`, {
+        preserveScroll: true,
+        onSuccess: () => { setupDeleteTarget.value = null; },
+    });
+}
+
+function reconcileBeds() {
+    reconcileForm.post('/admin/admissions/reconcile-beds', { preserveScroll: true });
+}
+
+function purgeAdmissionsDemo() {
+    resetForm.delete('/admin/admissions/purge-demo', {
+        preserveScroll: true,
+        onSuccess: () => {
+            resetModal.value = false;
+            resetForm.defaults({ confirmation: '' });
+            resetForm.reset();
+        },
+    });
 }
 </script>
 
@@ -94,10 +222,10 @@ function submitSetup(form, url) {
             <template #actions>
                 <ActionToolbar align="end">
                     <PrimaryButton v-if="can('admissions.request')" type="button" @click="requestModal = true">Request Admission</PrimaryButton>
-                    <button v-if="can('admissions.manage')" class="rounded-md border px-4 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="setupModal = 'class'">Add Bed Class</button>
-                    <button v-if="can('admissions.manage')" class="rounded-md border px-4 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="setupModal = 'ward'">Add Ward</button>
-                    <button v-if="can('admissions.manage')" class="rounded-md border px-4 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="setupModal = 'room'">Add Room</button>
-                    <button v-if="can('admissions.manage')" class="rounded-md border px-4 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="setupModal = 'bed'">Add Bed</button>
+                    <button v-if="can('admissions.manage')" class="rounded-md border px-4 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="openSetup('class')">Add Bed Class</button>
+                    <button v-if="can('admissions.manage')" class="rounded-md border px-4 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="openSetup('ward')">Add Ward</button>
+                    <button v-if="can('admissions.manage')" class="rounded-md border px-4 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="openSetup('room')">Add Room</button>
+                    <button v-if="can('admissions.manage')" class="rounded-md border px-4 py-2 text-sm font-bold" style="border-color: var(--admin-border);" type="button" @click="openSetup('bed')">Add Bed</button>
                 </ActionToolbar>
             </template>
         </PageHeader>

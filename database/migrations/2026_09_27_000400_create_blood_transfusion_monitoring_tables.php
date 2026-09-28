@@ -36,7 +36,9 @@ return new class extends Migration
 
         Schema::create('blood_transfusion_observations', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('blood_transfusion_episode_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('blood_transfusion_episode_id');
+            $table->foreign('blood_transfusion_episode_id', 'bt_obs_episode_fk')
+                ->references('id')->on('blood_transfusion_episodes')->cascadeOnDelete();
             $table->foreignId('recorded_by')->constrained('users')->restrictOnDelete();
             $table->dateTime('observed_at');
             $table->decimal('temperature_c', 4, 1)->nullable();
@@ -53,7 +55,9 @@ return new class extends Migration
 
         Schema::create('blood_transfusion_reactions', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('blood_transfusion_episode_id')->constrained()->restrictOnDelete();
+            $table->unsignedBigInteger('blood_transfusion_episode_id');
+            $table->foreign('blood_transfusion_episode_id', 'bt_react_episode_fk')
+                ->references('id')->on('blood_transfusion_episodes')->restrictOnDelete();
             $table->foreignId('reported_by')->constrained('users')->restrictOnDelete();
             $table->dateTime('occurred_at');
             $table->string('reported_severity')->nullable();

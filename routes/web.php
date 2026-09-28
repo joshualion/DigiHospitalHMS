@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\PrescriptionController;
 use App\Http\Controllers\Admin\ProcurementController;
 use App\Http\Controllers\Admin\PublicWebsiteController;
 use App\Http\Controllers\Admin\RadiologyController;
+use App\Http\Controllers\Admin\ReportingController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\StaffController;
@@ -84,6 +85,8 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::patch('roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');
 
         Route::get('audit-logs', [AuditLogController::class, 'index'])->name('admin.audit.index');
+        Route::get('reports', [ReportingController::class, 'index'])->name('admin.reports.index');
+        Route::get('reports/export', [ReportingController::class, 'export'])->name('admin.reports.export');
         Route::get('settings', [HospitalSettingController::class, 'edit'])->name('admin.settings.edit');
         Route::patch('settings', [HospitalSettingController::class, 'update'])->name('admin.settings.update');
         Route::get('numbering', [NumberSequenceController::class, 'index'])->name('admin.numbering.index');

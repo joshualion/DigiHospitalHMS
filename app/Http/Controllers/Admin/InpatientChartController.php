@@ -9,6 +9,8 @@ use App\Models\InpatientHandoverRecord;
 use App\Models\InpatientOrder;
 use App\Models\InpatientProgressNote;
 use App\Services\InpatientChartWorkflowService;
+use App\Services\InpatientLifecycleService;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -31,9 +33,23 @@ class InpatientChartController extends FoundationController
             'tasks' => InpatientOrder::with('chart.patient')
                 ->where('hospital_id', $hospital->id)
                 ->whereIn('status', ['active', 'acknowledged'])
+                ->whereHas('chart.admission', fn ($query) => $query->whereIn('status', ['admitted', 'transferred'])->whereNull('discharged_at'))
                 ->latest()
                 ->get(),
         ]);
+    }
+
+    public function reconcile(InpatientLifecycleService $lifecycle, AuditService $audit): RedirectResponse
+    {
+        $this->authorize('viewAny', InpatientChart::class);
+        abort_unless(request()->user()->hasAnyRole(['superadmin', 'hospital-admin']), 403);
+
+        $result = $lifecycle->reconcile($this->currentHospital(), request()->user(), $audit);
+
+        return back()->with(
+            'success',
+            "Inpatient lifecycle reconciled. {$result['closed_charts']} stale chart(s) closed and {$result['retired_schedules']} pending eMAR schedule(s) retired."
+        );
     }
 
     public function open(Admission $admission, InpatientChartWorkflowService $workflow): RedirectResponse

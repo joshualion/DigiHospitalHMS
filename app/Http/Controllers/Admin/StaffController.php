@@ -8,6 +8,7 @@ use App\Models\FacilityMembership;
 use App\Models\StaffProfile;
 use App\Models\User;
 use App\Services\AuditService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -224,6 +225,40 @@ class StaffController extends FoundationController
         ]);
 
         return back()->with('success', 'Staff account status updated.');
+    }
+
+    public function destroy(Request $request, StaffProfile $staffProfile, AuditService $audit): RedirectResponse
+    {
+        $this->authorize('delete', $staffProfile);
+
+        $user = $staffProfile->user;
+
+        if ($request->user()->is($user)) {
+            return back()->withErrors(['staff' => 'You cannot delete the account you are currently signed in with.']);
+        }
+
+        if ($user->hasRole('superadmin')) {
+            $this->ensureNotLastSuperadmin($user);
+        }
+
+        $before = $staffProfile->load('user.roles', 'memberships')->toArray();
+
+        try {
+            DB::transaction(function () use ($staffProfile, $user): void {
+                FacilityMembership::where('staff_profile_id', $staffProfile->id)->delete();
+                $user->syncRoles([]);
+                $staffProfile->delete();
+                $user->delete();
+            });
+        } catch (QueryException) {
+            return back()->withErrors([
+                'staff' => 'This staff account is linked to historical clinical, accounting, inventory, or audit records and cannot be hard-deleted safely. Suspend the account instead so the historical record remains accurate.',
+            ]);
+        }
+
+        $audit->record('staff.deleted', null, $before, null, actor: $request->user());
+
+        return back()->with('success', 'Staff account deleted.');
     }
 
     private function rules(int $hospitalId, ?int $staffProfileId = null, ?int $userId = null): array

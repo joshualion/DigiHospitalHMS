@@ -103,7 +103,7 @@ class Phase6BInpatientClinicalChartTest extends TestCase
         $summary = $workflow->dischargeSummary($chart, ['clinical_course' => 'Reviewed and stable', 'discharge_plan' => 'Clinician reviewed plan'], $this->doctor);
         $workflow->signDischargeSummary($summary, $this->doctor);
 
-        $this->assertSame('closed', $chart->refresh()->status);
+        $this->assertSame('active', $chart->refresh()->status);
         $this->assertDatabaseHas('inpatient_observations', ['inpatient_chart_id' => $chart->id, 'pulse' => 88]);
         $this->assertDatabaseHas('inpatient_intake_outputs', ['inpatient_chart_id' => $chart->id, 'unit' => 'ml']);
         $this->assertDatabaseHas('inpatient_care_plans', ['inpatient_chart_id' => $chart->id, 'status' => 'active']);

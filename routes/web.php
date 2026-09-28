@@ -162,6 +162,12 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('insurance/coverages', [InsuranceController::class, 'storeCoverage'])->name('admin.insurance.coverages.store');
         Route::post('insurance/pre-authorizations', [InsuranceController::class, 'requestPreAuthorization'])->name('admin.insurance.preauthorizations.store');
         Route::patch('insurance/pre-authorizations/{preAuthorization}/decision', [InsuranceController::class, 'decidePreAuthorization'])->name('admin.insurance.preauthorizations.decision');
+        Route::post('insurance/claims', [InsuranceController::class, 'storeClaim'])->name('admin.insurance.claims.store');
+        Route::post('insurance/claim-batches', [InsuranceController::class, 'storeClaimBatch'])->name('admin.insurance.claim-batches.store');
+        Route::patch('insurance/claims/{claim}/submit', [InsuranceController::class, 'submitClaim'])->name('admin.insurance.claims.submit');
+        Route::patch('insurance/claims/{claim}/decision', [InsuranceController::class, 'decideClaim'])->name('admin.insurance.claims.decision');
+        Route::post('insurance/claims/{claim}/resubmit', [InsuranceController::class, 'resubmitClaim'])->name('admin.insurance.claims.resubmit');
+        Route::post('insurance/claims/{claim}/payments', [InsuranceController::class, 'recordClaimPayment'])->name('admin.insurance.claims.payments.store');
 
         Route::get('billing/invoices', [BillingController::class, 'invoices'])->name('admin.invoices.index');
         Route::post('billing/invoices', [BillingController::class, 'storeInvoice'])->name('admin.invoices.store');

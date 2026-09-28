@@ -135,10 +135,20 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
 
         Route::get('admissions', [AdmissionController::class, 'index'])->name('admin.admissions.index');
         Route::post('admissions/bed-classes', [AdmissionController::class, 'storeBedClass'])->name('admin.admissions.bed-classes.store');
+        Route::patch('admissions/bed-classes/{bedClass}', [AdmissionController::class, 'updateBedClass'])->name('admin.admissions.bed-classes.update');
+        Route::delete('admissions/bed-classes/{bedClass}', [AdmissionController::class, 'destroyBedClass'])->name('admin.admissions.bed-classes.destroy');
         Route::post('admissions/wards', [AdmissionController::class, 'storeWard'])->name('admin.admissions.wards.store');
+        Route::patch('admissions/wards/{ward}', [AdmissionController::class, 'updateWard'])->name('admin.admissions.wards.update');
+        Route::delete('admissions/wards/{ward}', [AdmissionController::class, 'destroyWard'])->name('admin.admissions.wards.destroy');
         Route::post('admissions/rooms', [AdmissionController::class, 'storeRoom'])->name('admin.admissions.rooms.store');
+        Route::patch('admissions/rooms/{room}', [AdmissionController::class, 'updateRoom'])->name('admin.admissions.rooms.update');
+        Route::delete('admissions/rooms/{room}', [AdmissionController::class, 'destroyRoom'])->name('admin.admissions.rooms.destroy');
         Route::post('admissions/beds', [AdmissionController::class, 'storeBed'])->name('admin.admissions.beds.store');
+        Route::patch('admissions/beds/{bed}', [AdmissionController::class, 'updateBed'])->name('admin.admissions.beds.update');
+        Route::delete('admissions/beds/{bed}', [AdmissionController::class, 'destroyBed'])->name('admin.admissions.beds.destroy');
         Route::patch('admissions/beds/{bed}/state', [AdmissionController::class, 'bedState'])->name('admin.admissions.beds.state');
+        Route::post('admissions/reconcile-beds', [AdmissionController::class, 'reconcileBeds'])->name('admin.admissions.reconcile-beds');
+        Route::delete('admissions/purge-demo', [AdmissionController::class, 'purgeDemo'])->name('admin.admissions.purge-demo');
         Route::post('admissions/requests', [AdmissionController::class, 'requestAdmission'])->name('admin.admissions.requests.store');
         Route::patch('admissions/{admission}', [AdmissionController::class, 'action'])->name('admin.admissions.action');
         Route::get('emar', [EmarController::class, 'index'])->name('admin.emar.index');

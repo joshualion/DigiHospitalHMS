@@ -81,20 +81,18 @@ class DemoStaffPurgeService
                 continue;
             }
 
+            if ($this->tableHasNoId($childTable)) {
+                $this->deletedRows += DB::table($childTable)->where($column, $id)->delete();
+                continue;
+            }
+
             $childIds = DB::table($childTable)
                 ->where($column, $id)
-                ->whereNotNull('id')
                 ->pluck('id')
                 ->all();
 
             foreach ($childIds as $childId) {
                 $this->purgeRow($childTable, $childId);
-            }
-
-            // Pivot tables without an id are not expected in the clinical schema,
-            // but if one references the row directly, remove its matching entries.
-            if ($childIds === [] && $this->tableHasNoId($childTable)) {
-                $this->deletedRows += DB::table($childTable)->where($column, $id)->delete();
             }
         }
 

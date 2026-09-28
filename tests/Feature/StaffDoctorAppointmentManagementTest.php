@@ -126,6 +126,90 @@ class StaffDoctorAppointmentManagementTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => $doctor->user_id]);
     }
 
+
+    public function test_hospital_admin_can_purge_demo_staff_with_restrict_linked_records(): void
+    {
+        $doctor = $this->doctor('phase7b-auth@example.test');
+        $patient = Patient::create([
+            'hospital_id' => $this->hospital->id,
+            'registration_facility_id' => $this->facility->id,
+            'registered_by' => $this->admin->id,
+            'hospital_number' => 'PAT-DEMO-PURGE-001',
+            'first_name' => 'Demo',
+            'last_name' => 'Patient',
+            'sex' => 'female',
+            'status' => 'active',
+        ]);
+        $type = AppointmentType::create([
+            'hospital_id' => $this->hospital->id,
+            'name' => 'Demo Consultation',
+            'code' => 'DEMO-PURGE',
+            'duration_minutes' => 30,
+            'is_active' => true,
+        ]);
+        $appointment = Appointment::create([
+            'hospital_id' => $this->hospital->id,
+            'facility_id' => $this->facility->id,
+            'patient_id' => $patient->id,
+            'clinician_id' => $doctor->id,
+            'appointment_type_id' => $type->id,
+            'starts_at' => now()->addDay(),
+            'ends_at' => now()->addDay()->addMinutes(30),
+            'status' => 'scheduled',
+            'source' => 'staff',
+            'booked_by' => $this->admin->id,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->delete("/admin/staff/{$doctor->id}/purge-demo", ['confirmation' => 'PURGE'])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseMissing('appointments', ['id' => $appointment->id]);
+        $this->assertDatabaseMissing('staff_profiles', ['id' => $doctor->id]);
+        $this->assertDatabaseMissing('users', ['id' => $doctor->user_id]);
+        $this->assertDatabaseHas('patients', ['id' => $patient->id]);
+        $this->assertDatabaseHas('audit_events', ['action' => 'staff.demo_purged']);
+    }
+
+    public function test_demo_purge_clears_nullable_reviewer_references_instead_of_deleting_unrelated_record(): void
+    {
+        $doctor = $this->doctor('phase7a-verifier@example.test');
+
+        $publicRequest = PublicAppointmentRequest::create([
+            'hospital_id' => $this->hospital->id,
+            'name' => 'Keep This Request',
+            'consent' => true,
+            'status' => 'accepted',
+            'preferred_clinician_id' => $doctor->id,
+            'reviewed_by' => $doctor->user_id,
+            'reviewed_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->delete("/admin/staff/{$doctor->id}/purge-demo", ['confirmation' => 'PURGE'])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('public_appointment_requests', [
+            'id' => $publicRequest->id,
+            'preferred_clinician_id' => null,
+            'reviewed_by' => null,
+        ]);
+    }
+
+    public function test_demo_purge_requires_explicit_confirmation(): void
+    {
+        $doctor = $this->doctor('phase6a-admin@example.test');
+
+        $this->actingAs($this->admin)
+            ->delete("/admin/staff/{$doctor->id}/purge-demo", ['confirmation' => 'DELETE'])
+            ->assertSessionHasErrors('confirmation');
+
+        $this->assertDatabaseHas('staff_profiles', ['id' => $doctor->id]);
+        $this->assertDatabaseHas('users', ['id' => $doctor->user_id]);
+    }
+
     public function test_public_request_can_target_a_doctor_and_only_that_doctor_can_review_it(): void
     {
         $doctor = $this->doctor('preferred-doctor@example.test');

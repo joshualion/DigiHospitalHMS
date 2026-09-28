@@ -367,30 +367,33 @@ function purgeAdmissionsDemo() {
             </div>
         </FormModal>
 
-        <FormModal :show="setupModal === 'class'" :form="classForm" title="Bed Class" submit-label="Create class" size="md" @close="setupModal = null" @submit="submitSetup(classForm, '/admin/admissions/bed-classes')">
+        <FormModal :show="setupModal === 'class'" :form="classForm" :title="setupEditing?.type === 'class' ? 'Edit Bed Class' : 'Add Bed Class'" :submit-label="setupEditing?.type === 'class' ? 'Save changes' : 'Create class'" size="md" @close="setupModal = null" @submit="submitSetup('class', classForm)">
             <TextInput id="bed_class_code" v-model="classForm.code" label="Code" :error="classForm.errors.code" />
             <TextInput id="bed_class_name" v-model="classForm.name" label="Name" :error="classForm.errors.name" />
             <label class="grid gap-1 text-sm font-semibold">Accommodation service<select v-model="classForm.billable_service_id" class="rounded-md border-slate-300"><option value="">Accommodation service</option><option v-for="service in services" :key="service.id" :value="service.id">{{ service.code }} - {{ service.name }}</option></select></label>
             <label class="grid gap-1 text-sm font-semibold">Description<textarea v-model="classForm.description" class="rounded-md border-slate-300" rows="3"></textarea></label>
+            <label class="flex items-center gap-2 text-sm font-semibold"><input v-model="classForm.is_active" type="checkbox"> Active</label>
         </FormModal>
 
-        <FormModal :show="setupModal === 'ward'" :form="wardForm" title="Ward" submit-label="Create ward" size="lg" @close="setupModal = null" @submit="submitSetup(wardForm, '/admin/admissions/wards')">
+        <FormModal :show="setupModal === 'ward'" :form="wardForm" :title="setupEditing?.type === 'ward' ? 'Edit Ward' : 'Add Ward'" :submit-label="setupEditing?.type === 'ward' ? 'Save changes' : 'Create ward'" size="lg" @close="setupModal = null" @submit="submitSetup('ward', wardForm)">
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="grid gap-1 text-sm font-semibold">Facility<select v-model="wardForm.facility_id" class="rounded-md border-slate-300"><option v-for="facility in facilities" :key="facility.id" :value="facility.id">{{ facility.name }}</option></select></label>
                 <label class="grid gap-1 text-sm font-semibold">Department<select v-model="wardForm.department_id" class="rounded-md border-slate-300"><option value="">Department</option><option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }}</option></select></label>
                 <TextInput id="ward_code" v-model="wardForm.code" label="Code" :error="wardForm.errors.code" />
                 <TextInput id="ward_name" v-model="wardForm.name" label="Name" :error="wardForm.errors.name" />
+                <label class="grid gap-1 text-sm font-semibold">Status<select v-model="wardForm.status" class="rounded-md border-slate-300"><option value="active">Active</option><option value="inactive">Inactive</option></select></label>
                 <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Notes<textarea v-model="wardForm.notes" class="rounded-md border-slate-300" rows="3"></textarea></label>
             </div>
         </FormModal>
 
-        <FormModal :show="setupModal === 'room'" :form="roomForm" title="Room" submit-label="Create room" size="md" @close="setupModal = null" @submit="submitSetup(roomForm, '/admin/admissions/rooms')">
+        <FormModal :show="setupModal === 'room'" :form="roomForm" :title="setupEditing?.type === 'room' ? 'Edit Room' : 'Add Room'" :submit-label="setupEditing?.type === 'room' ? 'Save changes' : 'Create room'" size="md" @close="setupModal = null" @submit="submitSetup('room', roomForm)">
             <label class="grid gap-1 text-sm font-semibold">Ward<select v-model="roomForm.ward_id" class="rounded-md border-slate-300"><option value="">Ward</option><option v-for="ward in wards" :key="ward.id" :value="ward.id">{{ ward.name }}</option></select></label>
             <TextInput id="room_code" v-model="roomForm.code" label="Code" :error="roomForm.errors.code" />
             <TextInput id="room_name" v-model="roomForm.name" label="Name" :error="roomForm.errors.name" />
+            <label class="grid gap-1 text-sm font-semibold">Status<select v-model="roomForm.status" class="rounded-md border-slate-300"><option value="active">Active</option><option value="inactive">Inactive</option></select></label>
         </FormModal>
 
-        <FormModal :show="setupModal === 'bed'" :form="bedForm" title="Bed" submit-label="Create bed" size="lg" @close="setupModal = null" @submit="submitSetup(bedForm, '/admin/admissions/beds')">
+        <FormModal :show="setupModal === 'bed'" :form="bedForm" :title="setupEditing?.type === 'bed' ? 'Edit Bed' : 'Add Bed'" :submit-label="setupEditing?.type === 'bed' ? 'Save changes' : 'Create bed'" size="lg" @close="setupModal = null" @submit="submitSetup('bed', bedForm)">
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="grid gap-1 text-sm font-semibold">Ward<select v-model="bedForm.ward_id" class="rounded-md border-slate-300"><option value="">Ward</option><option v-for="ward in wards" :key="ward.id" :value="ward.id">{{ ward.name }}</option></select></label>
                 <label class="grid gap-1 text-sm font-semibold">Room<select v-model="bedForm.ward_room_id" class="rounded-md border-slate-300"><option value="">Room</option><option v-for="room in rooms" :key="room.id" :value="room.id">{{ room.name }}</option></select></label>
@@ -402,7 +405,7 @@ function purgeAdmissionsDemo() {
 
         <FormModal :show="Boolean(actionTarget)" :form="actionForm" :title="actionForm.action ? `${actionForm.action} admission` : 'Admission action'" submit-label="Save action" size="lg" @close="actionTarget = null" @submit="submitAction">
             <div class="grid gap-4 sm:grid-cols-2">
-                <label v-if="['admit', 'transfer'].includes(actionForm.action)" class="grid gap-1 text-sm font-semibold sm:col-span-2">Bed<select v-model="actionForm.bed_id" class="rounded-md border-slate-300"><option value="">Bed</option><option v-for="bed in beds.filter((entry) => ['available', 'reserved'].includes(entry.state))" :key="bed.id" :value="bed.id">{{ bed.label }} - {{ bed.ward?.name }}</option></select></label>
+                <label v-if="['admit', 'transfer'].includes(actionForm.action)" class="grid gap-1 text-sm font-semibold sm:col-span-2">Bed<select v-model="actionForm.bed_id" class="rounded-md border-slate-300"><option value="">Bed</option><option v-for="bed in beds.filter((entry) => ['available', 'reserved'].includes(effectiveBedState(entry)))" :key="bed.id" :value="bed.id">{{ bed.label }} - {{ bed.ward?.name }}</option></select></label>
                 <label v-if="['reject', 'cancel', 'transfer', 'approve'].includes(actionForm.action)" class="grid gap-1 text-sm font-semibold sm:col-span-2">Reason<textarea v-model="actionForm.reason" class="rounded-md border-slate-300" rows="3"></textarea></label>
                 <label v-if="actionForm.action === 'discharge'" class="grid gap-1 text-sm font-semibold">Destination<input v-model="actionForm.discharge_destination" class="rounded-md border-slate-300"></label>
                 <label v-if="actionForm.action === 'discharge'" class="grid gap-1 text-sm font-semibold">Outcome<input v-model="actionForm.discharge_outcome" class="rounded-md border-slate-300"></label>
@@ -412,6 +415,23 @@ function purgeAdmissionsDemo() {
             </div>
         </FormModal>
 
-        <ConfirmDialog :show="Boolean(bedTarget)" :form="bedStateForm" title="Update Bed State" :message="bedTarget ? `Set ${bedTarget.label} to ${bedStateForm.state}?` : ''" require-reason confirm-label="Update bed" @close="bedTarget = null" @confirm="submitBedState" />
+        <ConfirmDialog :show="Boolean(bedTarget)" :form="bedStateForm" title="Update Bed Availability" :message="bedTarget ? `Set ${bedTarget.label} to ${bedStateLabels[bedStateForm.state] || bedStateForm.state}?` : ''" require-reason confirm-label="Update bed" @close="bedTarget = null" @confirm="submitBedState" />
+
+        <ConfirmDialog
+            :show="Boolean(setupDeleteTarget)"
+            :form="setupDeleteForm"
+            title="Delete Admissions Setup"
+            :message="setupDeleteTarget ? `Delete ${setupDeleteTarget.item.name || setupDeleteTarget.item.label || setupDeleteTarget.item.code}? Active dependencies will block unsafe deletion.` : ''"
+            confirm-label="Delete"
+            @close="setupDeleteTarget = null"
+            @confirm="deleteSetup"
+        />
+
+        <FormModal :show="resetModal" :form="resetForm" title="Reset Pre-production Admissions Data" submit-label="Permanently reset admissions data" size="md" @close="resetModal = false" @submit="purgeAdmissionsDemo">
+            <div class="space-y-4">
+                <p class="text-sm leading-6 text-amber-800 dark:text-amber-200">Use this only before the hospital starts recording real inpatient activity. It permanently removes this hospital’s admission records, inpatient records, wards, rooms, beds and bed classes. Patients, staff, facilities and unrelated modules are not reset.</p>
+                <TextInput id="admissions_reset_confirmation" v-model="resetForm.confirmation" label="Type PURGE ADMISSIONS to confirm" :error="resetForm.errors.confirmation || resetForm.errors.reset" />
+            </div>
+        </FormModal>
     </AppLayout>
 </template>

@@ -235,7 +235,6 @@ class InpatientChartWorkflowService
         abort_unless($summary->status === 'draft', 422, 'Only draft discharge summaries can be signed.');
         $before = $summary->toArray();
         $summary->forceFill(['status' => 'signed', 'signed_by' => $actor->id, 'signed_at' => now()])->save();
-        $summary->chart->forceFill(['status' => 'closed', 'closed_by' => $actor->id, 'closed_at' => now()])->save();
         $this->event($summary->chart, 'inpatient.discharge_summary_signed', $before, $summary->fresh()->toArray(), $actor);
         $this->activity->record($summary->chart->patient, 'inpatient.discharge_summary_signed', $actor, ['chart_id' => $summary->inpatient_chart_id]);
 

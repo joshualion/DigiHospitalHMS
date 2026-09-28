@@ -38,6 +38,7 @@ const batchForm = useForm({ payer_organization_id: '', reference: '', currency: 
 const claimDecisionForm = useForm({ status: 'approved', payer_reference: '', approved_minor: '', decision_notes: '', rejection_reason: '' });
 const claimPaymentForm = useForm({ amount_minor: '', payer_reference: '' });
 const resubmitForm = useForm({ claim_number: '', submission_notes: '' });
+const actionForm = useForm({});
 
 const plansForCoverage = computed(() => props.organizations.find((entry) => Number(entry.id) === Number(coverageForm.payer_organization_id))?.plans || []);
 const activeCoverages = computed(() => props.coverages.data.filter((entry) => entry.status === 'active'));
@@ -201,7 +202,7 @@ function statusClass(status) {
                                 <td class="p-2"><span class="rounded-full px-2 py-1 text-xs font-bold" :class="statusClass(claim.status)">{{ claim.status.replaceAll('_',' ') }}</span></td>
                                 <td class="p-2">
                                     <ActionToolbar>
-                                        <button v-if="['draft','resubmitted'].includes(claim.status) && can('insurance.claims.manage')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="submit(useForm({}), `/admin/insurance/claims/${claim.id}/submit`, 'patch')">Submit</button>
+                                        <button v-if="['draft','resubmitted'].includes(claim.status) && can('insurance.claims.manage')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="submit(actionForm, `/admin/insurance/claims/${claim.id}/submit`, 'patch')">Submit</button>
                                         <button v-if="claim.status === 'submitted' && can('insurance.claims.decide')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openClaimDecision(claim)">Decision</button>
                                         <button v-if="claim.status === 'rejected' && can('insurance.claims.manage')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openResubmit(claim)">Resubmit</button>
                                         <button v-if="['approved','partially_approved','partially_paid'].includes(claim.status) && can('insurance.claims.manage')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openClaimPayment(claim)">Record payment</button>
@@ -228,7 +229,7 @@ function statusClass(status) {
                     <div class="mt-2 grid gap-2">
                         <div v-for="batch in claimBatches" :key="batch.id" class="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3 text-sm" style="border-color: var(--admin-border);">
                             <div><strong>{{ batch.reference }}</strong> · {{ batch.organization?.name }} · {{ batch.claims?.length || 0 }} claim(s)</div>
-                            <div>{{ money(batch.claimed_minor, batch.currency) }} · {{ batch.status }}</div>
+                            <div class="flex items-center gap-2">{{ money(batch.claimed_minor, batch.currency) }} · {{ batch.status }} <button v-if="batch.status === 'draft' && can('insurance.claims.manage')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="submit(actionForm, `/admin/insurance/claim-batches/${batch.id}/submit`, 'patch')">Submit batch</button></div>
                         </div>
                     </div>
                 </div>

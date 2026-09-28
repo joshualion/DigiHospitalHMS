@@ -63,6 +63,17 @@ class AdmissionController extends FoundationController
             'name' => ['required', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
+        if (! empty($validated['department_id'])) {
+            $validDepartment = Department::where('hospital_id', $hospital->id)
+                ->where('facility_id', $validated['facility_id'])
+                ->whereKey($validated['department_id'])
+                ->exists();
+
+            if (! $validDepartment) {
+                return back()->withErrors(['department_id' => 'The selected department must belong to the selected facility.']);
+            }
+        }
+
         Ward::create($validated + ['hospital_id' => $hospital->id, 'status' => 'active']);
 
         return back()->with('success', 'Ward created.');
@@ -158,6 +169,22 @@ class AdmissionController extends FoundationController
             'notes' => ['nullable', 'string', 'max:1000'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
         ]);
+
+        if (! empty($validated['department_id'])) {
+            $validDepartment = Department::where('hospital_id', $hospital->id)
+                ->where('facility_id', $validated['facility_id'])
+                ->whereKey($validated['department_id'])
+                ->exists();
+
+            if (! $validDepartment) {
+                return back()->withErrors(['department_id' => 'The selected department must belong to the selected facility.']);
+            }
+        }
+
+        if ((int) $validated['facility_id'] !== (int) $ward->facility_id
+            && Admission::where('current_ward_id', $ward->id)->whereIn('status', ['admitted', 'transferred'])->exists()) {
+            return back()->withErrors(['setup' => 'A ward with an active admission cannot be moved to another facility. Transfer or discharge the patient first.']);
+        }
 
         $ward->update($validated);
 

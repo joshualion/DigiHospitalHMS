@@ -41,6 +41,13 @@ class AdmissionsDemoResetService
                 }
             }
 
+            if (DB::getSchemaBuilder()->hasTable('patient_activity_events')) {
+                $this->deletedRows += DB::table('patient_activity_events')
+                    ->where('hospital_id', $hospital->id)
+                    ->where('action', 'like', 'admission.%')
+                    ->delete();
+            }
+
             foreach (['beds', 'ward_rooms', 'wards', 'bed_classes'] as $table) {
                 if (! DB::getSchemaBuilder()->hasTable($table)) {
                     continue;

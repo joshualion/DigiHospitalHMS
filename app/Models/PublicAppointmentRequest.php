@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Crypt;
 
 class PublicAppointmentRequest extends Model
 {
-    protected $fillable = ['hospital_id', 'preferred_facility_id', 'preferred_department_id', 'name', 'phone_encrypted', 'phone_hash', 'email_encrypted', 'email_hash', 'preferred_date', 'consent', 'status', 'patient_id', 'appointment_id', 'reviewed_by', 'reviewed_at', 'review_reason', 'ip_hash'];
+    protected $fillable = ['hospital_id', 'preferred_facility_id', 'preferred_department_id', 'preferred_clinician_id', 'name', 'phone_encrypted', 'phone_hash', 'email_encrypted', 'email_hash', 'preferred_date', 'consent', 'status', 'patient_id', 'appointment_id', 'reviewed_by', 'reviewed_at', 'review_reason', 'ip_hash'];
 
     protected $appends = ['phone', 'email'];
 

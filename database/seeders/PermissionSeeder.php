@@ -84,6 +84,8 @@ class PermissionSeeder extends Seeder
             'insurance.coverage.manage',
             'insurance.preauthorizations.manage',
             'insurance.preauthorizations.decide',
+            'insurance.claims.manage',
+            'insurance.claims.decide',
             'billing.catalogue.view',
             'billing.catalogue.manage',
             'invoices.view',
@@ -352,6 +354,8 @@ class PermissionSeeder extends Seeder
             'insurance.coverage.manage',
             'insurance.preauthorizations.manage',
             'insurance.preauthorizations.decide',
+            'insurance.claims.manage',
+            'insurance.claims.decide',
         ]);
 
         Role::whereIn('name', ['cashier', 'accountant'])->get()->each(fn (Role $role) => $role->syncPermissions([

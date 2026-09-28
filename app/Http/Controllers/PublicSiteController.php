@@ -375,6 +375,7 @@ class PublicSiteController extends Controller
             'is_featured' => $profile->public_is_featured,
             'source' => 'staff_profile',
             'content' => $this->normalizeContentImages([
+                'staff_profile_id' => $profile->id,
                 'display_name' => $name,
                 'professional_title' => $profile->public_specialty ?: $profile->job_title,
                 'specialty' => $profile->public_specialty,

@@ -341,6 +341,7 @@ class PermissionSeeder extends Seeder
         ];
 
         Role::where('name', 'admin')->first()?->syncPermissions(array_values(array_diff($adminPermissions, [
+            'staff.purge-demo',
             'website.publish',
             'website.unpublish',
             'website.restore_revision',

@@ -30,10 +30,16 @@ class AdmissionsDemoResetService
                 $this->purgeRow('admissions', $admissionId);
             }
 
-            // Admission events use a polymorphic subject without a database FK.
-            $this->deletedRows += DB::table('admission_events')
-                ->where('hospital_id', $hospital->id)
-                ->delete();
+            // These history tables intentionally use nullable references so routine
+            // deletion preserves history. A pre-production reset should remove the
+            // demo history itself rather than leave empty shells behind.
+            foreach (['admission_bed_movements', 'admission_events'] as $historyTable) {
+                if (DB::getSchemaBuilder()->hasTable($historyTable)) {
+                    $this->deletedRows += DB::table($historyTable)
+                        ->where('hospital_id', $hospital->id)
+                        ->delete();
+                }
+            }
 
             foreach (['beds', 'ward_rooms', 'wards', 'bed_classes'] as $table) {
                 if (! DB::getSchemaBuilder()->hasTable($table)) {

@@ -95,7 +95,7 @@ function submitReview() {
             <div class="grid gap-3 border-b border-slate-200 p-4 md:grid-cols-3 dark:border-slate-800">
                 <input v-model="filters.date" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" type="date" @change="filter">
                 <select v-model="filters.status" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" @change="filter"><option value="">All statuses</option><option value="scheduled">Scheduled</option><option value="confirmed">Confirmed</option><option value="checked_in">Checked in</option><option value="cancelled">Cancelled</option><option value="no_show">No-show</option></select>
-                <select v-model="filters.clinician_id" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" @change="filter"><option value="">All clinicians</option><option v-for="clinician in clinicians" :key="clinician.id" :value="clinician.id">{{ clinician.user?.full_name || clinician.job_title || clinician.id }}</option></select>
+                <select v-model="filters.clinician_id" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" @change="filter"><option value="">All doctors</option><option v-for="clinician in clinicians" :key="clinician.id" :value="clinician.id">{{ clinician.user?.full_name || clinician.job_title || clinician.id }}</option></select>
             </div>
             <div class="divide-y divide-slate-100 dark:divide-slate-800">
                 <article v-for="appointment in appointments.data" :key="appointment.id" class="grid min-w-0 gap-3 p-4 lg:grid-cols-[1fr_160px_280px]">
@@ -123,6 +123,7 @@ function submitReview() {
                     <div class="min-w-0">
                         <p class="truncate font-semibold">{{ request.name }}</p>
                         <p class="truncate text-slate-500">{{ request.phone || request.email }} - {{ request.preferred_date }}</p>
+                        <p class="truncate text-xs text-slate-500">Preferred doctor: {{ request.preferred_clinician?.user?.full_name || 'Any available doctor' }}</p>
                     </div>
                     <ActionToolbar>
                         <button v-if="can('appointment-requests.review')" class="rounded-md border px-3 py-2 text-xs font-bold" type="button" @click="openReview(request, 'accepted')">Accept</button>
@@ -138,7 +139,7 @@ function submitReview() {
                 <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Patient<select v-model="form.patient_id" class="rounded-md border-slate-300"><option value="">Patient</option><option v-for="patient in patients" :key="patient.id" :value="patient.id">{{ patient.hospital_number }} - {{ patient.full_name }}</option></select><span v-if="form.errors.patient_id" class="text-xs text-red-700">{{ form.errors.patient_id }}</span></label>
                 <label class="grid gap-1 text-sm font-semibold">Facility<select v-model="form.facility_id" class="rounded-md border-slate-300"><option v-for="facility in facilities" :key="facility.id" :value="facility.id">{{ facility.name }}</option></select></label>
                 <label class="grid gap-1 text-sm font-semibold">Department<select v-model="form.department_id" class="rounded-md border-slate-300"><option value="">Department</option><option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }}</option></select></label>
-                <label class="grid gap-1 text-sm font-semibold">Clinician<select v-model="form.clinician_id" class="rounded-md border-slate-300"><option value="">Clinician</option><option v-for="clinician in clinicians" :key="clinician.id" :value="clinician.id">{{ clinician.user?.full_name || clinician.job_title || clinician.id }}</option></select></label>
+                <label class="grid gap-1 text-sm font-semibold">Doctor<select v-model="form.clinician_id" class="rounded-md border-slate-300"><option value="">Doctor</option><option v-for="clinician in clinicians" :key="clinician.id" :value="clinician.id">{{ clinician.user?.full_name || clinician.job_title || clinician.id }}</option></select></label>
                 <label class="grid gap-1 text-sm font-semibold">Type<select v-model="form.appointment_type_id" class="rounded-md border-slate-300"><option v-for="type in appointmentTypes" :key="type.id" :value="type.id">{{ type.name }} - {{ type.duration_minutes }} min</option></select></label>
                 <label class="grid gap-1 text-sm font-semibold">Starts at<input v-model="form.starts_at" class="rounded-md border-slate-300" type="datetime-local"><span v-if="form.errors.starts_at" class="text-xs text-red-700">{{ form.errors.starts_at }}</span></label>
                 <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Reason<textarea v-model="form.reason" class="rounded-md border-slate-300" rows="2"></textarea></label>
@@ -147,7 +148,7 @@ function submitReview() {
 
         <FormModal :show="showSchedule" :form="schedule" title="Clinician Schedule" submit-label="Save schedule" size="lg" @close="showSchedule = false" @submit="submitSchedule">
             <div class="grid gap-4 sm:grid-cols-2">
-                <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Clinician<select v-model="schedule.staff_profile_id" class="rounded-md border-slate-300"><option value="">Clinician</option><option v-for="clinician in clinicians" :key="clinician.id" :value="clinician.id">{{ clinician.user?.full_name || clinician.id }}</option></select></label>
+                <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Doctor<select v-model="schedule.staff_profile_id" class="rounded-md border-slate-300"><option value="">Doctor</option><option v-for="clinician in clinicians" :key="clinician.id" :value="clinician.id">{{ clinician.user?.full_name || clinician.id }}</option></select></label>
                 <label class="grid gap-1 text-sm font-semibold">Facility<select v-model="schedule.facility_id" class="rounded-md border-slate-300"><option v-for="facility in facilities" :key="facility.id" :value="facility.id">{{ facility.name }}</option></select></label>
                 <label class="grid gap-1 text-sm font-semibold">Department<select v-model="schedule.department_id" class="rounded-md border-slate-300"><option value="">Department</option><option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }}</option></select></label>
                 <label class="grid gap-1 text-sm font-semibold">Day<select v-model="schedule.day_of_week" class="rounded-md border-slate-300"><option :value="1">Monday</option><option :value="2">Tuesday</option><option :value="3">Wednesday</option><option :value="4">Thursday</option><option :value="5">Friday</option><option :value="6">Saturday</option><option :value="0">Sunday</option></select></label>
@@ -158,7 +159,7 @@ function submitReview() {
 
         <FormModal :show="showUnavailable" :form="unavailable" title="Leave / Unavailability" submit-label="Save unavailable time" size="lg" @close="showUnavailable = false" @submit="submitUnavailable">
             <div class="grid gap-4 sm:grid-cols-2">
-                <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Clinician<select v-model="unavailable.staff_profile_id" class="rounded-md border-slate-300"><option value="">Clinician</option><option v-for="clinician in clinicians" :key="clinician.id" :value="clinician.id">{{ clinician.user?.full_name || clinician.id }}</option></select></label>
+                <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Doctor<select v-model="unavailable.staff_profile_id" class="rounded-md border-slate-300"><option value="">Doctor</option><option v-for="clinician in clinicians" :key="clinician.id" :value="clinician.id">{{ clinician.user?.full_name || clinician.id }}</option></select></label>
                 <label class="grid gap-1 text-sm font-semibold">Starts<input v-model="unavailable.starts_at" class="rounded-md border-slate-300" type="datetime-local"></label>
                 <label class="grid gap-1 text-sm font-semibold">Ends<input v-model="unavailable.ends_at" class="rounded-md border-slate-300" type="datetime-local"></label>
                 <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Reason<input v-model="unavailable.reason" class="rounded-md border-slate-300"></label>

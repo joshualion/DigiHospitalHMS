@@ -8,7 +8,9 @@ The application is built as a modular Laravel monolith using Inertia, Vue 3, Tai
 
 The public website, public content management workflow, admin shell, and branded maintenance experience are launch-ready.
 
-Core HMS development is ongoing. The current backend includes tested foundations and operational workflows through patient identity, appointments, clinical encounters, billing, payments, laboratory, radiology, inventory, pharmacy, procurement, admissions, inpatient charting, eMAR, blood bank, and patient blood requests. Additional production hardening, integrations, reporting, insurance/HMO flows, notifications, and deployment-specific configuration should be completed per installation.
+The planned core HMS phases are implemented through patient identity, appointments, clinical encounters, billing, payments, laboratory, radiology, inventory, pharmacy, procurement, admissions, inpatient charting, eMAR, blood bank/transfusion, insurance/HMO/corporate claims, reporting, notifications and commercial/integration administration.
+
+Phase 10 focuses on production hardening, automated release gates and installation-specific operational acceptance. External provider credentials, infrastructure backups, jurisdiction-specific compliance review and hospital clinical acceptance remain deployment responsibilities rather than application defaults.
 
 ## Key Features
 
@@ -163,3 +165,9 @@ Experienced in Laravel, Vue.js, MySQL, REST APIs, SaaS/business systems, applica
 - GitHub: [@joshualion](https://github.com/joshualion)
 - Repository: [DigiHospitalHMS](https://github.com/joshualion/DigiHospitalHMS)
 - Email: [Email the Author](mailto:joshuaekpe87@gmail.com)
+
+## Production deployment
+
+See [docs/production-deployment.md](docs/production-deployment.md) for the deployment runbook and [docs/release-checklist.md](docs/release-checklist.md) for the Phase 10 technical and operational release checklist.
+
+Production releases should pass the permanent GitHub Actions CI gate before deployment. The repository tracks built Vite assets under `public/build`, so installations on shared hosting can deploy verified frontend assets without requiring Node.js on the production server.

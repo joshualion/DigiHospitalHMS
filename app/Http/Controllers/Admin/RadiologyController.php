@@ -19,6 +19,7 @@ use App\Services\RadiologyWorkflowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -57,6 +58,80 @@ class RadiologyController extends FoundationController
         app(AuditService::class)->record('radiology.study_created', $study, null, $study->toArray(), actor: $request->user());
 
         return back()->with('success', 'Study created.');
+    }
+
+    public function updateModality(Request $request, RadiologyModality $modality): RedirectResponse
+    {
+        $this->authorize('update', new RadiologyStudy(['hospital_id' => $modality->hospital_id]));
+        abort_unless($modality->hospital_id === $this->currentHospital()->id, 403);
+
+        $validated = $request->validate([
+            'facility_id' => ['nullable', Rule::exists('facilities', 'id')->where('hospital_id', $modality->hospital_id)],
+            'code' => ['required', 'string', 'max:40', Rule::unique('radiology_modalities')->where('hospital_id', $modality->hospital_id)->ignore($modality->id)],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'is_active' => ['boolean'],
+        ]);
+        $before = $modality->toArray();
+        $modality->update($validated);
+        app(AuditService::class)->record('radiology.modality_updated', $modality, $before, $modality->fresh()->toArray(), actor: $request->user());
+
+        return back()->with('success', 'Radiology modality updated.');
+    }
+
+    public function destroyModality(Request $request, RadiologyModality $modality): RedirectResponse
+    {
+        abort_unless($request->user()->can('radiology.catalogue.manage') || $request->user()->hasRole('superadmin'), 403);
+        abort_unless($modality->hospital_id === $this->currentHospital()->id, 403);
+
+        if ($modality->studies()->exists()) {
+            return back()->withErrors(['catalogue' => 'This modality still has studies assigned. Reassign or delete unused studies first.']);
+        }
+
+        $before = $modality->toArray();
+        $modality->delete();
+        app(AuditService::class)->record('radiology.modality_deleted', $modality, $before, null, actor: $request->user());
+
+        return back()->with('success', 'Radiology modality deleted.');
+    }
+
+    public function updateStudy(Request $request, RadiologyStudy $study): RedirectResponse
+    {
+        $this->authorize('update', $study);
+        abort_unless($study->hospital_id === $this->currentHospital()->id, 403);
+
+        $validated = $request->validate([
+            'radiology_modality_id' => ['required', Rule::exists('radiology_modalities', 'id')->where('hospital_id', $study->hospital_id)],
+            'billable_service_id' => ['nullable', Rule::exists('billable_services', 'id')->where('hospital_id', $study->hospital_id)],
+            'code' => ['required', 'string', 'max:40', Rule::unique('radiology_studies')->where('hospital_id', $study->hospital_id)->ignore($study->id)],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'preparation_acknowledgements' => ['nullable', 'array'],
+            'safety_screening_acknowledgements' => ['nullable', 'array'],
+            'requires_professional_validation' => ['boolean'],
+            'is_active' => ['boolean'],
+        ]);
+        $before = $study->toArray();
+        $study->update($validated);
+        app(AuditService::class)->record('radiology.study_updated', $study, $before, $study->fresh()->toArray(), actor: $request->user());
+
+        return back()->with('success', 'Radiology study updated.');
+    }
+
+    public function destroyStudy(Request $request, RadiologyStudy $study): RedirectResponse
+    {
+        $this->authorize('update', $study);
+        abort_unless($study->hospital_id === $this->currentHospital()->id, 403);
+
+        if (DB::table('radiology_request_studies')->where('radiology_study_id', $study->id)->exists()) {
+            return back()->withErrors(['catalogue' => 'This study has clinical request history and cannot be deleted. Mark it inactive instead.']);
+        }
+
+        $before = $study->toArray();
+        $study->delete();
+        app(AuditService::class)->record('radiology.study_deleted', $study, $before, null, actor: $request->user());
+
+        return back()->with('success', 'Radiology study deleted.');
     }
 
     public function requests(Request $request): Response

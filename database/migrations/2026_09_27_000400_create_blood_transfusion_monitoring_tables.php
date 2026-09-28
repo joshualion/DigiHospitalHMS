@@ -22,11 +22,11 @@ return new class extends Migration
             $table->dateTime('started_at');
             $table->dateTime('completed_at')->nullable();
             $table->dateTime('stopped_at')->nullable();
-            $table->string('status')->default('in_progress')->index();
+            $table->string('status', 32)->default('in_progress')->index();
             $table->string('destination')->nullable();
             $table->string('patient_identifier_checked');
             $table->string('component_identifier_checked');
-            $table->string('identity_check_status')->default('matched');
+            $table->string('identity_check_status', 32)->default('matched');
             $table->text('stop_reason')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
@@ -61,7 +61,7 @@ return new class extends Migration
             $table->text('immediate_actions')->nullable();
             $table->dateTime('clinician_notified_at')->nullable();
             $table->dateTime('blood_bank_notified_at')->nullable();
-            $table->string('status')->default('open')->index();
+            $table->string('status', 32)->default('open')->index();
             $table->foreignId('resolved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->dateTime('resolved_at')->nullable();
             $table->text('resolution_notes')->nullable();

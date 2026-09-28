@@ -11,15 +11,15 @@ return new class extends Migration
         Schema::create('payer_organizations', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('hospital_id')->constrained()->restrictOnDelete();
-            $table->string('type')->index();
-            $table->string('code');
+            $table->string('type', 64)->index();
+            $table->string('code', 100);
             $table->string('name');
             $table->string('contact_name')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
             $table->unsignedInteger('credit_days')->default(0);
-            $table->string('status')->default('active')->index();
+            $table->string('status', 32)->default('active')->index();
             $table->text('notes')->nullable();
             $table->timestamps();
             $table->unique(['hospital_id', 'code']);
@@ -29,11 +29,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('hospital_id')->constrained()->restrictOnDelete();
             $table->foreignId('payer_organization_id')->constrained()->restrictOnDelete();
-            $table->string('code');
+            $table->string('code', 100);
             $table->string('name');
             $table->string('currency', 3)->default('NGN');
             $table->boolean('requires_pre_authorization')->default(false);
-            $table->string('status')->default('active')->index();
+            $table->string('status', 32)->default('active')->index();
             $table->date('effective_from')->nullable();
             $table->date('effective_to')->nullable();
             $table->text('notes')->nullable();
@@ -72,7 +72,7 @@ return new class extends Migration
             $table->date('valid_from')->nullable();
             $table->date('valid_to')->nullable();
             $table->boolean('is_primary')->default(false);
-            $table->string('status')->default('active')->index();
+            $table->string('status', 32)->default('active')->index();
             $table->text('notes')->nullable();
             $table->timestamps();
             $table->index(['hospital_id', 'patient_id', 'status']);
@@ -86,9 +86,9 @@ return new class extends Migration
             $table->foreignId('patient_id')->constrained()->restrictOnDelete();
             $table->foreignId('billable_service_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('clinical_encounter_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('reference')->nullable();
-            $table->string('authorization_code')->nullable();
-            $table->string('status')->default('requested')->index();
+            $table->string('reference', 120)->nullable();
+            $table->string('authorization_code', 120)->nullable();
+            $table->string('status', 32)->default('requested')->index();
             $table->bigInteger('requested_amount_minor')->nullable();
             $table->bigInteger('approved_amount_minor')->nullable();
             $table->text('clinical_or_service_context')->nullable();

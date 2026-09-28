@@ -11,9 +11,9 @@ return new class extends Migration
         Schema::create('installation_licenses', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('hospital_id')->unique()->constrained()->restrictOnDelete();
-            $table->string('license_key')->nullable();
-            $table->string('plan')->default('standard');
-            $table->string('status')->default('trial')->index();
+            $table->string('license_key', 191)->nullable();
+            $table->string('plan', 64)->default('standard');
+            $table->string('status', 32)->default('trial')->index();
             $table->date('starts_on')->nullable();
             $table->date('expires_on')->nullable()->index();
             $table->unsignedInteger('licensed_facilities')->default(1);
@@ -24,12 +24,12 @@ return new class extends Migration
         Schema::create('integration_configurations', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('hospital_id')->constrained()->restrictOnDelete();
-            $table->string('type')->index();
-            $table->string('provider');
-            $table->string('status')->default('disabled')->index();
+            $table->string('type', 64)->index();
+            $table->string('provider', 100);
+            $table->string('status', 32)->default('disabled')->index();
             $table->json('configuration')->nullable();
             $table->timestamp('last_checked_at')->nullable();
-            $table->string('last_check_status')->nullable();
+            $table->string('last_check_status', 32)->nullable();
             $table->text('last_check_message')->nullable();
             $table->timestamps();
             $table->unique(['hospital_id','type']);
@@ -38,9 +38,9 @@ return new class extends Migration
         Schema::create('backup_monitor_events', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('hospital_id')->constrained()->restrictOnDelete();
-            $table->string('status')->index();
-            $table->string('source')->default('manual');
-            $table->string('backup_reference')->nullable();
+            $table->string('status', 32)->index();
+            $table->string('source', 64)->default('manual');
+            $table->string('backup_reference', 191)->nullable();
             $table->bigInteger('size_bytes')->nullable();
             $table->timestamp('backup_completed_at')->nullable()->index();
             $table->timestamp('restore_verified_at')->nullable();

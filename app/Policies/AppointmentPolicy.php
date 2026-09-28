@@ -27,6 +27,14 @@ class AppointmentPolicy
 
     public function update(User $user, Appointment $appointment): bool
     {
-        return $this->allowed($user, 'appointments.manage', $appointment);
+        if (! $this->allowed($user, 'appointments.manage', $appointment)) {
+            return false;
+        }
+
+        if ($user->hasRole('doctor')) {
+            return (int) $user->staffProfile?->id === (int) $appointment->clinician_id;
+        }
+
+        return true;
     }
 }

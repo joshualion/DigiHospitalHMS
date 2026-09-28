@@ -29,6 +29,7 @@ class PermissionSeeder extends Seeder
             'staff.update',
             'staff.suspend',
             'staff.delete',
+            'staff.purge-demo',
             'staff.assign-facilities',
             'roles.view',
             'roles.assign',
@@ -196,6 +197,7 @@ class PermissionSeeder extends Seeder
             'staff.update',
             'staff.suspend',
             'staff.delete',
+            'staff.purge-demo',
             'staff.assign-facilities',
             'roles.view',
             'roles.assign',
@@ -339,6 +341,7 @@ class PermissionSeeder extends Seeder
         ];
 
         Role::where('name', 'admin')->first()?->syncPermissions(array_values(array_diff($adminPermissions, [
+            'staff.purge-demo',
             'website.publish',
             'website.unpublish',
             'website.restore_revision',

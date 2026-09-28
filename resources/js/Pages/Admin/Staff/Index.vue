@@ -30,6 +30,8 @@ const editing = ref(null);
 const statusTarget = ref(null);
 const deleteTarget = ref(null);
 const deleteForm = useForm({});
+const purgeTarget = ref(null);
+const purgeForm = useForm({ confirmation: '' });
 const clinicalCategories = [
     ['administrative', 'Administrative'],
     ['clinical', 'Other clinical staff'],
@@ -136,6 +138,25 @@ function deleteStaff() {
         onSuccess: () => { deleteTarget.value = null; },
     });
 }
+
+function openPurge(entry) {
+    purgeForm.clearErrors();
+    purgeForm.defaults({ confirmation: '' });
+    purgeForm.reset();
+    purgeTarget.value = entry;
+}
+
+function purgeDemoStaff() {
+    if (!purgeTarget.value) return;
+    purgeForm.delete(`/admin/staff/${purgeTarget.value.id}/purge-demo`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            purgeTarget.value = null;
+            purgeForm.defaults({ confirmation: '' });
+            purgeForm.reset();
+        },
+    });
+}
 </script>
 
 <template>
@@ -177,6 +198,7 @@ function deleteStaff() {
                                     <button v-if="can('staff.update')" class="rounded-md border px-3 py-2 text-xs font-bold" type="button" @click="openEdit(entry)">Edit</button>
                                     <button v-if="can('staff.suspend')" class="rounded-md border px-3 py-2 text-xs font-bold" type="button" @click="openStatus(entry)">{{ entry.employment_status === 'active' ? 'Suspend' : 'Activate' }}</button>
                                     <button v-if="can('staff.delete')" class="rounded-md border border-rose-300 px-3 py-2 text-xs font-bold text-rose-700" type="button" @click="openDelete(entry)">Delete</button>
+                                    <button v-if="can('staff.purge-demo')" class="rounded-md border border-amber-400 px-3 py-2 text-xs font-bold text-amber-700 dark:text-amber-300" type="button" @click="openPurge(entry)">Purge demo data</button>
                                 </ActionToolbar>
                             </td>
                         </tr>
@@ -260,10 +282,35 @@ function deleteStaff() {
             :show="Boolean(deleteTarget)"
             :form="deleteForm"
             title="Delete Staff Account"
-            :message="deleteTarget ? `Permanently delete ${deleteTarget.user?.full_name}? Unused/test accounts can be removed completely. Accounts linked to historical hospital records will be blocked and should be suspended instead.` : ''"
+            :message="deleteTarget ? `Permanently delete ${deleteTarget.user?.full_name}? Unused accounts can be removed completely. Accounts linked to protected historical records will be blocked.` : ''"
             confirm-label="Delete staff"
             @close="deleteTarget = null"
             @confirm="deleteStaff"
         />
+
+        <FormModal
+            :show="Boolean(purgeTarget)"
+            :form="purgeForm"
+            title="Purge Demo Staff & Linked Data"
+            submit-label="Permanently purge demo data"
+            size="md"
+            @close="purgeTarget = null"
+            @submit="purgeDemoStaff"
+        >
+            <div class="space-y-4">
+                <p class="text-sm leading-6 text-amber-800 dark:text-amber-200">
+                    This is only for demo/test accounts. It permanently removes the selected staff account and recursively removes linked records that exist only because database restrictions would otherwise block deletion. Non-owning references configured as nullable are cleared instead.
+                </p>
+                <p v-if="purgeTarget" class="text-sm font-bold">
+                    Selected: {{ purgeTarget.user?.full_name }} · {{ purgeTarget.staff_number }}
+                </p>
+                <TextInput
+                    id="purge_confirmation"
+                    v-model="purgeForm.confirmation"
+                    label="Type PURGE to confirm"
+                    :error="purgeForm.errors.confirmation || purgeForm.errors.staff"
+                />
+            </div>
+        </FormModal>
     </AppLayout>
 </template>

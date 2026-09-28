@@ -161,6 +161,46 @@ class Phase6CInpatientMedicationAdministrationTest extends TestCase
         }
     }
 
+    public function test_discharge_closes_chart_and_retires_pending_emar_schedules(): void
+    {
+        $this->reviewedDispensedPrescription();
+
+        $emar = app(EmarWorkflowService::class);
+        $emar->syncSchedules($this->chart, $this->nurse);
+
+        $this->assertTrue(
+            EmarSchedule::where('inpatient_chart_id', $this->chart->id)
+                ->whereIn('status', ['pending', 'delayed', 'prn_available'])
+                ->exists()
+        );
+
+        app(AdmissionWorkflowService::class)->discharge(
+            $this->chart->admission->fresh(),
+            $this->doctor,
+            [
+                'discharged_at' => now(),
+                'discharge_destination' => 'home',
+                'discharge_outcome' => 'stable',
+                'discharge_notes' => 'Discharged after clinical review.',
+            ]
+        );
+
+        $this->assertSame('closed', $this->chart->fresh()->status);
+        $this->assertNotNull($this->chart->fresh()->closed_at);
+        $this->assertFalse(
+            EmarSchedule::where('inpatient_chart_id', $this->chart->id)
+                ->whereIn('status', ['pending', 'delayed', 'prn_available'])
+                ->exists()
+        );
+        $this->assertTrue(
+            EmarSchedule::where('inpatient_chart_id', $this->chart->id)
+                ->where('status', 'cancelled')
+                ->exists()
+        );
+        $this->assertDatabaseHas('audit_events', ['action' => 'inpatient.chart_closed_on_discharge']);
+        $this->assertDatabaseHas('audit_events', ['action' => 'emar.pending_schedules_retired_on_discharge']);
+    }
+
     public function test_authorization_cross_hospital_isolation_and_pages(): void
     {
         $this->reviewedDispensedPrescription();

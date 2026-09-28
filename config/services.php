@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'sms_webhook' => [
+        'url' => env('SMS_WEBHOOK_URL'),
+        'token' => env('SMS_WEBHOOK_TOKEN'),
+        'sender' => env('SMS_WEBHOOK_SENDER'),
+    ],
+
 ];

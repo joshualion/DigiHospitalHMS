@@ -22,6 +22,7 @@ use App\Services\AuditService;
 use App\Services\LaboratoryWorkflowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -113,6 +114,151 @@ class LaboratoryController extends FoundationController
         app(AuditService::class)->record('lab.profile_created', $profile, null, $profile->load('tests')->toArray(), actor: $request->user());
 
         return back()->with('success', 'Panel created.');
+    }
+
+    public function updateSpecimenType(Request $request, LabSpecimenType $specimenType): RedirectResponse
+    {
+        abort_unless($request->user()->can('lab.catalogue.manage') || $request->user()->hasRole('superadmin'), 403);
+        abort_unless($specimenType->hospital_id === $this->currentHospital()->id, 403);
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:40', Rule::unique('lab_specimen_types')->where('hospital_id', $specimenType->hospital_id)->ignore($specimenType->id)],
+            'name' => ['required', 'string', 'max:255'],
+            'collection_notes' => ['nullable', 'string', 'max:2000'],
+            'is_active' => ['boolean'],
+        ]);
+        $before = $specimenType->toArray();
+        $specimenType->update($validated);
+        app(AuditService::class)->record('lab.specimen_type_updated', $specimenType, $before, $specimenType->fresh()->toArray(), actor: $request->user());
+
+        return back()->with('success', 'Specimen type updated.');
+    }
+
+    public function destroySpecimenType(Request $request, LabSpecimenType $specimenType): RedirectResponse
+    {
+        abort_unless($request->user()->can('lab.catalogue.manage') || $request->user()->hasRole('superadmin'), 403);
+        abort_unless($specimenType->hospital_id === $this->currentHospital()->id, 403);
+
+        if (DB::table('lab_specimens')->where('lab_specimen_type_id', $specimenType->id)->exists()) {
+            return back()->withErrors(['catalogue' => 'This specimen type has clinical history and cannot be deleted. Mark it inactive instead.']);
+        }
+
+        LabTest::where('default_specimen_type_id', $specimenType->id)->update(['default_specimen_type_id' => null]);
+        $before = $specimenType->toArray();
+        $specimenType->delete();
+        app(AuditService::class)->record('lab.specimen_type_deleted', $specimenType, $before, null, actor: $request->user());
+
+        return back()->with('success', 'Specimen type deleted.');
+    }
+
+    public function updateUnit(Request $request, LabUnit $unit): RedirectResponse
+    {
+        abort_unless($request->user()->can('lab.catalogue.manage') || $request->user()->hasRole('superadmin'), 403);
+        abort_unless($unit->hospital_id === $this->currentHospital()->id, 403);
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:40', Rule::unique('lab_units')->where('hospital_id', $unit->hospital_id)->ignore($unit->id)],
+            'name' => ['required', 'string', 'max:255'],
+            'is_active' => ['boolean'],
+        ]);
+        $before = $unit->toArray();
+        $unit->update($validated);
+        app(AuditService::class)->record('lab.unit_updated', $unit, $before, $unit->fresh()->toArray(), actor: $request->user());
+
+        return back()->with('success', 'Laboratory unit updated.');
+    }
+
+    public function destroyUnit(Request $request, LabUnit $unit): RedirectResponse
+    {
+        abort_unless($request->user()->can('lab.catalogue.manage') || $request->user()->hasRole('superadmin'), 403);
+        abort_unless($unit->hospital_id === $this->currentHospital()->id, 403);
+
+        if (DB::table('lab_results')->where('lab_unit_id', $unit->id)->exists()) {
+            return back()->withErrors(['catalogue' => 'This unit has result history and cannot be deleted. Mark it inactive instead.']);
+        }
+
+        DB::table('lab_test_components')->where('lab_unit_id', $unit->id)->update(['lab_unit_id' => null]);
+        $before = $unit->toArray();
+        $unit->delete();
+        app(AuditService::class)->record('lab.unit_deleted', $unit, $before, null, actor: $request->user());
+
+        return back()->with('success', 'Laboratory unit deleted.');
+    }
+
+    public function updateTest(Request $request, LabTest $test): RedirectResponse
+    {
+        $this->authorize('update', $test);
+        abort_unless($test->hospital_id === $this->currentHospital()->id, 403);
+
+        $validated = $request->validate([
+            'department_id' => ['nullable', Rule::exists('departments', 'id')->where('hospital_id', $test->hospital_id)],
+            'default_specimen_type_id' => ['nullable', Rule::exists('lab_specimen_types', 'id')->where('hospital_id', $test->hospital_id)],
+            'billable_service_id' => ['nullable', Rule::exists('billable_services', 'id')->where('hospital_id', $test->hospital_id)],
+            'code' => ['required', 'string', 'max:40', Rule::unique('lab_tests')->where('hospital_id', $test->hospital_id)->ignore($test->id)],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'turnaround_time' => ['nullable', 'string', 'max:100'],
+            'requires_approval' => ['boolean'],
+            'is_active' => ['boolean'],
+        ]);
+        $before = $test->toArray();
+        $test->update($validated);
+        app(AuditService::class)->record('lab.test_updated', $test, $before, $test->fresh()->toArray(), actor: $request->user());
+
+        return back()->with('success', 'Laboratory test updated.');
+    }
+
+    public function destroyTest(Request $request, LabTest $test): RedirectResponse
+    {
+        $this->authorize('update', $test);
+        abort_unless($test->hospital_id === $this->currentHospital()->id, 403);
+
+        if (DB::table('lab_request_tests')->where('lab_test_id', $test->id)->exists()) {
+            return back()->withErrors(['catalogue' => 'This test has clinical request history and cannot be deleted. Mark it inactive instead.']);
+        }
+
+        $before = $test->toArray();
+        $test->profiles()->detach();
+        $test->delete();
+        app(AuditService::class)->record('lab.test_deleted', $test, $before, null, actor: $request->user());
+
+        return back()->with('success', 'Laboratory test deleted.');
+    }
+
+    public function updateProfile(Request $request, LabTestProfile $profile): RedirectResponse
+    {
+        abort_unless($request->user()->can('lab.catalogue.manage') || $request->user()->hasRole('superadmin'), 403);
+        abort_unless($profile->hospital_id === $this->currentHospital()->id, 403);
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:40', Rule::unique('lab_test_profiles')->where('hospital_id', $profile->hospital_id)->ignore($profile->id)],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'lab_test_ids' => ['array'],
+            'lab_test_ids.*' => [Rule::exists('lab_tests', 'id')->where('hospital_id', $profile->hospital_id)],
+            'is_active' => ['boolean'],
+        ]);
+        $testIds = $validated['lab_test_ids'] ?? [];
+        unset($validated['lab_test_ids']);
+        $before = $profile->load('tests')->toArray();
+        $profile->update($validated);
+        $profile->tests()->sync($testIds);
+        app(AuditService::class)->record('lab.profile_updated', $profile, $before, $profile->fresh('tests')->toArray(), actor: $request->user());
+
+        return back()->with('success', 'Laboratory panel updated.');
+    }
+
+    public function destroyProfile(Request $request, LabTestProfile $profile): RedirectResponse
+    {
+        abort_unless($request->user()->can('lab.catalogue.manage') || $request->user()->hasRole('superadmin'), 403);
+        abort_unless($profile->hospital_id === $this->currentHospital()->id, 403);
+
+        $before = $profile->load('tests')->toArray();
+        $profile->tests()->detach();
+        $profile->delete();
+        app(AuditService::class)->record('lab.profile_deleted', $profile, $before, null, actor: $request->user());
+
+        return back()->with('success', 'Laboratory panel deleted.');
     }
 
     public function requests(Request $request): Response

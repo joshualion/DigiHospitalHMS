@@ -90,7 +90,7 @@ class InpatientChartController extends FoundationController
 
     public function amendProgressNote(Request $request, InpatientProgressNote $note, InpatientChartWorkflowService $workflow): RedirectResponse
     {
-        $this->authorize('document', $note->chart);
+        $this->authorize('clinicalDocument', $note->chart);
         $validated = $request->validate(['reason' => ['required', 'string', 'max:1000'], 'content' => ['required', 'string', 'max:10000']]);
         $workflow->amend($note, $validated, $request->user());
 

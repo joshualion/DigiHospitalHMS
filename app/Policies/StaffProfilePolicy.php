@@ -39,4 +39,9 @@ class StaffProfilePolicy
     {
         return $this->allowed($user, 'staff.assign-facilities', $staffProfile);
     }
+
+    public function delete(User $user, StaffProfile $staffProfile): bool
+    {
+        return $this->allowed($user, 'staff.delete', $staffProfile);
+    }
 }

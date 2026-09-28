@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -57,7 +58,10 @@ class StaffController extends FoundationController
         $validated = $request->validate($this->rules($hospital->id));
         $this->guardRoleAssignment($validated['roles'] ?? []);
 
-        $staff = DB::transaction(function () use ($validated, $hospital, $audit): StaffProfile {
+        $uploadedPhotoPath = $this->storeStaffPhoto($request, $hospital->id);
+
+        try {
+            $staff = DB::transaction(function () use ($validated, $hospital, $audit, $uploadedPhotoPath): StaffProfile {
             $user = User::create([
                 'firstname' => $validated['firstname'],
                 'lastname' => $validated['lastname'],
@@ -92,7 +96,7 @@ class StaffController extends FoundationController
                 'public_display_name' => $validated['public_display_name'] ?? null,
                 'public_specialty' => $validated['public_specialty'] ?? null,
                 'public_summary' => $validated['public_summary'] ?? null,
-                'public_photo_path' => $validated['public_photo_path'] ?? null,
+                'public_photo_path' => $uploadedPhotoPath ?: ($validated['public_photo_path'] ?? null),
                 'public_photo_alt' => $validated['public_photo_alt'] ?? null,
                 'public_display_order' => (int) ($validated['public_display_order'] ?? 0),
             ]);
@@ -107,8 +111,12 @@ class StaffController extends FoundationController
             $audit->record('staff.invited', $staff, null, $staff->load('user.roles', 'memberships')->toArray());
             $audit->record('roles.assigned', $user, null, ['roles' => $user->getRoleNames()->all()]);
 
-            return $staff;
-        });
+                return $staff;
+            });
+        } catch (\Throwable $exception) {
+            $this->deleteLocalStaffPhoto($uploadedPhotoPath);
+            throw $exception;
+        }
 
         Password::sendResetLink(['email' => $staff->user->email]);
 
@@ -121,7 +129,13 @@ class StaffController extends FoundationController
         $validated = $request->validate($this->rules($staffProfile->hospital_id, $staffProfile->id, $staffProfile->user_id));
         $this->guardRoleAssignment($validated['roles'] ?? []);
 
-        DB::transaction(function () use ($staffProfile, $validated, $audit): void {
+        $previousPhotoPath = $staffProfile->public_photo_path;
+        $uploadedPhotoPath = $this->storeStaffPhoto($request, $staffProfile->hospital_id);
+        $removePhoto = (bool) ($validated['remove_public_photo'] ?? false);
+        $nextPhotoPath = $uploadedPhotoPath ?: ($removePhoto ? null : ($validated['public_photo_path'] ?? $previousPhotoPath));
+
+        try {
+            DB::transaction(function () use ($staffProfile, $validated, $audit, $nextPhotoPath): void {
             $user = $staffProfile->user;
             $beforeUserRoles = $user->getRoleNames()->all();
             $before = $staffProfile->only([
@@ -169,7 +183,7 @@ class StaffController extends FoundationController
                 'public_display_name' => $validated['public_display_name'] ?? null,
                 'public_specialty' => $validated['public_specialty'] ?? null,
                 'public_summary' => $validated['public_summary'] ?? null,
-                'public_photo_path' => $validated['public_photo_path'] ?? null,
+                'public_photo_path' => $nextPhotoPath,
                 'public_photo_alt' => $validated['public_photo_alt'] ?? null,
                 'public_display_order' => (int) ($validated['public_display_order'] ?? 0),
             ]);
@@ -189,7 +203,15 @@ class StaffController extends FoundationController
                 'default_facility_id' => $validated['default_facility_id'] ?? null,
                 'facility_departments' => $validated['facility_departments'] ?? [],
             ]);
-        });
+            });
+        } catch (\Throwable $exception) {
+            $this->deleteLocalStaffPhoto($uploadedPhotoPath);
+            throw $exception;
+        }
+
+        if ($previousPhotoPath !== $nextPhotoPath) {
+            $this->deleteLocalStaffPhoto($previousPhotoPath);
+        }
 
         return back()->with('success', 'Staff profile updated.');
     }
@@ -345,6 +367,8 @@ class StaffController extends FoundationController
             'public_specialty' => ['nullable', 'string', 'max:255'],
             'public_summary' => ['nullable', 'string', 'max:2000'],
             'public_photo_path' => ['nullable', 'string', 'max:255'],
+            'public_photo_upload' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'remove_public_photo' => ['boolean'],
             'public_photo_alt' => ['nullable', 'string', 'max:255'],
             'public_display_order' => ['integer', 'min:0'],
             'roles' => ['array'],
@@ -355,6 +379,26 @@ class StaffController extends FoundationController
             'facility_departments' => ['array'],
             'facility_departments.*' => ['nullable', Rule::exists('departments', 'id')->where(fn ($query) => $query->where('hospital_id', $hospitalId)->where('status', 'active'))],
         ];
+    }
+
+    private function storeStaffPhoto(Request $request, int $hospitalId): ?string
+    {
+        if (! $request->hasFile('public_photo_upload')) {
+            return null;
+        }
+
+        $path = $request->file('public_photo_upload')->store("staff/{$hospitalId}", 'public');
+
+        return $path ? '/storage/'.$path : null;
+    }
+
+    private function deleteLocalStaffPhoto(?string $path): void
+    {
+        if (! $path || ! str_starts_with($path, '/storage/staff/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete(ltrim(str_replace('/storage/', '', $path), '/'));
     }
 
     private function syncMemberships(StaffProfile $staff, array $facilityIds, ?int $defaultFacilityId, array $facilityDepartments = []): void

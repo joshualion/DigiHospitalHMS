@@ -22,7 +22,7 @@ const permissions = computed(() => page.props.auth.permissions || []);
 const pageRoles = computed(() => page.props.auth.roles || []);
 const can = (permission) => pageRoles.value.includes('superadmin') || permissions.value.includes(permission);
 const search = useForm({ search: props.filters.search || '', status: props.filters.status || '' });
-const blankStaff = () => ({ firstname: '', lastname: '', email: '', staff_number: '', job_title: '', staff_category: 'administrative', professional_license_number: '', license_expires_at: '', work_phone: '', hire_date: '', roles: [], facility_ids: [], facility_departments: {}, default_facility_id: '', notes: '', public_is_visible: false, public_is_featured: false, public_slug: '', public_display_name: '', public_specialty: '', public_summary: '', public_photo_path: '', public_photo_alt: '', public_display_order: 0 });
+const blankStaff = () => ({ firstname: '', lastname: '', email: '', staff_number: '', job_title: '', staff_category: 'administrative', professional_license_number: '', license_expires_at: '', work_phone: '', hire_date: '', roles: [], facility_ids: [], facility_departments: {}, default_facility_id: '', notes: '', public_is_visible: false, public_is_featured: false, public_slug: '', public_display_name: '', public_specialty: '', public_summary: '', public_photo_path: '', public_photo_upload: null, remove_public_photo: false, public_photo_alt: '', public_display_order: 0 });
 const form = useForm(blankStaff());
 const statusForm = useForm({ status: 'active' });
 const showForm = ref(false);
@@ -95,6 +95,8 @@ function openEdit(entry) {
         public_specialty: entry.public_specialty || '',
         public_summary: entry.public_summary || '',
         public_photo_path: entry.public_photo_path || '',
+        public_photo_upload: null,
+        remove_public_photo: false,
         public_photo_alt: entry.public_photo_alt || '',
         public_display_order: entry.public_display_order || 0,
         roles: entry.user?.roles?.map((role) => role.name) || [],
@@ -111,9 +113,27 @@ function openEdit(entry) {
     showForm.value = true;
 }
 
+function selectStaffPhoto(event) {
+    form.public_photo_upload = event.target.files?.[0] || null;
+    if (form.public_photo_upload) {
+        form.remove_public_photo = false;
+    }
+}
+
 function saveStaff() {
-    const options = { preserveScroll: true, onSuccess: () => { showForm.value = false; editing.value = null; form.defaults(blankStaff()); form.reset(); } };
-    editing.value ? form.patch(`/admin/staff/${editing.value.id}`, options) : form.post('/admin/staff', options);
+    const options = {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => {
+            showForm.value = false;
+            editing.value = null;
+            form.defaults(blankStaff());
+            form.reset();
+        },
+    };
+
+    form.transform((data) => editing.value ? { ...data, _method: 'patch' } : data)
+        .post(editing.value ? `/admin/staff/${editing.value.id}` : '/admin/staff', options);
 }
 
 function openStatus(entry) {
@@ -258,6 +278,32 @@ function purgeDemoStaff() {
                     <p v-if="form.errors.facility_ids" class="mt-1 text-xs text-red-700">{{ form.errors.facility_ids }}</p>
                     <p v-if="form.errors.default_facility_id" class="mt-1 text-xs text-red-700">{{ form.errors.default_facility_id }}</p>
                 </div>
+                <div class="grid gap-2 rounded-md border border-slate-200 p-4 sm:col-span-2 dark:border-slate-800">
+                    <div>
+                        <h3 class="font-bold">Staff photograph <span class="font-normal text-slate-500">(optional)</span></h3>
+                        <p class="mt-1 text-xs text-slate-500">Upload directly from this device. Doctors can reuse the same photo on their public profile when public visibility is enabled.</p>
+                    </div>
+                    <div v-if="form.public_photo_path && !form.remove_public_photo" class="flex items-center gap-3 rounded-md border border-slate-200 p-3 dark:border-slate-800">
+                        <img :src="form.public_photo_path" alt="" class="h-20 w-20 rounded-md object-cover">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold">Current photograph</p>
+                            <p class="truncate text-xs text-slate-500">{{ form.public_photo_path }}</p>
+                        </div>
+                    </div>
+                    <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        class="block w-full rounded-md border border-slate-300 bg-white p-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                        @change="selectStaffPhoto"
+                    >
+                    <p class="text-xs text-slate-500">JPG, PNG or WebP. Maximum 5 MB. The image is stored on this hospital server automatically.</p>
+                    <p v-if="form.public_photo_upload" class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Selected: {{ form.public_photo_upload.name }}</p>
+                    <label v-if="form.public_photo_path" class="inline-flex items-center gap-2 text-sm font-semibold text-rose-700 dark:text-rose-300">
+                        <input v-model="form.remove_public_photo" type="checkbox">
+                        Remove current photograph
+                    </label>
+                    <span v-if="form.errors.public_photo_upload" class="text-xs text-red-700">{{ form.errors.public_photo_upload }}</span>
+                </div>
                 <div v-if="isClinicalForm" class="grid gap-3 rounded-md border border-slate-200 p-4 sm:col-span-2 sm:grid-cols-2 dark:border-slate-800">
                     <div class="sm:col-span-2">
                         <h3 class="font-bold">Public professional profile</h3>
@@ -269,7 +315,6 @@ function purgeDemoStaff() {
                     <TextInput id="staff_public_specialty" v-model="form.public_specialty" label="Specialty/designation" :error="form.errors.public_specialty" />
                     <TextInput id="staff_public_slug" v-model="form.public_slug" label="Public slug" :error="form.errors.public_slug" />
                     <TextInput id="staff_public_order" v-model="form.public_display_order" label="Public display order" type="number" :error="form.errors.public_display_order" />
-                    <TextInput id="staff_public_photo" v-model="form.public_photo_path" label="Profile photograph URL/path" :error="form.errors.public_photo_path" />
                     <TextInput id="staff_public_photo_alt" v-model="form.public_photo_alt" label="Profile photograph alt text" :error="form.errors.public_photo_alt" />
                     <label class="grid gap-1 text-sm font-semibold sm:col-span-2">Professional summary<textarea v-model="form.public_summary" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900" rows="3"></textarea><span v-if="form.errors.public_summary" class="text-xs text-red-700">{{ form.errors.public_summary }}</span></label>
                 </div>

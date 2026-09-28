@@ -770,7 +770,7 @@ Acceptance criteria:
 
 Objective: Convert implemented modules that still contain development artefacts, incomplete master-data CRUD, or stale-state assumptions into clean production operations.
 
-Status: Phase 11A admissions production completion is implemented. Phase 11B inpatient and eMAR production completion is in implementation.
+Status: Phase 11A admissions production completion and Phase 11B inpatient/eMAR completion are implemented. Phase 11C diagnostics production completion is in implementation.
 
 Work:
 
@@ -799,6 +799,14 @@ Phase 11B:
 - Role-specific clinician vs nursing documentation boundaries.
 - Separate inpatient order creation from order execution.
 - Active-admission-only ward and medication worklists.
+
+Phase 11C:
+
+- Laboratory specimen type, unit, test and panel/profile CRUD.
+- Radiology modality and study CRUD.
+- Active/inactive lifecycle for diagnostic catalogue items.
+- Dependency-aware deletion protection for clinically referenced configuration.
+- Preserve diagnostic request/result/report history while allowing obsolete setup to be retired.
 
 Acceptance criteria:
 

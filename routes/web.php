@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\InpatientChartController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\LaboratoryController;
 use App\Http\Controllers\Admin\NumberSequenceController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\PatientController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PrescriptionController;
@@ -90,6 +91,9 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::get('settings', [HospitalSettingController::class, 'edit'])->name('admin.settings.edit');
         Route::patch('settings', [HospitalSettingController::class, 'update'])->name('admin.settings.update');
         Route::get('numbering', [NumberSequenceController::class, 'index'])->name('admin.numbering.index');
+        Route::get('notifications', [NotificationController::class, 'index'])->name('admin.notifications.index');
+        Route::patch('notifications/templates/{template}', [NotificationController::class, 'update'])->name('admin.notifications.templates.update');
+        Route::post('notifications/run', [NotificationController::class, 'run'])->name('admin.notifications.run');
         Route::patch('numbering/{sequence}', [NumberSequenceController::class, 'update'])->name('admin.numbering.update');
         Route::post('numbering/{sequence}/allocate', [NumberSequenceController::class, 'allocate'])->name('admin.numbering.allocate');
 

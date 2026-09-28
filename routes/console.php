@@ -6,11 +6,13 @@ use App\Models\Hospital;
 use App\Models\PublicSitePage;
 use App\Models\StaffProfile;
 use App\Models\User;
+use App\Services\AppointmentReminderService;
 use App\Services\AuditService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
@@ -244,3 +246,13 @@ Artisan::command('public-site:hero-smoke-state {state}', function (string $state
 
     return 0;
 })->purpose('Switch local public-site hero states for launch cleanup browser smoke tests');
+
+
+Artisan::command('notifications:appointment-reminders', function (): int {
+    $result = app(AppointmentReminderService::class)->sendDue();
+    $this->info("Appointment reminders: {$result['sent']} sent, {$result['skipped']} skipped, {$result['failed']} failed.");
+
+    return $result['failed'] > 0 ? 1 : 0;
+})->purpose('Send due appointment reminder notifications');
+
+Schedule::command('notifications:appointment-reminders')->hourly()->withoutOverlapping();

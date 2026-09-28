@@ -14,6 +14,10 @@ const props = defineProps({
     preAuthorizations: { type: Array, default: () => [] },
     services: { type: Array, default: () => [] },
     facilities: { type: Array, default: () => [] },
+    invoices: { type: Array, default: () => [] },
+    claims: { type: Object, required: true },
+    claimBatches: { type: Array, default: () => [] },
+    receivablesAgeing: { type: Object, default: () => ({}) },
 });
 
 const page = usePage();
@@ -29,9 +33,20 @@ const tariffForm = useForm({ billable_service_id: '', facility_id: '', currency:
 const coverageForm = useForm({ patient_id: '', payer_organization_id: '', payer_plan_id: '', member_number: '', policy_number: '', principal_member_name: '', relationship_to_principal: '', employer_name: '', valid_from: '', valid_to: '', is_primary: true, status: 'active', notes: '' });
 const authForm = useForm({ patient_coverage_id: '', billable_service_id: '', clinical_encounter_id: '', reference: '', requested_amount_minor: '', clinical_or_service_context: '', valid_until: '' });
 const decisionForm = useForm({ status: 'approved', authorization_code: '', approved_amount_minor: '', decision_notes: '', valid_until: '' });
+const claimForm = useForm({ patient_coverage_id: '', invoice_id: '', payer_pre_authorization_id: '', claim_number: '', service_date: '', submission_notes: '' });
+const batchForm = useForm({ payer_organization_id: '', reference: '', currency: 'NGN', due_date: '', notes: '', claim_ids: [] });
+const claimDecisionForm = useForm({ status: 'approved', payer_reference: '', approved_minor: '', decision_notes: '', rejection_reason: '' });
+const claimPaymentForm = useForm({ amount_minor: '', payer_reference: '' });
+const resubmitForm = useForm({ claim_number: '', submission_notes: '' });
 
 const plansForCoverage = computed(() => props.organizations.find((entry) => Number(entry.id) === Number(coverageForm.payer_organization_id))?.plans || []);
 const activeCoverages = computed(() => props.coverages.data.filter((entry) => entry.status === 'active'));
+const draftClaims = computed(() => props.claims.data.filter((entry) => entry.status === 'draft' && !entry.payer_claim_batch_id));
+const invoicesForClaim = computed(() => {
+    const coverage = props.coverages.data.find((entry) => Number(entry.id) === Number(claimForm.patient_coverage_id));
+    return coverage ? props.invoices.filter((invoice) => Number(invoice.patient_id) === Number(coverage.patient_id)) : props.invoices;
+});
+const batchEligibleClaims = computed(() => draftClaims.value.filter((claim) => !batchForm.payer_organization_id || Number(claim.payer_organization_id) === Number(batchForm.payer_organization_id)));
 
 function patientName(patient) {
     return [patient.first_name, patient.middle_name, patient.last_name].filter(Boolean).join(' ');
@@ -62,6 +77,35 @@ function openDecision(record) {
     decisionForm.approved_amount_minor = record.requested_amount_minor || '';
     activeModal.value = 'decision';
 }
+
+function openClaimDecision(record) {
+    target.value = record;
+    claimDecisionForm.reset();
+    claimDecisionForm.status = 'approved';
+    claimDecisionForm.approved_minor = record.claimed_minor;
+    activeModal.value = 'claim-decision';
+}
+
+function openClaimPayment(record) {
+    target.value = record;
+    claimPaymentForm.reset();
+    claimPaymentForm.amount_minor = Math.max(0, Number(record.approved_minor ?? record.claimed_minor) - Number(record.paid_minor || 0));
+    claimPaymentForm.payer_reference = record.payer_reference || '';
+    activeModal.value = 'claim-payment';
+}
+
+function openResubmit(record) {
+    target.value = record;
+    resubmitForm.reset();
+    activeModal.value = 'claim-resubmit';
+}
+
+function statusClass(status) {
+    if (['approved','paid','closed'].includes(status)) return 'bg-emerald-100 text-emerald-800';
+    if (['rejected'].includes(status)) return 'bg-rose-100 text-rose-800';
+    if (['submitted','partially_approved','partially_paid'].includes(status)) return 'bg-amber-100 text-amber-800';
+    return 'bg-slate-100 text-slate-700';
+}
 </script>
 
 <template>
@@ -74,6 +118,8 @@ function openDecision(record) {
                     <button v-if="can('insurance.manage')" class="rounded-md border px-3 py-2 text-sm font-bold" type="button" @click="activeModal = 'plan'">Add Plan</button>
                     <button v-if="can('insurance.coverage.manage')" class="rounded-md border px-3 py-2 text-sm font-bold" type="button" @click="activeModal = 'coverage'">Add Coverage</button>
                     <button v-if="can('insurance.preauthorizations.manage')" class="rounded-md border px-3 py-2 text-sm font-bold" type="button" @click="activeModal = 'authorization'">Pre-authorisation</button>
+                    <button v-if="can('insurance.claims.manage')" class="rounded-md border px-3 py-2 text-sm font-bold" type="button" @click="activeModal = 'claim'">New Claim</button>
+                    <button v-if="can('insurance.claims.manage')" class="rounded-md border px-3 py-2 text-sm font-bold" type="button" @click="activeModal = 'batch'">Create Batch</button>
                 </ActionToolbar>
             </template>
         </PageHeader>
@@ -135,6 +181,59 @@ function openDecision(record) {
                     <p v-if="!preAuthorizations.length" class="text-sm" style="color: var(--admin-text-muted);">No pre-authorisation records yet.</p>
                 </div>
             </section>
+
+            <section class="rounded-lg border p-5" style="border-color: var(--admin-border); background: var(--admin-surface);">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-black">Claims Workbench</h2>
+                        <p class="text-sm" style="color: var(--admin-text-muted);">Create, submit, decide, resubmit and reconcile payer claims against issued invoices.</p>
+                    </div>
+                </div>
+                <div class="mt-4 overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead><tr><th class="p-2 text-left">Claim</th><th class="p-2 text-left">Patient / Payer</th><th class="p-2 text-left">Invoice</th><th class="p-2 text-left">Amounts</th><th class="p-2 text-left">Status</th><th class="p-2 text-left">Actions</th></tr></thead>
+                        <tbody>
+                            <tr v-for="claim in claims.data" :key="claim.id" class="border-t" style="border-color: var(--admin-border);">
+                                <td class="p-2"><strong>{{ claim.claim_number }}</strong><br><span class="text-xs">{{ claim.batch?.reference || 'Unbatched' }}</span></td>
+                                <td class="p-2">{{ patientName(claim.patient) }}<br><span class="text-xs">{{ claim.organization?.name }} · {{ claim.plan?.name }}</span></td>
+                                <td class="p-2">{{ claim.invoice?.invoice_number || '—' }}</td>
+                                <td class="p-2">Claimed {{ money(claim.claimed_minor, claim.currency) }}<br><span class="text-xs">Approved {{ money(claim.approved_minor, claim.currency) }} · Paid {{ money(claim.paid_minor, claim.currency) }}</span></td>
+                                <td class="p-2"><span class="rounded-full px-2 py-1 text-xs font-bold" :class="statusClass(claim.status)">{{ claim.status.replaceAll('_',' ') }}</span></td>
+                                <td class="p-2">
+                                    <ActionToolbar>
+                                        <button v-if="['draft','resubmitted'].includes(claim.status) && can('insurance.claims.manage')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="submit(useForm({}), `/admin/insurance/claims/${claim.id}/submit`, 'patch')">Submit</button>
+                                        <button v-if="claim.status === 'submitted' && can('insurance.claims.decide')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openClaimDecision(claim)">Decision</button>
+                                        <button v-if="claim.status === 'rejected' && can('insurance.claims.manage')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openResubmit(claim)">Resubmit</button>
+                                        <button v-if="['approved','partially_approved','partially_paid'].includes(claim.status) && can('insurance.claims.manage')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openClaimPayment(claim)">Record payment</button>
+                                    </ActionToolbar>
+                                </td>
+                            </tr>
+                            <tr v-if="!claims.data.length"><td colspan="6" class="p-4 text-center" style="color: var(--admin-text-muted);">No payer claims recorded yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="rounded-lg border p-5" style="border-color: var(--admin-border); background: var(--admin-surface);">
+                <h2 class="text-lg font-black">Receivables Ageing</h2>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <div class="rounded-md border p-4" style="border-color: var(--admin-border);"><p class="text-xs font-bold uppercase">Current</p><p class="mt-1 text-lg font-black">{{ money(receivablesAgeing.current || 0) }}</p></div>
+                    <div class="rounded-md border p-4" style="border-color: var(--admin-border);"><p class="text-xs font-bold uppercase">1–30 days</p><p class="mt-1 text-lg font-black">{{ money(receivablesAgeing['1_30'] || 0) }}</p></div>
+                    <div class="rounded-md border p-4" style="border-color: var(--admin-border);"><p class="text-xs font-bold uppercase">31–60 days</p><p class="mt-1 text-lg font-black">{{ money(receivablesAgeing['31_60'] || 0) }}</p></div>
+                    <div class="rounded-md border p-4" style="border-color: var(--admin-border);"><p class="text-xs font-bold uppercase">61–90 days</p><p class="mt-1 text-lg font-black">{{ money(receivablesAgeing['61_90'] || 0) }}</p></div>
+                    <div class="rounded-md border p-4" style="border-color: var(--admin-border);"><p class="text-xs font-bold uppercase">90+ days</p><p class="mt-1 text-lg font-black">{{ money(receivablesAgeing['90_plus'] || 0) }}</p></div>
+                </div>
+                <div v-if="claimBatches.length" class="mt-5">
+                    <h3 class="font-black">Recent claim batches</h3>
+                    <div class="mt-2 grid gap-2">
+                        <div v-for="batch in claimBatches" :key="batch.id" class="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3 text-sm" style="border-color: var(--admin-border);">
+                            <div><strong>{{ batch.reference }}</strong> · {{ batch.organization?.name }} · {{ batch.claims?.length || 0 }} claim(s)</div>
+                            <div>{{ money(batch.claimed_minor, batch.currency) }} · {{ batch.status }}</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
         </div>
 
         <FormModal :show="activeModal === 'organization'" title="Add Payer Organisation" :form="organizationForm" submit-label="Create payer" @close="activeModal = null" @submit="submit(organizationForm, '/admin/insurance/organizations')">
@@ -210,5 +309,56 @@ function openDecision(record) {
                 <textarea v-model="decisionForm.decision_notes" class="min-h-24 rounded-md border p-2 md:col-span-2" placeholder="Payer decision notes" required></textarea>
             </div>
         </FormModal>
+
+        <FormModal :show="activeModal === 'claim'" title="Create Payer Claim" :form="claimForm" submit-label="Create claim" @close="activeModal = null" @submit="submit(claimForm, '/admin/insurance/claims')">
+            <div class="grid gap-3 md:grid-cols-2">
+                <select v-model="claimForm.patient_coverage_id" class="rounded-md border p-2" required><option value="">Patient coverage</option><option v-for="coverage in activeCoverages" :key="coverage.id" :value="coverage.id">{{ coverage.patient?.hospital_number }} · {{ coverage.organization?.name }} · {{ coverage.member_number }}</option></select>
+                <select v-model="claimForm.invoice_id" class="rounded-md border p-2" required><option value="">Issued invoice</option><option v-for="invoice in invoicesForClaim" :key="invoice.id" :value="invoice.id">{{ invoice.invoice_number }} · {{ patientName(invoice.patient) }} · {{ money(invoice.balance_minor, invoice.currency) }}</option></select>
+                <input v-model="claimForm.claim_number" class="rounded-md border p-2" placeholder="Claim number / internal reference" required>
+                <input v-model="claimForm.service_date" type="date" class="rounded-md border p-2">
+                <textarea v-model="claimForm.submission_notes" class="rounded-md border p-2 md:col-span-2" placeholder="Claim preparation notes"></textarea>
+            </div>
+        </FormModal>
+
+        <FormModal :show="activeModal === 'batch'" title="Create Claim Batch" :form="batchForm" submit-label="Create batch" @close="activeModal = null" @submit="submit(batchForm, '/admin/insurance/claim-batches')">
+            <div class="grid gap-3 md:grid-cols-2">
+                <select v-model="batchForm.payer_organization_id" class="rounded-md border p-2" required><option value="">Payer organisation</option><option v-for="organization in organizations" :key="organization.id" :value="organization.id">{{ organization.name }}</option></select>
+                <input v-model="batchForm.reference" class="rounded-md border p-2" placeholder="Batch reference" required>
+                <input v-model="batchForm.currency" class="rounded-md border p-2" maxlength="3" required>
+                <input v-model="batchForm.due_date" type="date" class="rounded-md border p-2">
+                <div class="md:col-span-2">
+                    <p class="text-sm font-bold">Draft claims</p>
+                    <div class="mt-2 grid gap-2">
+                        <label v-for="claim in batchEligibleClaims" :key="claim.id" class="flex items-center gap-2 rounded-md border p-2 text-sm"><input v-model="batchForm.claim_ids" :value="claim.id" type="checkbox"> {{ claim.claim_number }} · {{ claim.organization?.name }} · {{ money(claim.claimed_minor, claim.currency) }}</label>
+                    </div>
+                </div>
+                <textarea v-model="batchForm.notes" class="rounded-md border p-2 md:col-span-2" placeholder="Batch notes"></textarea>
+            </div>
+        </FormModal>
+
+        <FormModal :show="activeModal === 'claim-decision'" title="Record Claim Decision" :form="claimDecisionForm" submit-label="Save decision" @close="activeModal = null" @submit="submit(claimDecisionForm, `/admin/insurance/claims/${target.id}/decision`, 'patch')">
+            <div class="grid gap-3 md:grid-cols-2">
+                <select v-model="claimDecisionForm.status" class="rounded-md border p-2"><option value="approved">Approved</option><option value="partially_approved">Partially approved</option><option value="rejected">Rejected</option></select>
+                <input v-model="claimDecisionForm.payer_reference" class="rounded-md border p-2" placeholder="Payer reference">
+                <input v-model="claimDecisionForm.approved_minor" type="number" min="0" class="rounded-md border p-2" placeholder="Approved amount (minor units)">
+                <textarea v-model="claimDecisionForm.decision_notes" class="rounded-md border p-2 md:col-span-2" placeholder="Decision notes" required></textarea>
+                <textarea v-if="claimDecisionForm.status === 'rejected'" v-model="claimDecisionForm.rejection_reason" class="rounded-md border p-2 md:col-span-2" placeholder="Rejection reason" required></textarea>
+            </div>
+        </FormModal>
+
+        <FormModal :show="activeModal === 'claim-payment'" title="Record Payer Payment" :form="claimPaymentForm" submit-label="Record payment" @close="activeModal = null" @submit="submit(claimPaymentForm, `/admin/insurance/claims/${target.id}/payments`)">
+            <div class="grid gap-3 md:grid-cols-2">
+                <input v-model="claimPaymentForm.amount_minor" type="number" min="1" class="rounded-md border p-2" placeholder="Amount received (minor units)" required>
+                <input v-model="claimPaymentForm.payer_reference" class="rounded-md border p-2" placeholder="Payer payment reference">
+            </div>
+        </FormModal>
+
+        <FormModal :show="activeModal === 'claim-resubmit'" title="Resubmit Rejected Claim" :form="resubmitForm" submit-label="Create resubmission" @close="activeModal = null" @submit="submit(resubmitForm, `/admin/insurance/claims/${target.id}/resubmit`)">
+            <div class="grid gap-3">
+                <input v-model="resubmitForm.claim_number" class="rounded-md border p-2" placeholder="New claim number" required>
+                <textarea v-model="resubmitForm.submission_notes" class="rounded-md border p-2" placeholder="What was corrected for resubmission?" required></textarea>
+            </div>
+        </FormModal>
+
     </AppLayout>
 </template>

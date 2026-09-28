@@ -11,6 +11,7 @@ import { computed, ref } from 'vue';
 
 const props = defineProps({
     facilities: { type: Object, required: true },
+    replacementFacilities: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
 });
 
@@ -27,7 +28,7 @@ const showForm = ref(false);
 const editing = ref(null);
 const statusTarget = ref(null);
 const deleteTarget = ref(null);
-const deleteForm = useForm({});
+const deleteForm = useForm({ replacement_facility_id: '' });
 
 function filter() {
     router.get('/admin/facilities', search.data(), { preserveState: true, replace: true });
@@ -65,6 +66,8 @@ function saveStatus() {
 }
 
 function openDelete(facility) {
+    deleteForm.clearErrors();
+    deleteForm.reset();
     deleteTarget.value = facility;
 }
 
@@ -140,6 +143,32 @@ function deleteFacility() {
         </FormModal>
 
         <ConfirmDialog :show="Boolean(statusTarget)" :form="statusForm" :title="statusForm.status === 'active' ? 'Activate Facility' : 'Deactivate Facility'" :message="statusTarget ? `Update ${statusTarget.name} status?` : ''" confirm-label="Update status" @close="statusTarget = null" @confirm="saveStatus" />
-        <ConfirmDialog :show="Boolean(deleteTarget)" :form="deleteForm" title="Delete Facility" :message="deleteTarget ? `Permanently delete ${deleteTarget.name}? This is only allowed when the facility has no operational records.` : ''" confirm-label="Delete facility" @close="deleteTarget = null" @confirm="deleteFacility" />
+        <ConfirmDialog
+            :show="Boolean(deleteTarget)"
+            :form="deleteForm"
+            title="Delete Facility"
+            :message="deleteTarget ? `Delete ${deleteTarget.name}. If it has linked records, choose where those records should be reassigned.` : ''"
+            confirm-label="Delete facility"
+            @close="deleteTarget = null"
+            @confirm="deleteFacility"
+        >
+            <div class="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                <strong>Historical-data warning:</strong> use reassignment only for an incorrect/test facility. A real branch that actually operated should normally be deactivated so its historical records keep the correct location.
+            </div>
+            <label class="mt-4 grid gap-1 text-sm font-semibold">
+                Reassign linked records to
+                <select v-model="deleteForm.replacement_facility_id" class="rounded-md border-slate-300 dark:border-slate-700 dark:bg-slate-900">
+                    <option value="">No reassignment — delete only if unused</option>
+                    <option
+                        v-for="replacement in replacementFacilities.filter((item) => item.id !== deleteTarget?.id)"
+                        :key="replacement.id"
+                        :value="replacement.id"
+                    >
+                        {{ replacement.name }}{{ replacement.is_primary ? ' (Primary)' : '' }}
+                    </option>
+                </select>
+                <span v-if="deleteForm.errors.replacement_facility_id" class="text-xs text-red-700">{{ deleteForm.errors.replacement_facility_id }}</span>
+            </label>
+        </ConfirmDialog>
     </AppLayout>
 </template>

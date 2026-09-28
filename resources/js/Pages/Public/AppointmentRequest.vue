@@ -10,11 +10,12 @@ const props = defineProps({
     facilities: { type: Array, default: () => [] },
     departments: { type: Array, default: () => [] },
     doctors: { type: Array, default: () => [] },
+    selectedDoctorId: { type: [Number, String], default: '' },
 });
 
 const page = usePage();
 const singleFacilityId = computed(() => props.facilities.length === 1 ? props.facilities[0].id : '');
-const form = useForm({ name: '', phone: '', email: '', preferred_facility_id: singleFacilityId.value, preferred_department_id: '', preferred_clinician_id: '', preferred_date: '', consent: false, website: '' });
+const form = useForm({ name: '', phone: '', email: '', preferred_facility_id: singleFacilityId.value, preferred_department_id: '', preferred_clinician_id: props.selectedDoctorId || '', preferred_date: '', consent: false, website: '' });
 const feedback = ref(null);
 const feedbackPanel = ref(null);
 const successMessage = computed(() => page.props.flash?.success || '');
@@ -37,6 +38,7 @@ function submit() {
             feedback.value = 'success';
             form.reset();
             form.preferred_facility_id = singleFacilityId.value;
+            form.preferred_clinician_id = props.selectedDoctorId || '';
             focusFeedback();
         },
         onError: () => {

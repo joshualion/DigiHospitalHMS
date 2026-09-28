@@ -23,6 +23,7 @@ class AdmissionWorkflowService
         private readonly InvoiceWorkflowService $invoices,
         private readonly AuditService $audit,
         private readonly PatientActivity $activity,
+        private readonly InpatientLifecycleService $inpatientLifecycle,
     ) {}
 
     public function request(array $data, User $actor): Admission
@@ -153,6 +154,7 @@ class AdmissionWorkflowService
                 'status_reason' => $data['override_reason'] ?? $data['reason'] ?? null,
             ])->save();
             $bed->forceFill(['state' => 'cleaning', 'state_reason' => 'Discharged patient'])->save();
+            $this->inpatientLifecycle->closeForAdmission($admission->fresh(), $actor, $this->audit);
             $this->event($admission, 'admissions.discharged', $before, $admission->fresh()->toArray(), $actor, $data['override_reason'] ?? null);
             $this->activity->record($admission->patient, 'admission.discharged', $actor, ['admission_id' => $admission->id]);
 

@@ -6,10 +6,18 @@ import PageHeader from '@/Components/Admin/PageHeader.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 
 const props = defineProps({ chart: { type: Object, required: true }, timeline: { type: Array, default: () => [] } });
+const page = usePage();
+const permissions = computed(() => page.props.auth.permissions || []);
+const roles = computed(() => page.props.auth.roles || []);
+const can = (permission) => roles.value.includes('superadmin') || permissions.value.includes(permission);
+const canClinicalDocument = computed(() => can('inpatient.clinical-document') || can('inpatient.document'));
+const canNursingDocument = computed(() => can('inpatient.nursing-document') || can('inpatient.document'));
+const canCreateOrders = computed(() => can('inpatient.orders.create') || can('inpatient.orders'));
+const canExecuteOrders = computed(() => can('inpatient.orders.execute') || can('inpatient.orders'));
 const now = () => new Date().toISOString().slice(0, 16);
 const progress = useForm({ note_type: 'soap', subjective: '', objective: '', assessment: '', plan: '', narrative: '' });
 const amendment = useForm({ reason: '', content: '' });
@@ -41,14 +49,14 @@ function signSummary() { blank.post(`/admin/inpatient/discharge-summaries/${prop
             <template #actions>
                 <ActionToolbar align="end">
                     <Link href="/admin/inpatient" class="rounded-md border px-3 py-2 text-sm font-bold">Back</Link>
-                    <PrimaryButton type="button" @click="activeModal = 'progress'">Progress Note</PrimaryButton>
-                    <PrimaryButton type="button" @click="activeModal = 'nursing'">Nursing Note</PrimaryButton>
-                    <PrimaryButton type="button" @click="activeModal = 'observation'">Observation</PrimaryButton>
-                    <PrimaryButton type="button" @click="activeModal = 'intake'">Intake/Output</PrimaryButton>
-                    <PrimaryButton type="button" @click="activeModal = 'care'">Care Plan</PrimaryButton>
-                    <PrimaryButton type="button" @click="activeModal = 'order'">Order</PrimaryButton>
-                    <PrimaryButton type="button" @click="activeModal = 'handover'">Handover</PrimaryButton>
-                    <PrimaryButton type="button" @click="activeModal = 'discharge'">Discharge Summary</PrimaryButton>
+                    <PrimaryButton v-if="canClinicalDocument" type="button" @click="activeModal = 'progress'">Progress Note</PrimaryButton>
+                    <PrimaryButton v-if="canNursingDocument" type="button" @click="activeModal = 'nursing'">Nursing Note</PrimaryButton>
+                    <PrimaryButton v-if="canNursingDocument" type="button" @click="activeModal = 'observation'">Observation</PrimaryButton>
+                    <PrimaryButton v-if="canNursingDocument" type="button" @click="activeModal = 'intake'">Intake/Output</PrimaryButton>
+                    <PrimaryButton v-if="canNursingDocument" type="button" @click="activeModal = 'care'">Care Plan</PrimaryButton>
+                    <PrimaryButton v-if="canCreateOrders" type="button" @click="activeModal = 'order'">Order</PrimaryButton>
+                    <PrimaryButton v-if="can('inpatient.handover')" type="button" @click="activeModal = 'handover'">Handover</PrimaryButton>
+                    <PrimaryButton v-if="canClinicalDocument" type="button" @click="activeModal = 'discharge'">Discharge Summary</PrimaryButton>
                 </ActionToolbar>
             </template>
         </PageHeader>
@@ -60,7 +68,7 @@ function signSummary() { blank.post(`/admin/inpatient/discharge-summaries/${prop
         </div>
 
         <div class="grid gap-6">
-            <section class="min-w-0 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h2 class="font-black">Progress Notes</h2><article v-for="note in chart.progress_notes" :key="note.id" class="mt-3 min-w-0 border-t pt-3 text-sm"><p class="break-words font-bold">{{ note.note_type }} - {{ note.status }}</p><p class="break-words">{{ note.assessment || note.narrative || note.subjective }}</p><ActionToolbar class="mt-2"><button v-if="note.status === 'draft'" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="signNote(note)">Sign</button><button v-if="note.status === 'signed'" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openAmend(note)">Amend</button></ActionToolbar><p v-for="amend in note.amendments" :key="amend.id" class="mt-2 break-words text-xs text-slate-500">Amendment: {{ amend.reason }} - {{ amend.content }}</p></article></section>
+            <section class="min-w-0 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h2 class="font-black">Progress Notes</h2><article v-for="note in chart.progress_notes" :key="note.id" class="mt-3 min-w-0 border-t pt-3 text-sm"><p class="break-words font-bold">{{ note.note_type }} - {{ note.status }}</p><p class="break-words">{{ note.assessment || note.narrative || note.subjective }}</p><ActionToolbar class="mt-2"><button v-if="note.status === 'draft' && can('inpatient.sign')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="signNote(note)">Sign</button><button v-if="note.status === 'signed' && canClinicalDocument" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openAmend(note)">Amend</button></ActionToolbar><p v-for="amend in note.amendments" :key="amend.id" class="mt-2 break-words text-xs text-slate-500">Amendment: {{ amend.reason }} - {{ amend.content }}</p></article></section>
             <section class="grid gap-6 lg:grid-cols-3">
                 <div class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h2 class="font-black">Nursing Notes</h2><p v-for="item in chart.nursing_notes" :key="item.id" class="mt-3 break-words text-sm">{{ item.shift }} - {{ item.note }}</p></div>
                 <div class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h2 class="font-black">Observations</h2><p v-for="item in chart.observations" :key="item.id" class="mt-3 break-words text-sm">{{ item.observed_at }} - T {{ item.temperature || '-' }} - BP {{ item.blood_pressure_systolic || '-' }}/{{ item.blood_pressure_diastolic || '-' }}</p></div>
@@ -71,8 +79,8 @@ function signSummary() { blank.post(`/admin/inpatient/discharge-summaries/${prop
                 <div class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h2 class="font-black">Handovers</h2><p v-for="item in chart.handovers" :key="item.id" class="mt-3 break-words text-sm">{{ item.from_shift }} to {{ item.to_shift }} - {{ item.summary }}</p></div>
                 <div class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h2 class="font-black">Timeline</h2><p v-for="item in timeline" :key="`${item.type}-${item.label}-${item.occurred_at}`" class="mt-2 break-words text-sm">{{ item.type }} - {{ item.label }} - {{ item.occurred_at }}</p></div>
             </section>
-            <section class="min-w-0 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h2 class="font-black">Orders</h2><article v-for="item in chart.orders" :key="item.id" class="grid min-w-0 gap-3 border-t py-3 text-sm md:grid-cols-[1fr_auto]"><div><p class="break-words font-bold">{{ item.order_type }} - {{ item.status }}</p><p class="break-words">{{ item.instruction }}</p></div><ActionToolbar align="end"><button class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openOrderAction(item, 'activate')">Activate</button><button class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openOrderAction(item, 'acknowledge')">Acknowledge</button><button class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openOrderAction(item, 'complete')">Complete</button><button class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openOrderAction(item, 'cancel')">Cancel</button></ActionToolbar></article></section>
-            <section class="min-w-0 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><div class="flex flex-wrap justify-between gap-3"><h2 class="font-black">Discharge Summary</h2><button v-if="chart.discharge_summary?.status === 'draft'" class="rounded-md border px-3 py-2 text-sm font-bold" type="button" @click="signSummary">Sign summary</button></div><p class="mt-3 break-words text-sm">{{ chart.discharge_summary?.discharge_plan || 'No discharge summary drafted.' }}</p></section>
+            <section class="min-w-0 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><h2 class="font-black">Orders</h2><article v-for="item in chart.orders" :key="item.id" class="grid min-w-0 gap-3 border-t py-3 text-sm md:grid-cols-[1fr_auto]"><div><p class="break-words font-bold">{{ item.order_type }} - {{ item.status }}</p><p class="break-words">{{ item.instruction }}</p></div><ActionToolbar v-if="canExecuteOrders" align="end"><button v-if="item.status === 'draft' && canCreateOrders" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openOrderAction(item, 'activate')">Activate</button><button v-if="item.status === 'active'" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openOrderAction(item, 'acknowledge')">Acknowledge</button><button v-if="['active', 'acknowledged'].includes(item.status)" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openOrderAction(item, 'complete')">Complete</button><button v-if="['draft', 'active'].includes(item.status) && canCreateOrders" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openOrderAction(item, 'cancel')">Cancel</button></ActionToolbar></article></section>
+            <section class="min-w-0 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"><div class="flex flex-wrap justify-between gap-3"><h2 class="font-black">Discharge Summary</h2><button v-if="chart.discharge_summary?.status === 'draft' && can('inpatient.discharge-summary.sign')" class="rounded-md border px-3 py-2 text-sm font-bold" type="button" @click="signSummary">Sign summary</button></div><p class="mt-3 break-words text-sm">{{ chart.discharge_summary?.discharge_plan || 'No discharge summary drafted.' }}</p></section>
         </div>
 
         <FormModal :show="activeModal === 'progress'" title="Clinician Progress Note" :form="progress" submit-label="Save note" size="full" @close="activeModal = null" @submit="save(progress, `/admin/inpatient/charts/${chart.id}/progress-notes`)"><div class="grid gap-3"><select v-model="progress.note_type" class="rounded-md border-slate-300"><option value="soap">SOAP</option><option value="ward_round">Ward round</option><option value="review">Review</option><option value="procedure_note">Procedure note</option><option value="other">Other</option></select><textarea v-model="progress.subjective" class="rounded-md border-slate-300" rows="2" placeholder="Subjective"></textarea><textarea v-model="progress.objective" class="rounded-md border-slate-300" rows="2" placeholder="Objective"></textarea><textarea v-model="progress.assessment" class="rounded-md border-slate-300" rows="2" placeholder="Assessment"></textarea><textarea v-model="progress.plan" class="rounded-md border-slate-300" rows="2" placeholder="Plan"></textarea><textarea v-model="progress.narrative" class="rounded-md border-slate-300" rows="3" placeholder="Additional narrative"></textarea></div></FormModal>

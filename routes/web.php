@@ -157,6 +157,7 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('emar/schedules/{schedule}/administer', [EmarController::class, 'administer'])->name('admin.emar.schedules.administer');
         Route::post('emar/administrations/{administration}/amendments', [EmarController::class, 'amend'])->name('admin.emar.administrations.amend');
         Route::get('inpatient', [InpatientChartController::class, 'index'])->name('admin.inpatient.index');
+        Route::post('inpatient/reconcile', [InpatientChartController::class, 'reconcile'])->name('admin.inpatient.reconcile');
         Route::post('inpatient/admissions/{admission}/chart', [InpatientChartController::class, 'open'])->name('admin.inpatient.open');
         Route::get('inpatient/charts/{chart}', [InpatientChartController::class, 'show'])->name('admin.inpatient.charts.show');
         Route::post('inpatient/charts/{chart}/progress-notes', [InpatientChartController::class, 'progressNote'])->name('admin.inpatient.progress-notes.store');

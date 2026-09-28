@@ -4,21 +4,31 @@ import ConfirmDialog from '@/Components/Admin/ConfirmDialog.vue';
 import PageHeader from '@/Components/Admin/PageHeader.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 
 defineProps({ admissions: { type: Array, default: () => [] }, tasks: { type: Array, default: () => [] } });
+const page = usePage();
+const roles = computed(() => page.props.auth.roles || []);
+const reconcileForm = useForm({});
 const chartForm = useForm({});
 const chartTarget = ref(null);
 function fullName(patient) { return [patient?.first_name, patient?.middle_name, patient?.last_name].filter(Boolean).join(' '); }
 function openChart(admission) { if (admission.chart) { router.get(`/admin/inpatient/charts/${admission.chart.id}`); return; } chartTarget.value = admission; }
 function createChart() { chartForm.post(`/admin/inpatient/admissions/${chartTarget.value.id}/chart`, { preserveScroll: true, onSuccess: () => { chartTarget.value = null; } }); }
+function reconcileInpatient() { reconcileForm.post('/admin/inpatient/reconcile', { preserveScroll: true }); }
 </script>
 
 <template>
     <Head title="Ward Charts" />
     <AppLayout title="Ward Charts">
-        <PageHeader title="Ward Charts" description="Active inpatient admissions and order worklist." />
+        <PageHeader title="Ward Charts" description="Active inpatient admissions and order worklist. Discharged patients are automatically removed from active ward and eMAR worklists.">
+            <template #actions>
+                <button v-if="roles.includes('superadmin') || roles.includes('hospital-admin')" class="rounded-md border px-3 py-2 text-sm font-bold" type="button" :disabled="reconcileForm.processing" @click="reconcileInpatient">
+                    {{ reconcileForm.processing ? 'Reconciling…' : 'Reconcile inpatient lifecycle' }}
+                </button>
+            </template>
+        </PageHeader>
         <div class="grid gap-6">
             <section class="min-w-0 rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                 <h2 class="font-black">Active Admissions</h2>

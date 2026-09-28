@@ -22,7 +22,21 @@ class InpatientChartPolicy
 
     public function document(User $user, InpatientChart $chart): bool
     {
-        return $this->allowed($user, 'inpatient.document', $chart);
+        return $this->allowed($user, 'inpatient.document', $chart)
+            || $this->allowed($user, 'inpatient.clinical-document', $chart)
+            || $this->allowed($user, 'inpatient.nursing-document', $chart);
+    }
+
+    public function clinicalDocument(User $user, InpatientChart $chart): bool
+    {
+        return $this->allowed($user, 'inpatient.clinical-document', $chart)
+            || $this->allowed($user, 'inpatient.document', $chart);
+    }
+
+    public function nursingDocument(User $user, InpatientChart $chart): bool
+    {
+        return $this->allowed($user, 'inpatient.nursing-document', $chart)
+            || $this->allowed($user, 'inpatient.document', $chart);
     }
 
     public function sign(User $user, InpatientChart $chart): bool
@@ -32,7 +46,14 @@ class InpatientChartPolicy
 
     public function orders(User $user, InpatientChart $chart): bool
     {
-        return $this->allowed($user, 'inpatient.orders', $chart);
+        return $this->allowed($user, 'inpatient.orders', $chart)
+            || $this->allowed($user, 'inpatient.orders.create', $chart);
+    }
+
+    public function executeOrders(User $user, InpatientChart $chart): bool
+    {
+        return $this->allowed($user, 'inpatient.orders', $chart)
+            || $this->allowed($user, 'inpatient.orders.execute', $chart);
     }
 
     public function handover(User $user, InpatientChart $chart): bool

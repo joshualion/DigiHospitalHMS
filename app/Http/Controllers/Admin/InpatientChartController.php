@@ -9,6 +9,8 @@ use App\Models\InpatientHandoverRecord;
 use App\Models\InpatientOrder;
 use App\Models\InpatientProgressNote;
 use App\Services\InpatientChartWorkflowService;
+use App\Services\InpatientLifecycleService;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -31,9 +33,23 @@ class InpatientChartController extends FoundationController
             'tasks' => InpatientOrder::with('chart.patient')
                 ->where('hospital_id', $hospital->id)
                 ->whereIn('status', ['active', 'acknowledged'])
+                ->whereHas('chart.admission', fn ($query) => $query->whereIn('status', ['admitted', 'transferred'])->whereNull('discharged_at'))
                 ->latest()
                 ->get(),
         ]);
+    }
+
+    public function reconcile(InpatientLifecycleService $lifecycle, AuditService $audit): RedirectResponse
+    {
+        $this->authorize('viewAny', InpatientChart::class);
+        abort_unless(request()->user()->hasAnyRole(['superadmin', 'hospital-admin']), 403);
+
+        $result = $lifecycle->reconcile($this->currentHospital(), request()->user(), $audit);
+
+        return back()->with(
+            'success',
+            "Inpatient lifecycle reconciled. {$result['closed_charts']} stale chart(s) closed and {$result['retired_schedules']} pending eMAR schedule(s) retired."
+        );
     }
 
     public function open(Admission $admission, InpatientChartWorkflowService $workflow): RedirectResponse
@@ -57,7 +73,7 @@ class InpatientChartController extends FoundationController
 
     public function progressNote(Request $request, InpatientChart $chart, InpatientChartWorkflowService $workflow): RedirectResponse
     {
-        $this->authorize('document', $chart);
+        $this->authorize('clinicalDocument', $chart);
         $validated = $request->validate(['note_type' => ['required', Rule::in(['soap', 'ward_round', 'review', 'procedure_note', 'other'])], 'subjective' => ['nullable', 'string', 'max:10000'], 'objective' => ['nullable', 'string', 'max:10000'], 'assessment' => ['nullable', 'string', 'max:10000'], 'plan' => ['nullable', 'string', 'max:10000'], 'narrative' => ['nullable', 'string', 'max:10000']]);
         $workflow->progressNote($chart, $validated, $request->user());
 
@@ -74,7 +90,7 @@ class InpatientChartController extends FoundationController
 
     public function amendProgressNote(Request $request, InpatientProgressNote $note, InpatientChartWorkflowService $workflow): RedirectResponse
     {
-        $this->authorize('document', $note->chart);
+        $this->authorize('clinicalDocument', $note->chart);
         $validated = $request->validate(['reason' => ['required', 'string', 'max:1000'], 'content' => ['required', 'string', 'max:10000']]);
         $workflow->amend($note, $validated, $request->user());
 
@@ -83,7 +99,7 @@ class InpatientChartController extends FoundationController
 
     public function nursingNote(Request $request, InpatientChart $chart, InpatientChartWorkflowService $workflow): RedirectResponse
     {
-        $this->authorize('document', $chart);
+        $this->authorize('nursingDocument', $chart);
         $validated = $request->validate(['shift' => ['nullable', 'string', 'max:80'], 'note' => ['required', 'string', 'max:10000']]);
         $workflow->nursingNote($chart, $validated, $request->user());
 
@@ -92,7 +108,7 @@ class InpatientChartController extends FoundationController
 
     public function observation(Request $request, InpatientChart $chart, InpatientChartWorkflowService $workflow): RedirectResponse
     {
-        $this->authorize('document', $chart);
+        $this->authorize('nursingDocument', $chart);
         $validated = $request->validate(['temperature' => ['nullable', 'numeric'], 'temperature_unit' => ['required', Rule::in(['C', 'F'])], 'pulse' => ['nullable', 'integer', 'min:0', 'max:300'], 'respiratory_rate' => ['nullable', 'integer', 'min:0', 'max:100'], 'blood_pressure_systolic' => ['nullable', 'integer', 'min:0', 'max:300'], 'blood_pressure_diastolic' => ['nullable', 'integer', 'min:0', 'max:200'], 'oxygen_saturation' => ['nullable', 'integer', 'min:0', 'max:100'], 'pain_score' => ['nullable', 'integer', 'min:0', 'max:10'], 'glucose' => ['nullable', 'numeric'], 'glucose_unit' => ['nullable', 'string', 'max:20'], 'consciousness_notes' => ['nullable', 'string', 'max:2000'], 'observed_at' => ['required', 'date']]);
         $workflow->observation($chart, $validated, $request->user());
 
@@ -101,7 +117,7 @@ class InpatientChartController extends FoundationController
 
     public function intakeOutput(Request $request, InpatientChart $chart, InpatientChartWorkflowService $workflow): RedirectResponse
     {
-        $this->authorize('document', $chart);
+        $this->authorize('nursingDocument', $chart);
         $validated = $request->validate(['direction' => ['required', Rule::in(['intake', 'output'])], 'measurement_type' => ['required', 'string', 'max:120'], 'quantity' => ['required', 'numeric', 'min:0'], 'unit' => ['required', 'string', 'max:40'], 'notes' => ['nullable', 'string', 'max:2000'], 'measured_at' => ['required', 'date']]);
         $workflow->intakeOutput($chart, $validated, $request->user());
 
@@ -110,7 +126,7 @@ class InpatientChartController extends FoundationController
 
     public function carePlan(Request $request, InpatientChart $chart, InpatientChartWorkflowService $workflow): RedirectResponse
     {
-        $this->authorize('document', $chart);
+        $this->authorize('nursingDocument', $chart);
         $validated = $request->validate(['problem' => ['required', 'string', 'max:3000'], 'goal' => ['nullable', 'string', 'max:3000'], 'intervention' => ['nullable', 'string', 'max:3000'], 'evaluation' => ['nullable', 'string', 'max:3000'], 'status' => ['required', Rule::in(['active', 'met', 'not_met', 'discontinued'])]]);
         $workflow->carePlan($chart, $validated, $request->user());
 
@@ -119,7 +135,7 @@ class InpatientChartController extends FoundationController
 
     public function diagnosis(Request $request, InpatientChart $chart, InpatientChartWorkflowService $workflow): RedirectResponse
     {
-        $this->authorize('document', $chart);
+        $this->authorize('clinicalDocument', $chart);
         $validated = $request->validate(['description' => ['required', 'string', 'max:2000'], 'coding_system' => ['nullable', 'string', 'max:80'], 'code' => ['nullable', 'string', 'max:80'], 'status' => ['required', Rule::in(['provisional', 'confirmed', 'resolved'])]]);
         $workflow->diagnosis($chart, $validated, $request->user());
 
@@ -137,7 +153,7 @@ class InpatientChartController extends FoundationController
 
     public function orderTransition(Request $request, InpatientOrder $order, InpatientChartWorkflowService $workflow): RedirectResponse
     {
-        $this->authorize('orders', $order->chart);
+        $this->authorize('executeOrders', $order->chart);
         $validated = $request->validate(['action' => ['required', Rule::in(['activate', 'acknowledge', 'complete', 'discontinue', 'cancel'])], 'reason' => ['nullable', 'string', 'max:1000']]);
         $workflow->transitionOrder($order, $validated['action'], $request->user(), $validated['reason'] ?? null);
 
@@ -163,7 +179,7 @@ class InpatientChartController extends FoundationController
 
     public function dischargeSummary(Request $request, InpatientChart $chart, InpatientChartWorkflowService $workflow): RedirectResponse
     {
-        $this->authorize('document', $chart);
+        $this->authorize('clinicalDocument', $chart);
         $validated = $request->validate(['admission_summary' => ['nullable', 'string', 'max:10000'], 'diagnosis_summary' => ['nullable', 'string', 'max:10000'], 'results_summary' => ['nullable', 'string', 'max:10000'], 'clinical_course' => ['nullable', 'string', 'max:10000'], 'discharge_plan' => ['nullable', 'string', 'max:10000']]);
         $workflow->dischargeSummary($chart, $validated, $request->user());
 

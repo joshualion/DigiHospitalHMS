@@ -24,11 +24,13 @@ class EmarController extends FoundationController
             'charts' => InpatientChart::with(['admission.ward', 'admission.bed', 'patient.allergies', 'patient.alerts'])
                 ->where('hospital_id', $hospital->id)
                 ->where('status', 'active')
+                ->whereHas('admission', fn ($query) => $query->whereIn('status', ['admitted', 'transferred'])->whereNull('discharged_at'))
                 ->latest('opened_at')
                 ->get(),
             'doses' => EmarSchedule::with(['chart.patient', 'prescriptionItem'])
                 ->where('hospital_id', $hospital->id)
                 ->whereIn('status', ['pending', 'delayed', 'prn_available'])
+                ->whereHas('chart.admission', fn ($query) => $query->whereIn('status', ['admitted', 'transferred'])->whereNull('discharged_at'))
                 ->orderByRaw('scheduled_at IS NULL, scheduled_at ASC')
                 ->get()
                 ->map(fn (EmarSchedule $schedule): array => $this->dosePayload($schedule, $now)),

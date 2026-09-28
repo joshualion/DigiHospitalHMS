@@ -482,10 +482,11 @@ class Phase1BPublicSiteTest extends TestCase
         ]);
 
         $doctor = User::factory()->create(['firstname' => 'Listing', 'lastname' => 'Doctor', 'status' => 'active']);
+        $doctor->syncRoles(['doctor']);
         StaffProfile::factory()->create([
             'user_id' => $doctor->id,
             'hospital_id' => $this->hospital->id,
-            'staff_category' => 'clinical',
+            'staff_category' => 'doctor',
             'job_title' => 'Doctor',
             'public_is_visible' => true,
             'public_is_featured' => false,
@@ -954,11 +955,12 @@ class Phase1BPublicSiteTest extends TestCase
             'lastname' => 'Clinician',
             'status' => 'active',
         ]);
+        $clinicianUser->syncRoles(['doctor']);
         StaffProfile::factory()->create([
             'user_id' => $clinicianUser->id,
             'hospital_id' => $this->hospital->id,
-            'staff_category' => 'clinical',
-            'job_title' => 'Clinician',
+            'staff_category' => 'doctor',
+            'job_title' => 'Doctor',
             'employment_status' => 'active',
             'is_active' => true,
             'public_is_visible' => true,

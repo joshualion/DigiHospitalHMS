@@ -275,6 +275,27 @@ class InsuranceController extends FoundationController
         return back()->with('success','Claim batch created.');
     }
 
+    public function submitClaimBatch(Request $request, PayerClaimBatch $batch, AuditService $audit): RedirectResponse
+    {
+        $this->assertHospital($batch->hospital_id);
+        abort_unless($request->user()->can('insurance.claims.manage') || $request->user()->hasRole('superadmin'),403);
+        abort_unless($batch->status==='draft',422,'Only draft claim batches can be submitted.');
+
+        DB::transaction(function() use($batch,$request): void {
+            $claims=PayerClaim::where('payer_claim_batch_id',$batch->id)->lockForUpdate()->get();
+            abort_if($claims->isEmpty(),422,'A claim batch must contain at least one claim.');
+            abort_if($claims->contains(fn($claim)=>$claim->status!=='draft'),422,'All claims in a batch must still be draft before batch submission.');
+
+            PayerClaim::where('payer_claim_batch_id',$batch->id)->update([
+                'status'=>'submitted','submitted_by'=>$request->user()->id,'submitted_at'=>now(),
+            ]);
+            $batch->update(['status'=>'submitted','submitted_by'=>$request->user()->id,'submitted_at'=>now()]);
+        });
+
+        $audit->record('insurance.claim_batch_submitted',$batch,null,$batch->fresh('claims')->toArray(),actor:$request->user());
+        return back()->with('success','Claim batch submitted.');
+    }
+
     public function submitClaim(Request $request, PayerClaim $claim, AuditService $audit): RedirectResponse
     {
         $this->assertHospital($claim->hospital_id);

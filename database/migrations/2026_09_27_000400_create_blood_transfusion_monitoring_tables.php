@@ -50,7 +50,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->index(['blood_transfusion_episode_id', 'observed_at']);
+            $table->index(['blood_transfusion_episode_id', 'observed_at'], 'bt_obs_episode_observed_idx');
         });
 
         Schema::create('blood_transfusion_reactions', function (Blueprint $table): void {
@@ -71,7 +71,7 @@ return new class extends Migration
             $table->text('resolution_notes')->nullable();
             $table->timestamps();
 
-            $table->index(['blood_transfusion_episode_id', 'occurred_at']);
+            $table->index(['blood_transfusion_episode_id', 'occurred_at'], 'bt_react_episode_occurred_idx');
         });
     }
 

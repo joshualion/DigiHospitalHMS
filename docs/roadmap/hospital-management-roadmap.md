@@ -770,7 +770,7 @@ Acceptance criteria:
 
 Objective: Convert implemented modules that still contain development artefacts, incomplete master-data CRUD, or stale-state assumptions into clean production operations.
 
-Status: Phase 11A admissions production completion is in implementation.
+Status: Phase 11A admissions production completion is implemented. Phase 11B inpatient and eMAR production completion is in implementation.
 
 Work:
 
@@ -790,6 +790,15 @@ Phase 11A:
 - Admissions setup CRUD.
 - Pre-production admissions demo reset.
 - Plain-language bed-state workflow.
+
+Phase 11B:
+
+- Inpatient chart and eMAR lifecycle tied to the authoritative admission.
+- Automatic chart closure and pending eMAR retirement on discharge.
+- Legacy stale-chart reconciliation.
+- Role-specific clinician vs nursing documentation boundaries.
+- Separate inpatient order creation from order execution.
+- Active-admission-only ward and medication worklists.
 
 Acceptance criteria:
 

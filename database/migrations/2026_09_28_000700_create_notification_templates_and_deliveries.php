@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('notification_templates', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('hospital_id')->constrained()->restrictOnDelete();
-            $table->string('key');
-            $table->string('channel');
+            $table->string('key', 100);
+            $table->string('channel', 32);
             $table->string('name');
             $table->string('subject')->nullable();
             $table->text('body');
@@ -28,14 +28,14 @@ return new class extends Migration
             $table->foreignId('notification_template_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('appointment_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('patient_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('channel')->index();
+            $table->string('channel', 32)->index();
             $table->text('recipient_encrypted')->nullable();
             $table->string('recipient_hash',64)->nullable()->index();
             $table->string('subject')->nullable();
             $table->text('body');
-            $table->string('status')->default('queued')->index();
-            $table->string('provider')->nullable();
-            $table->string('provider_reference')->nullable();
+            $table->string('status', 32)->default('queued')->index();
+            $table->string('provider', 100)->nullable();
+            $table->string('provider_reference', 191)->nullable();
             $table->text('error_message')->nullable();
             $table->timestamp('scheduled_for')->nullable();
             $table->timestamp('attempted_at')->nullable();

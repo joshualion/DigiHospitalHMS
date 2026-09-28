@@ -18,6 +18,9 @@ const emit = defineEmits(['close', 'confirm']);
 <template>
     <BaseModal :show="show" :title="title" size="md" :busy="form.processing" @close="$emit('close')">
         <p v-if="message" class="text-sm" style="color: var(--admin-text-muted);">{{ message }}</p>
+        <div v-if="Object.keys(form.errors || {}).length" class="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+            <p v-for="(error, key) in form.errors" :key="key">{{ error }}</p>
+        </div>
         <label v-if="requireReason" class="mt-4 grid gap-1 text-sm font-semibold">
             {{ reasonLabel }}
             <textarea v-model="form.reason" class="min-h-24 rounded-md border p-2" style="border-color: var(--admin-border); background: var(--public-input); color: var(--admin-text);" rows="3"></textarea>

@@ -232,12 +232,25 @@ function purgeAdmissionsDemo() {
 
         <div class="space-y-6">
             <section class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                <h2 class="font-black">Bed Census</h2>
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 class="font-black">Bed Census</h2>
+                        <p class="mt-1 text-sm text-slate-500">Occupied counts come from active admissions, not from a manually stored bed flag.</p>
+                    </div>
+                    <button v-if="can('admissions.manage')" class="rounded-md border px-3 py-2 text-sm font-bold" type="button" :disabled="reconcileForm.processing" @click="reconcileBeds">
+                        {{ reconcileForm.processing ? 'Reconciling…' : 'Reconcile bed status' }}
+                    </button>
+                </div>
                 <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div v-for="row in census" :key="row.state" class="rounded-md border border-slate-200 p-3 dark:border-slate-800">
-                        <p class="text-xs font-bold uppercase text-slate-500">{{ row.state }}</p>
+                        <p class="text-xs font-bold uppercase text-slate-500">{{ bedStateLabels[row.state] || row.state }}</p>
                         <p class="text-2xl font-black">{{ row.count }}</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ bedStateHelp[row.state] || '' }}</p>
                     </div>
+                </div>
+                <div v-if="bedIntegrityIssues.length" class="mt-4 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                    <p class="font-black">Bed-status inconsistency detected</p>
+                    <p class="mt-1">{{ bedIntegrityIssues.length }} bed(s) disagree with the active admission records. Use “Reconcile bed status” to repair the stored state safely.</p>
                 </div>
             </section>
 
@@ -264,19 +277,78 @@ function purgeAdmissionsDemo() {
             </section>
 
             <section class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                <h2 class="font-black">Bed Board</h2>
+                <div>
+                    <h2 class="font-black">Operational Bed Board</h2>
+                    <p class="mt-1 text-sm text-slate-500">Day-to-day availability only. “Occupied” is controlled by admissions and cannot be set manually.</p>
+                </div>
                 <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    <article v-for="bed in beds" :key="bed.id" class="rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800">
-                        <p class="font-bold">{{ bed.label }} - {{ bed.state }}</p>
-                        <p class="text-slate-500">{{ bed.ward?.name }} {{ bed.room?.name || '' }} - {{ bed.bed_class?.name }}</p>
-                        <ActionToolbar class="mt-3">
-                            <button v-if="can('admissions.manage')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openBedState(bed, 'reserved')">Hold</button>
-                            <button v-if="can('admissions.manage')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openBedState(bed, 'available')">Release</button>
-                            <button v-if="can('admissions.manage')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openBedState(bed, 'cleaning')">Cleaning</button>
-                            <button v-if="can('admissions.manage')" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openBedState(bed, 'maintenance')">Maintenance</button>
+                    <article v-for="bed in beds" :key="bed.id" class="rounded-md border p-3 text-sm" :class="bed.integrity_issue ? 'border-amber-400' : 'border-slate-200 dark:border-slate-800'">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <p class="font-bold">{{ bed.label }} · {{ bedStateLabels[effectiveBedState(bed)] || effectiveBedState(bed) }}</p>
+                                <p class="text-slate-500">{{ bed.ward?.name }}<span v-if="bed.room?.name"> · {{ bed.room.name }}</span><span v-if="bed.bed_class?.name"> · {{ bed.bed_class.name }}</span></p>
+                            </div>
+                            <span class="rounded-full border px-2 py-1 text-xs font-bold">{{ bed.code }}</span>
+                        </div>
+                        <p class="mt-2 text-xs text-slate-500">{{ bedStateHelp[effectiveBedState(bed)] }}</p>
+                        <p v-if="bed.integrity_issue" class="mt-2 rounded bg-amber-50 p-2 text-xs font-semibold text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">{{ bed.integrity_issue }}</p>
+                        <ActionToolbar v-if="can('admissions.manage')" class="mt-3">
+                            <button v-if="effectiveBedState(bed) !== 'occupied'" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openBedState(bed, 'reserved')">Reserve</button>
+                            <button v-if="effectiveBedState(bed) !== 'occupied'" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openBedState(bed, 'available')">Mark ready</button>
+                            <button v-if="effectiveBedState(bed) !== 'occupied'" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openBedState(bed, 'cleaning')">Needs cleaning</button>
+                            <button v-if="effectiveBedState(bed) !== 'occupied'" class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openBedState(bed, 'maintenance')">Maintenance</button>
+                            <button class="rounded-md border px-2 py-1 text-xs font-bold" type="button" @click="openSetup('bed', bed)">Edit</button>
+                            <button v-if="effectiveBedState(bed) !== 'occupied'" class="rounded-md border border-rose-300 px-2 py-1 text-xs font-bold text-rose-700" type="button" @click="openSetupDelete('bed', bed)">Delete</button>
                         </ActionToolbar>
                     </article>
+                    <p v-if="!beds.length" class="text-sm text-slate-500">No beds configured yet.</p>
                 </div>
+            </section>
+
+            <section v-if="can('admissions.manage')" class="rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 class="font-black">Setup & Capacity</h2>
+                        <p class="mt-1 text-sm text-slate-500">Configure accommodation classes, wards, rooms and beds. These are master records, not patient activity.</p>
+                    </div>
+                    <button v-if="roles.includes('superadmin') || roles.includes('hospital-admin')" class="rounded-md border border-amber-400 px-3 py-2 text-sm font-bold text-amber-800 dark:text-amber-300" type="button" @click="resetModal = true">Reset pre-production admissions data</button>
+                </div>
+
+                <div class="mt-5 grid gap-5 xl:grid-cols-3">
+                    <div>
+                        <div class="flex items-center justify-between"><h3 class="font-bold">Bed classes</h3><button class="text-xs font-bold underline" type="button" @click="openSetup('class')">Add</button></div>
+                        <div class="mt-2 space-y-2">
+                            <div v-for="bedClass in bedClasses" :key="bedClass.id" class="rounded-md border border-slate-200 p-3 dark:border-slate-800">
+                                <p class="font-semibold">{{ bedClass.name }} <span class="text-xs text-slate-500">({{ bedClass.code }})</span></p>
+                                <p class="text-xs text-slate-500">{{ bedClass.is_active ? 'Active' : 'Inactive' }}</p>
+                                <ActionToolbar class="mt-2"><button class="rounded border px-2 py-1 text-xs font-bold" type="button" @click="openSetup('class', bedClass)">Edit</button><button class="rounded border border-rose-300 px-2 py-1 text-xs font-bold text-rose-700" type="button" @click="openSetupDelete('class', bedClass)">Delete</button></ActionToolbar>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between"><h3 class="font-bold">Wards</h3><button class="text-xs font-bold underline" type="button" @click="openSetup('ward')">Add</button></div>
+                        <div class="mt-2 space-y-2">
+                            <div v-for="ward in wards" :key="ward.id" class="rounded-md border border-slate-200 p-3 dark:border-slate-800">
+                                <p class="font-semibold">{{ ward.name }} <span class="text-xs text-slate-500">({{ ward.code }})</span></p>
+                                <p class="text-xs text-slate-500">{{ ward.facility?.name }} · {{ ward.status }}</p>
+                                <ActionToolbar class="mt-2"><button class="rounded border px-2 py-1 text-xs font-bold" type="button" @click="openSetup('ward', ward)">Edit</button><button class="rounded border border-rose-300 px-2 py-1 text-xs font-bold text-rose-700" type="button" @click="openSetupDelete('ward', ward)">Delete</button></ActionToolbar>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between"><h3 class="font-bold">Rooms</h3><button class="text-xs font-bold underline" type="button" @click="openSetup('room')">Add</button></div>
+                        <div class="mt-2 space-y-2">
+                            <div v-for="room in rooms" :key="room.id" class="rounded-md border border-slate-200 p-3 dark:border-slate-800">
+                                <p class="font-semibold">{{ room.name }} <span class="text-xs text-slate-500">({{ room.code }})</span></p>
+                                <p class="text-xs text-slate-500">{{ wards.find((ward) => ward.id === room.ward_id)?.name || 'Ward' }} · {{ room.status }}</p>
+                                <ActionToolbar class="mt-2"><button class="rounded border px-2 py-1 text-xs font-bold" type="button" @click="openSetup('room', room)">Edit</button><button class="rounded border border-rose-300 px-2 py-1 text-xs font-bold text-rose-700" type="button" @click="openSetupDelete('room', room)">Delete</button></ActionToolbar>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p v-if="setupDeleteForm.errors.setup" class="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{{ setupDeleteForm.errors.setup }}</p>
             </section>
         </div>
 

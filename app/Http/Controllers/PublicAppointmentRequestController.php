@@ -18,16 +18,12 @@ use Inertia\Response;
 
 class PublicAppointmentRequestController extends Controller
 {
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $hospital = Hospital::primary() ?? Hospital::firstOrFail();
         $site = app(PublicSiteController::class)->siteShell($hospital);
 
-        return Inertia::render('Public/AppointmentRequest', [
-            'site' => $site,
-            'facilities' => Facility::where('hospital_id', $hospital->id)->where('status', 'active')->orderBy('name')->get(['id', 'name']),
-            'departments' => Department::where('hospital_id', $hospital->id)->where('status', 'active')->orderBy('name')->get(['id', 'name']),
-            'doctors' => StaffProfile::with('user:id,firstname,lastname')
+        $doctors = StaffProfile::with('user:id,firstname,lastname')
                 ->where('hospital_id', $hospital->id)
                 ->where('is_active', true)
                 ->where('employment_status', 'active')
@@ -40,7 +36,19 @@ class PublicAppointmentRequestController extends Controller
                 })
                 ->orderBy('public_display_order')
                 ->orderBy('id')
-                ->get(['id', 'user_id', 'job_title', 'public_display_name', 'public_specialty']),
+                ->get(['id', 'user_id', 'job_title', 'public_display_name', 'public_specialty']);
+
+        $requestedDoctorId = (int) $request->query('doctor', 0);
+        $selectedDoctorId = $doctors->contains(fn (StaffProfile $doctor) => $doctor->id === $requestedDoctorId)
+            ? $requestedDoctorId
+            : null;
+
+        return Inertia::render('Public/AppointmentRequest', [
+            'site' => $site,
+            'facilities' => Facility::where('hospital_id', $hospital->id)->where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'departments' => Department::where('hospital_id', $hospital->id)->where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'doctors' => $doctors,
+            'selectedDoctorId' => $selectedDoctorId,
         ]);
     }
 

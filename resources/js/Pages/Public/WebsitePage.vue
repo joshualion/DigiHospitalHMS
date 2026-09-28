@@ -81,7 +81,7 @@ const cleanPageSummary = computed(() => {
 const publicPageTitle = computed(() => ({
     about: `About ${props.site.hospital?.display_name || 'Our Hospital'}`,
     services: 'Our Healthcare Services',
-    doctors: 'Our Clinical Team',
+    doctors: 'Our Doctors',
     departments: 'Hospital Departments',
     news: 'News & Health Information',
     contact: 'Contact Us',
@@ -91,7 +91,7 @@ const publicPageTitle = computed(() => ({
 const defaultPageSummaries = computed(() => ({
     about: `Learn more about ${props.site.hospital?.display_name || 'our hospital'}, our commitment to patient care, and the people and values behind our services.`,
     services: `Explore the healthcare services available at ${props.site.hospital?.display_name || 'our hospital'}, delivered by our clinical team with a focus on safe, respectful and patient-centred care.`,
-    doctors: 'Meet the clinicians whose profiles are currently available on our website.',
+    doctors: 'Meet the doctors whose profiles are currently available on our website.',
     departments: 'Explore the hospital departments currently available to patients and visitors.',
     news: 'Hospital updates and health information for our patients, families and community.',
     contact: 'Reach the hospital using the contact details below. Our team will guide you to the right department or service.',
@@ -103,14 +103,14 @@ const pageEyebrow = computed(() => ({
     about: 'About us',
     services: 'Our services',
     departments: 'Departments',
-    doctors: 'Our clinicians',
+    doctors: 'Our doctors',
     news: 'Health news',
     contact: 'Contact us',
     appointment: 'Appointments',
     policies: 'Policies',
-    'doctor-profile': 'Clinician profile',
+    'doctor-profile': 'Doctor profile',
     article: 'Health update',
-}[props.page.slug] || 'Testimony Healthcare'));
+}[props.page.slug] || props.site.hospital?.display_name || 'Hospital'));
 
 function showSlide(index) {
     if (!slides.value.length) return;
@@ -356,6 +356,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         <PublicImage v-if="page.content?.photo || page.content?.image" :src="page.content.photo || page.content.image" :alt="page.content.alt || page.title" class="mb-8 aspect-video w-full overflow-hidden rounded-3xl" width="900" height="520" loading="eager" sizes="(min-width: 1024px) 900px, 100vw" />
                         <div v-if="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary" class="public-prose text-lg" v-html="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary"></div>
                         <p v-else class="text-center text-sm font-bold" style="color: var(--public-text-secondary);">This information is currently being updated. Please contact the hospital if you need assistance.</p>
+                        <PublicButton v-if="page.slug === 'doctor-profile' && page.content?.staff_profile_id" class="mt-7" :href="`/appointment/request?doctor=${page.content.staff_profile_id}`">Request appointment with this doctor</PublicButton>
                     </article>
                     <div v-else-if="page.slug === 'about'" class="mx-auto max-w-5xl">
                         <article v-if="standardBody" class="public-card rounded-[2rem] p-8 sm:p-10">

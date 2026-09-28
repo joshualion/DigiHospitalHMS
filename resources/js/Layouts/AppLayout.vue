@@ -2,7 +2,7 @@
 import ThemeSwitcher from '@/Components/Public/ThemeSwitcher.vue';
 import ToastHost from '@/Components/Admin/ToastHost.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { Activity, Bed, Building2, ClipboardList, Droplets, FileClock, FlaskConical, Gauge, HandCoins, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, Pill, ScanLine, Settings, ShieldCheck, ShoppingCart, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
+import { Activity, BarChart3, Bed, Building2, ClipboardList, Droplets, FileClock, FlaskConical, Gauge, HandCoins, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, Pill, ScanLine, Settings, ShieldCheck, ShoppingCart, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 
 defineProps({
@@ -62,6 +62,7 @@ const navItems = computed(() => [
     { label: 'Roles', href: '/admin/roles', icon: ShieldCheck, show: can('roles.view') },
     { label: 'Settings', href: '/admin/settings', icon: Settings, show: can('settings.manage') },
     { label: 'Numbering', href: '/admin/numbering', icon: FileClock, show: can('numbering.manage') },
+    { label: 'Reports', href: '/admin/reports', icon: BarChart3, show: can('reports.view') },
     { label: 'Audit Logs', href: '/admin/audit-logs', icon: FileClock, show: can('audit.view') },
     { label: 'Public Website', href: '/admin/public-website', icon: Stethoscope, show: can('website.view') },
     { label: 'Profile', href: '/profile', icon: UserCog, show: true },

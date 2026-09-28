@@ -34,6 +34,8 @@ class PermissionSeeder extends Seeder
             'permissions.manage',
             'audit.view',
             'audit.export',
+            'reports.view',
+            'reports.export',
             'settings.manage',
             'numbering.manage',
             'website.view',
@@ -189,6 +191,8 @@ class PermissionSeeder extends Seeder
             'roles.view',
             'roles.assign',
             'audit.view',
+            'reports.view',
+            'reports.export',
             'settings.manage',
             'numbering.manage',
             'website.view',
@@ -381,6 +385,8 @@ class PermissionSeeder extends Seeder
                 'refunds.approve',
                 'refunds.process',
                 'cashier-shifts.review',
+                'reports.view',
+                'reports.export',
             ]),
         ]));
 

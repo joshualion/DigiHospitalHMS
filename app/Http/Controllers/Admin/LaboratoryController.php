@@ -37,6 +37,8 @@ class LaboratoryController extends FoundationController
         return Inertia::render('Admin/Laboratory/Catalogue', $this->shared($hospital->id) + [
             'tests' => LabTest::with(['components.unit', 'components.referenceRanges', 'specimenType', 'billableService:id,code,name'])->where('hospital_id', $hospital->id)->orderBy('name')->get(),
             'profiles' => LabTestProfile::with('tests:id,code,name')->where('hospital_id', $hospital->id)->orderBy('name')->get(),
+            'specimenTypes' => LabSpecimenType::where('hospital_id', $hospital->id)->orderBy('name')->get(),
+            'units' => LabUnit::where('hospital_id', $hospital->id)->orderBy('name')->get(),
         ]);
     }
 

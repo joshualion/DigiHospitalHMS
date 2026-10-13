@@ -284,10 +284,16 @@ onBeforeUnmount(() => window.clearInterval(timer));
                     <div v-if="hasNewsContent">
                         <SectionHeading kicker="News" :title="newsSection.heading || 'News'" :description="newsSection.description" align="left" />
                         <div class="mt-8 space-y-4">
-                            <article v-for="article in articles.slice(0, 3)" :key="article.slug" class="public-card rounded-3xl p-6">
-                                <h3 class="text-lg font-black" style="color: var(--public-text);">{{ article.title }}</h3>
-                                <p class="mt-2 text-sm leading-7" style="color: var(--public-text-secondary);">{{ article.summary }}</p>
-                                <Link :href="`/news/${article.slug}`" class="public-focus public-link mt-4 inline-flex text-sm font-black">Read update</Link>
+                            <article v-for="article in articles.slice(0, 3)" :key="article.slug" class="public-card overflow-hidden rounded-3xl">
+                                <Link :href="`/news/${article.slug}`" class="block">
+                                    <PublicImage v-if="article.content?.thumbnail || article.content?.image" :src="article.content.thumbnail || article.content.image" :alt="article.content.thumbnail_alt || article.content.alt || article.title" class="aspect-[16/9] w-full overflow-hidden" width="640" height="360" loading="lazy" />
+                                </Link>
+                                <div class="p-6">
+                                    <h3 class="text-lg font-black" style="color: var(--public-text);">{{ article.title }}</h3>
+                                    <p v-if="article.content?.subtitle" class="mt-2 text-sm font-semibold" style="color: var(--public-text-secondary);">{{ article.content.subtitle }}</p>
+                                    <p class="mt-2 text-sm leading-7" style="color: var(--public-text-secondary);">{{ article.summary || article.content?.excerpt }}</p>
+                                    <Link :href="`/news/${article.slug}`" class="public-focus public-link mt-4 inline-flex text-sm font-black">Read update</Link>
+                                </div>
                             </article>
                             <p v-if="articles.length === 0" class="public-card rounded-3xl p-8" style="color: var(--public-text-secondary);">Health news and hospital updates will appear here.</p>
                         </div>

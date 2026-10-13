@@ -169,7 +169,7 @@ function defaultItemContent(type) {
         department: { icon: 'building-2', public_title: '', summary: '' },
         clinician: { display_name: '', professional_title: '', specialty: '', bio: '', photo: '', alt: '' },
         testimonial: { display_name: '', context: '', text: '', rating: null, approved: false },
-        article: { excerpt: '', body: '', image: '', alt: '', author: '', published_on: '' },
+        article: { subtitle: '', excerpt: '', body: '', image: '', alt: '', thumbnail: '', thumbnail_alt: '', author: '', published_on: '' },
     }[type] || {};
 }
 
@@ -362,9 +362,28 @@ function toggleAccent(value) {
                         <label class="mt-4 block text-sm font-semibold">Intro / summary
                             <textarea v-model="pageContent.summary" class="mt-1 w-full rounded-md border-slate-300" rows="3" placeholder="Short public introduction"></textarea>
                         </label>
-                        <label class="mt-4 block text-sm font-semibold">Main page content
-                            <textarea v-model="pageContent.body" class="mt-1 w-full rounded-md border-slate-300" rows="10" placeholder="Approved hospital information for this page"></textarea>
+                        <template v-if="pageModel.slug === 'about'">
+                            <label class="mt-4 block text-sm font-semibold">Editorial heading
+                                <input v-model="pageContent.heading" class="mt-1 w-full rounded-md border-slate-300" type="text" placeholder="Our commitment to compassionate care">
+                            </label>
+                            <p class="mt-2 text-xs text-slate-500">The About page uses a dedicated editorial layout. The homepage About summary remains separately editable from Home → Sections → About.</p>
+                        </template>
+                        <label class="mt-4 block text-sm font-semibold">{{ pageModel.slug === 'about' ? 'Hospital story / detailed profile' : 'Main page content' }}
+                            <textarea v-model="pageContent.body" class="mt-1 w-full rounded-md border-slate-300" rows="14" placeholder="Write clear, approved hospital information in paragraphs"></textarea>
                         </label>
+                        <template v-if="pageModel.slug === 'about'">
+                            <div class="mt-4 grid gap-4 md:grid-cols-2">
+                                <label class="block text-sm font-semibold">Our mission
+                                    <textarea v-model="pageContent.mission" class="mt-1 w-full rounded-md border-slate-300" rows="5"></textarea>
+                                </label>
+                                <label class="block text-sm font-semibold">Our vision
+                                    <textarea v-model="pageContent.vision" class="mt-1 w-full rounded-md border-slate-300" rows="5"></textarea>
+                                </label>
+                            </div>
+                            <div class="mt-4">
+                                <MediaPicker v-model="pageContent.image" v-model:alt-value="pageContent.image_alt" :media="media" label="Hospital profile image" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" @delete="deleteMedia" />
+                            </div>
+                        </template>
                     </div>
 
                     <label class="flex items-center gap-2 text-sm font-semibold"><input v-model="pageContent.utility.visible" type="checkbox"> Show top information bar</label>
@@ -641,12 +660,15 @@ function toggleAccent(value) {
 
                                 <div v-if="type === 'article'" class="grid gap-3">
                                     <div class="grid gap-3 md:grid-cols-2">
+                                        <input v-model="item.draft_content.subtitle" class="rounded-md border-slate-300 text-sm md:col-span-2" type="text" placeholder="Optional article subtitle / standfirst">
                                         <input v-model="item.draft_content.author" class="rounded-md border-slate-300 text-sm" type="text" placeholder="Author">
                                         <input v-model="item.draft_content.published_on" class="rounded-md border-slate-300 text-sm" type="date">
                                         <textarea v-model="item.draft_content.excerpt" class="rounded-md border-slate-300 text-sm md:col-span-2" rows="2" placeholder="Excerpt"></textarea>
                                         <textarea v-model="item.draft_content.body" class="rounded-md border-slate-300 text-sm md:col-span-2" rows="6" placeholder="Article body"></textarea>
                                     </div>
-                                    <MediaPicker v-model="item.draft_content.image" v-model:alt-value="item.draft_content.alt" :media="media" label="Article image" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" @delete="deleteMedia" />
+                                    <MediaPicker v-model="item.draft_content.image" v-model:alt-value="item.draft_content.alt" :media="media" label="Article cover image" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" @delete="deleteMedia" />
+                                    <MediaPicker v-model="item.draft_content.thumbnail" v-model:alt-value="item.draft_content.thumbnail_alt" :media="media" label="Optional listing thumbnail (cover image used if empty)" :can-upload="can_manage_media" :upload-form="uploadForm" @upload="uploadMedia" @delete="deleteMedia" />
+                                    <p class="text-xs text-slate-500">Public cards automatically crop proportionally to a consistent aspect ratio without stretching. Use a separate thumbnail only when a different composition is necessary.</p>
                                 </div>
 
                                 <button class="rounded-md bg-slate-950 px-4 py-2 text-sm font-bold text-white" type="submit">Save item draft</button>

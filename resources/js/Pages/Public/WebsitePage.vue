@@ -199,7 +199,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
                                     <ShieldCheck class="h-5 w-5 shrink-0 public-accent" aria-hidden="true" />{{ point }}
                                 </li>
                             </ul>
-                            <PublicButton v-if="about.cta_label" class="mt-8" :href="about.cta_url || '/about'">{{ about.cta_label }}</PublicButton>
+                            <PublicButton class="mt-8" href="/about">{{ about.cta_label || 'Read more about our hospital' }}</PublicButton>
                         </div>
                     </div>
                 </div>
@@ -349,20 +349,59 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         <p v-if="departments.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">Department information is being updated. Please contact the hospital if you need assistance.</p>
                     </div>
                     <div v-else-if="page.slug === 'news'" class="grid gap-5 md:grid-cols-3">
-                        <article v-for="article in articles" :key="article.slug" class="public-card rounded-3xl p-6"><h2 class="text-xl font-black">{{ article.title }}</h2><p class="mt-3 public-prose text-sm">{{ article.summary }}</p><Link :href="`/news/${article.slug}`" class="public-focus public-link mt-4 inline-flex text-sm font-black">Read update</Link></article>
+                        <article v-for="article in articles" :key="article.slug" class="public-card overflow-hidden rounded-3xl">
+                            <Link :href="`/news/${article.slug}`" class="block">
+                                <PublicImage v-if="article.content?.thumbnail || article.content?.image" :src="article.content.thumbnail || article.content.image" :alt="article.content.thumbnail_alt || article.content.alt || article.title" class="aspect-[16/10] w-full overflow-hidden" width="640" height="400" loading="lazy" />
+                            </Link>
+                            <div class="p-7">
+                                <p v-if="article.content?.published_on || article.content?.author" class="text-xs font-bold uppercase tracking-wider public-accent">{{ [article.content?.published_on, article.content?.author].filter(Boolean).join(' · ') }}</p>
+                                <h2 class="mt-3 text-xl font-black">{{ article.title }}</h2>
+                                <p v-if="article.content?.subtitle" class="mt-2 text-base font-semibold" style="color: var(--public-text-secondary);">{{ article.content.subtitle }}</p>
+                                <p class="mt-4 text-sm leading-7" style="color: var(--public-text-secondary);">{{ article.summary || article.content?.excerpt }}</p>
+                                <Link :href="`/news/${article.slug}`" class="public-focus public-link mt-5 inline-flex text-sm font-black">Read article <ArrowRight class="ml-2 h-4 w-4" /></Link>
+                            </div>
+                        </article>
                         <p v-if="articles.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">Health news and hospital updates will appear here.</p>
                     </div>
                     <article v-else-if="page.slug === 'doctor-profile' || page.slug === 'article'" class="public-card mx-auto max-w-4xl rounded-[2rem] p-8">
                         <PublicImage v-if="page.content?.photo || page.content?.image" :src="page.content.photo || page.content.image" :alt="page.content.alt || page.title" class="mb-8 aspect-video w-full overflow-hidden rounded-3xl" width="900" height="520" loading="eager" sizes="(min-width: 1024px) 900px, 100vw" />
-                        <div v-if="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary" class="public-prose text-lg" v-html="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary"></div>
+                        <p v-if="page.content?.subtitle" class="mb-6 text-xl font-semibold" style="color: var(--public-text-secondary);">{{ page.content.subtitle }}</p>
+                        <div v-if="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary" class="public-prose whitespace-pre-line text-lg leading-9">{{ page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary }}</div>
                         <p v-else class="text-center text-sm font-bold" style="color: var(--public-text-secondary);">This information is currently being updated. Please contact the hospital if you need assistance.</p>
                         <PublicButton v-if="page.slug === 'doctor-profile' && page.content?.staff_profile_id" class="mt-7" :href="`/appointment/request?doctor=${page.content.staff_profile_id}`">Request appointment with this doctor</PublicButton>
                     </article>
-                    <div v-else-if="page.slug === 'about'" class="mx-auto max-w-5xl">
-                        <article v-if="standardBody" class="public-card rounded-[2rem] p-8 sm:p-10">
-                            <div class="public-prose whitespace-pre-line text-left text-lg">{{ standardBody }}</div>
-                        </article>
-                        <div v-else class="min-h-24"></div>
+                    <div v-else-if="page.slug === 'about'" class="mx-auto max-w-6xl">
+                        <div v-if="standardBody || page.content?.mission || page.content?.vision || page.content?.image" class="grid items-start gap-12 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.85fr)]">
+                            <div>
+                                <p class="text-sm font-black uppercase tracking-[0.2em] public-accent">Our hospital</p>
+                                <h2 class="mt-3 text-3xl font-black tracking-tight sm:text-4xl" style="color: var(--public-text);">{{ page.content?.heading || 'Dedicated to the people we serve' }}</h2>
+                                <p v-if="page.content?.summary" class="mt-6 text-xl leading-9" style="color: var(--public-text-secondary);">{{ page.content.summary }}</p>
+                                <div v-if="standardBody" class="public-prose mt-8 whitespace-pre-line text-left text-lg leading-9">{{ standardBody }}</div>
+                                <div v-if="page.content?.mission || page.content?.vision" class="mt-10 grid gap-5 sm:grid-cols-2">
+                                    <section v-if="page.content?.mission" class="public-card rounded-3xl p-7">
+                                        <h3 class="text-xl font-black public-accent">Our mission</h3>
+                                        <p class="mt-3 whitespace-pre-line leading-7" style="color: var(--public-text-secondary);">{{ page.content.mission }}</p>
+                                    </section>
+                                    <section v-if="page.content?.vision" class="public-card rounded-3xl p-7">
+                                        <h3 class="text-xl font-black public-accent">Our vision</h3>
+                                        <p class="mt-3 whitespace-pre-line leading-7" style="color: var(--public-text-secondary);">{{ page.content.vision }}</p>
+                                    </section>
+                                </div>
+                            </div>
+                            <aside class="space-y-6">
+                                <PublicImage v-if="page.content?.image" :src="page.content.image" :alt="page.content.image_alt || 'Hospital facilities'" class="aspect-[4/5] w-full overflow-hidden rounded-[2rem] shadow-xl" width="640" height="800" loading="lazy" />
+                                <div class="public-card rounded-3xl p-8">
+                                    <p class="text-sm font-black uppercase tracking-widest public-accent">Patient information</p>
+                                    <h3 class="mt-3 text-2xl font-black">We're here to help</h3>
+                                    <p class="mt-3 leading-7" style="color: var(--public-text-secondary);">Find out more about our clinical services or speak with the hospital team.</p>
+                                    <div class="mt-6 flex flex-wrap gap-3">
+                                        <PublicButton href="/services">Explore services</PublicButton>
+                                        <PublicButton href="/contact" variant="secondary">Contact us</PublicButton>
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
+                        <div v-else class="public-card rounded-3xl p-10 text-center" style="color: var(--public-text-secondary);">Our hospital profile is being updated. Contact us for more information.</div>
                     </div>
                     <div v-else-if="page.slug === 'contact'" class="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
                         <article class="public-card rounded-[2rem] p-8">

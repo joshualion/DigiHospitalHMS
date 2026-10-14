@@ -9,7 +9,7 @@ class PublicSiteMediaPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('website.manage_media') || $user->hasRole('superadmin');
+        return $user->isActive() && ($user->can('website.manage_media') || $user->hasRole('superadmin'));
     }
 
     public function create(User $user): bool

@@ -10,17 +10,20 @@ abstract class FoundationController extends Controller
     protected function currentHospital(): Hospital
     {
         $user = request()->user();
+        abort_unless($user && $user->isActive(), 403, 'An active account is required.');
 
-        if ($user?->hospitalId()) {
-            return Hospital::query()->findOrFail($user->hospitalId());
+        $hospitalId = $user->hospitalId();
+        if ($hospitalId !== null) {
+            return Hospital::query()->findOrFail($hospitalId);
         }
 
-        return Hospital::primary() ?? Hospital::query()->create([
-            'legal_name' => 'Demo Hospital',
-            'display_name' => 'Demo Hospital',
-            'country' => 'Nigeria',
-            'timezone' => 'Africa/Lagos',
-            'default_currency' => 'NGN',
-        ]);
+        // Global superadministrators may administer the primary hospital, but
+        // unassigned standard users must never inherit a hospital implicitly.
+        if ($user->hasRole('superadmin')) {
+            return Hospital::primary()
+                ?? abort(404, 'Hospital setup is required before using administration.');
+        }
+
+        abort(403, 'Your account has no assigned hospital.');
     }
 }

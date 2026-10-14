@@ -67,6 +67,14 @@ const articles = computed(() => (props.items.article || []).filter((article) => 
         .filter(Boolean)
         .some((value) => isPlaceholderCopy(value));
 }));
+const newsSearch = ref('');
+const newsCategory = ref('all');
+const newsCategories = computed(() => [...new Set(articles.value.map((article) => article.content?.category).filter(Boolean))].sort());
+const visibleArticles = computed(() => articles.value.filter((article) => {
+    const categoryMatches = newsCategory.value === 'all' || article.content?.category === newsCategory.value;
+    const searchable = [article.title, article.summary, article.content?.subtitle, article.content?.category, article.content?.tags].join(' ').toLowerCase();
+    return categoryMatches && searchable.includes(newsSearch.value.trim().toLowerCase());
+}));
 const activeSlide = computed(() => slides.value[slideIndex.value] || slides.value[0] || {});
 const trustIcons = [ShieldCheck, Users, Activity];
 const hasHeroCopy = computed(() => slides.value.length > 0 || Boolean(pageTitle.value));
@@ -361,20 +369,34 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         <article v-for="department in departments" :key="department.slug" class="public-card rounded-3xl p-6"><Building2 class="h-8 w-8 public-accent" /><h2 class="mt-4 text-xl font-black">{{ department.title }}</h2><p class="mt-3 public-prose text-sm">{{ department.summary }}</p></article>
                         <p v-if="departments.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">Department information is being updated. Please contact the hospital if you need assistance.</p>
                     </div>
-                    <div v-else-if="page.slug === 'news'" class="grid gap-5 md:grid-cols-3">
-                        <article v-for="article in articles" :key="article.slug" class="public-card overflow-hidden rounded-3xl">
-                            <Link :href="`/news/${article.slug}`" class="block">
-                                <PublicImage v-if="article.content?.thumbnail || article.content?.image" :src="article.content.thumbnail || article.content.image" :alt="article.content.thumbnail_alt || article.content.alt || article.title" class="aspect-[16/10] w-full overflow-hidden" width="640" height="400" loading="lazy" />
-                            </Link>
-                            <div class="p-7">
-                                <p v-if="article.content?.published_on || article.content?.author" class="text-xs font-bold uppercase tracking-wider public-accent">{{ [article.content?.published_on, article.content?.author].filter(Boolean).join(' · ') }}</p>
-                                <h2 class="mt-3 text-xl font-black">{{ article.title }}</h2>
-                                <p v-if="article.content?.subtitle" class="mt-2 text-base font-semibold" style="color: var(--public-text-secondary);">{{ article.content.subtitle }}</p>
-                                <p class="mt-4 text-sm leading-7" style="color: var(--public-text-secondary);">{{ article.summary || article.content?.excerpt }}</p>
-                                <Link :href="`/news/${article.slug}`" class="public-focus public-link mt-5 inline-flex text-sm font-black">Read article <ArrowRight class="ml-2 h-4 w-4" /></Link>
-                            </div>
-                        </article>
-                        <p v-if="articles.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">Health news and hospital updates will appear here.</p>
+                    <div v-else-if="page.slug === 'news'" class="space-y-8">
+                        <div class="public-card grid gap-4 rounded-2xl p-5 md:grid-cols-[minmax(0,1fr)_15rem]">
+                            <label class="grid gap-2 text-sm font-bold">Search articles
+                                <input v-model="newsSearch" type="search" placeholder="Search health news and updates" class="w-full rounded-lg border-slate-300 text-slate-900" />
+                            </label>
+                            <label class="grid gap-2 text-sm font-bold">Category
+                                <select v-model="newsCategory" class="w-full rounded-lg border-slate-300 text-slate-900">
+                                    <option value="all">All topics</option>
+                                    <option v-for="category in newsCategories" :key="category" :value="category">{{ category }}</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            <article v-for="article in visibleArticles" :key="article.slug" class="public-card overflow-hidden rounded-3xl">
+                                <Link :href="`/news/${article.slug}`" class="block">
+                                    <PublicImage v-if="article.content?.thumbnail || article.content?.image" :src="article.content.thumbnail || article.content.image" :alt="article.content.thumbnail_alt || article.content.alt || article.title" class="aspect-[16/10] w-full overflow-hidden" width="640" height="400" loading="lazy" />
+                                </Link>
+                                <div class="p-7">
+                                    <p v-if="article.content?.category" class="mb-2 text-xs font-black uppercase tracking-wider public-accent">{{ article.content.category }}</p>
+                                    <p v-if="article.content?.published_on || article.published_at || article.content?.author" class="text-xs font-semibold uppercase tracking-wider" style="color: var(--public-text-secondary);">{{ [article.content?.published_on || article.published_at, article.content?.author].filter(Boolean).join(' · ') }}</p>
+                                    <h2 class="mt-3 text-xl font-black"><Link :href="`/news/${article.slug}`" class="public-focus public-link">{{ article.title }}</Link></h2>
+                                    <p v-if="article.content?.subtitle" class="mt-2 text-base font-semibold" style="color: var(--public-text-secondary);">{{ article.content.subtitle }}</p>
+                                    <p class="mt-4 text-sm leading-7" style="color: var(--public-text-secondary);">{{ article.summary || article.content?.excerpt }}</p>
+                                    <Link :href="`/news/${article.slug}`" class="public-focus public-link mt-5 inline-flex text-sm font-black">Read article <ArrowRight class="ml-2 h-4 w-4" /></Link>
+                                </div>
+                            </article>
+                        </div>
+                        <p v-if="visibleArticles.length === 0" class="public-card rounded-3xl p-8 text-center">No articles match your search. Try another topic or keyword.</p>
                     </div>
                     <article v-else-if="page.slug === 'doctor-profile' || page.slug === 'article'" class="public-card mx-auto max-w-4xl rounded-[2rem] p-8">
                         <PublicImage v-if="page.content?.photo || page.content?.image" :src="page.content.photo || page.content.image" :alt="page.content.alt || page.title" class="mb-8 aspect-video w-full overflow-hidden rounded-3xl" width="900" height="520" loading="eager" sizes="(min-width: 1024px) 900px, 100vw" />

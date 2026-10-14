@@ -50,7 +50,7 @@ class Phase3SecurityBoundaryTest extends TestCase
         $user = User::factory()->create(['access_level' => 'admin']);
         $user->assignRole('admin');
         StaffProfile::factory()->create(['user_id' => $user->id, 'hospital_id' => $hospitalA->id]);
-        $patient = Patient::factory()->create(['hospital_id' => $hospitalB->id]);
+        $patient = new Patient(['hospital_id' => $hospitalB->id]);
 
         $this->assertFalse($user->can('view', $patient));
     }

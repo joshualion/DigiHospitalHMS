@@ -102,7 +102,9 @@ class PublicSiteController extends Controller
         $page = [
             'slug' => 'article',
             'title' => $item->published_title ?? $item->title,
-            'content' => $this->normalizeContentImages($item->published_content ?? []),
+            'content' => array_merge($this->normalizeContentImages($item->published_content ?? []), [
+                'body_html' => Str::markdown((string) ($item->published_content['body'] ?? ''), ['html_input' => 'strip', 'allow_unsafe_links' => false]),
+            ]),
             'seo' => ['title' => ($item->published_content['seo_title'] ?? null) ?: ($item->published_title ?? $item->title), 'description' => ($item->published_content['seo_description'] ?? null) ?: ($item->published_summary ?? $item->summary)],
             'published_at' => $item->published_at?->toISOString(),
         ];

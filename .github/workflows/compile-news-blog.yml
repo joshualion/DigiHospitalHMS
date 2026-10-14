@@ -5,6 +5,7 @@ on:
       - feature/news-blog-and-sidebar-icons-20261014
     paths:
       - '.github/workflows/compile-news-blog.yml'
+      - 'resources/js/**'
 permissions:
   contents: write
 jobs:

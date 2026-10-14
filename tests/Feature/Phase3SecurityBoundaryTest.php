@@ -57,7 +57,7 @@ class Phase3SecurityBoundaryTest extends TestCase
 
     public function test_audit_service_redacts_nested_credentials(): void
     {
-        $redacted = app(\\App\\Services\\AuditService::class)->redact([
+        $redacted = app(\App\Services\AuditService::class)->redact([
             'password' => 'pass',
             'access_token' => 'token',
             'nested' => ['client_secret' => 'secret', 'recovery_codes' => ['abc', 'def']],

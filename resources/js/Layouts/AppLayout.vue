@@ -2,7 +2,7 @@
 import ThemeSwitcher from '@/Components/Public/ThemeSwitcher.vue';
 import ToastHost from '@/Components/Admin/ToastHost.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { Activity, BarChart3, Bed, Bell, Building2, ClipboardList, CloudCog, ChevronDown, Droplets, FileClock, FlaskConical, Gauge, HandCoins, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, Pill, ScanLine, Settings, ShieldCheck, ShoppingCart, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
+import { Activity, BarChart3, Bed, Bell, Building2, ClipboardList, CloudCog, ChevronDown, Newspaper, Droplets, FileClock, FlaskConical, Gauge, HandCoins, Menu, PackageSearch, PanelLeftClose, PanelLeftOpen, Pill, ScanLine, Settings, ShieldCheck, ShoppingCart, Stethoscope, UserCog, UsersRound, WalletCards, X } from '@lucide/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 
 defineProps({
@@ -69,19 +69,20 @@ const navItems = computed(() => [
     { label: 'Commercial', href: '/admin/commercial', icon: CloudCog, show: can('commercial-admin.view') },
     { label: 'Audit Logs', href: '/admin/audit-logs', icon: FileClock, show: can('audit.view') },
     { label: 'Public Website', href: '/admin/public-website', icon: Stethoscope, show: can('website.view') },
+    { label: 'News & Blog', href: '/admin/news', icon: Newspaper, show: can('website.view') },
     { label: 'Profile', href: '/profile', icon: UserCog, show: true },
 ]);
 
 
 const navGroups = computed(() => {
     const groups = [
-        { label: 'Overview', items: ['Dashboard', 'Admin'] },
-        { label: 'People & Access', items: ['Patients', 'Staff', 'Roles'] },
-        { label: 'Patient Services', items: ['Appointments', 'Queues', 'Clinical', 'Admissions', 'Ward Charts', 'eMAR'] },
-        { label: 'Diagnostics & Treatment', items: ['Laboratory', 'Radiology', 'Pharmacy', 'Blood Bank'] },
-        { label: 'Finance & Insurance', items: ['Billing', 'Payments', 'Insurance / HMO', 'Reports'] },
-        { label: 'Supplies & Operations', items: ['Inventory', 'Procurement', 'Facilities', 'Departments', 'Services'] },
-        { label: 'Administration', items: ['Hospital', 'Public Website', 'Notifications', 'Settings', 'Numbering', 'Commercial', 'Audit Logs', 'Profile'] },
+        { label: 'Overview', icon: Gauge, items: ['Dashboard', 'Admin'] },
+        { label: 'People & Access', icon: UsersRound, items: ['Patients', 'Staff', 'Roles'] },
+        { label: 'Patient Services', icon: Activity, items: ['Appointments', 'Queues', 'Clinical', 'Admissions', 'Ward Charts', 'eMAR'] },
+        { label: 'Diagnostics & Treatment', icon: Stethoscope, items: ['Laboratory', 'Radiology', 'Pharmacy', 'Blood Bank'] },
+        { label: 'Finance & Insurance', icon: WalletCards, items: ['Billing', 'Payments', 'Insurance / HMO', 'Reports'] },
+        { label: 'Supplies & Operations', icon: PackageSearch, items: ['Inventory', 'Procurement', 'Facilities', 'Departments', 'Services'] },
+        { label: 'Administration', icon: Settings, items: ['Hospital', 'Public Website', 'News & Blog', 'Notifications', 'Settings', 'Numbering', 'Commercial', 'Audit Logs', 'Profile'] },
     ];
     return groups.map((group) => ({
         ...group,
@@ -147,8 +148,7 @@ watch(expandedGroup, (value) => {
             <nav class="admin-sidebar-scroll mt-5 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1 text-sm font-bold" aria-label="Admin navigation">
                 <div v-for="group in navGroups" :key="group.label" class="mb-2">
                     <button type="button" class="admin-nav-link flex w-full items-center justify-between rounded-md px-3 py-2 text-left" :title="sidebarCompact ? group.label : null" :aria-expanded="expandedGroup === group.label" @click="toggleGroup(group.label)">
-                        <span v-if="!sidebarCompact" class="truncate text-xs font-extrabold uppercase tracking-wide">{{ group.label }}</span>
-                        <span v-else class="text-[10px]">{{ group.label.slice(0, 2) }}</span>
+                        <span class="flex min-w-0 items-center gap-3"><component :is="group.icon" class="h-4 w-4 shrink-0" aria-hidden="true" /><span v-if="!sidebarCompact" class="truncate text-xs font-extrabold uppercase tracking-wide">{{ group.label }}</span></span>
                         <ChevronDown v-if="!sidebarCompact" class="h-4 w-4 shrink-0 transition-transform" :class="{ 'rotate-180': expandedGroup === group.label }" />
                     </button>
                     <div v-if="expandedGroup === group.label || group.label === 'Overview' && !sidebarCompact" class="space-y-1 pl-2">

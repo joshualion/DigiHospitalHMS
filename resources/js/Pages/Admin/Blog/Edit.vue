@@ -24,6 +24,7 @@ const form = useForm({
 });
 const upload = useForm({ title: '', alt_text: '', caption: '', credit: '', image: null });
 const uploadTarget = ref('cover');
+const moderationNotes = ref({});
 const availableMedia = computed(() => props.media.map((asset) => ({ ...asset, reference: `/public-site/media/${asset.id}` })));
 const preview = computed(() => props.post?.status === 'published' ? `/news/${props.post?.slug}` : null);
 
@@ -44,7 +45,7 @@ function restore(revision) {
   router.post(`/admin/news/${props.post.id}/revisions/${revision.id}/restore`, {}, { preserveScroll: true });
 }
 function moderate(comment, status) {
-  router.patch(`/admin/news/comments/${comment.id}`, { status, note: '' }, { preserveScroll: true });
+  router.patch(`/admin/news/comments/${comment.id}`, { status, note: moderationNotes.value[comment.id] || '' }, { preserveScroll: true });
 }
 function uploadImage() {
   upload.post('/admin/public-website/media', {
@@ -134,9 +135,11 @@ function uploadImage() {
         <div v-for="comment in comments" :key="comment.id" class="space-y-3 border-b py-4 last:border-0">
           <div class="flex flex-wrap items-center justify-between gap-2"><strong>{{ comment.name }}</strong><span class="text-xs font-bold">{{ comment.status }}</span></div>
           <p class="whitespace-pre-line text-sm">{{ comment.body }}</p>
+          <label class="block text-xs font-semibold">Review note (optional)<input v-model="moderationNotes[comment.id]" maxlength="1000" class="mt-1 w-full rounded-lg border-slate-300 text-sm" placeholder="Reason for approval or rejection" /></label>
           <div class="flex flex-wrap gap-2">
             <button v-for="status in ['approved','rejected','pending']" :key="status" type="button" class="rounded-lg border px-3 py-2 text-xs font-semibold" @click="moderate(comment, status)">{{ status === 'approved' ? 'Approve' : status === 'rejected' ? 'Reject / hide' : 'Reset to pending' }}</button>
           </div>
+          <details v-if="comment.reviews?.length" class="text-xs text-slate-500"><summary class="cursor-pointer font-semibold">Moderation history ({{ comment.reviews.length }})</summary><ul class="mt-2 space-y-1"><li v-for="(review, index) in comment.reviews" :key="index">{{ review.previous_status }} → {{ review.status }} · {{ review.created_at }} <span v-if="review.note">· {{ review.note }}</span></li></ul></details>
         </div>
         <p v-if="!comments.length" class="text-sm text-slate-500">No comments yet.</p>
       </section>

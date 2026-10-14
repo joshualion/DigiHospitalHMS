@@ -219,11 +219,19 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
 
         Route::get('laboratory/catalogue', [LaboratoryController::class, 'catalogue'])->name('admin.lab.catalogue');
         Route::post('laboratory/specimen-types', [LaboratoryController::class, 'storeSpecimenType'])->name('admin.lab.specimen-types.store');
+        Route::patch('laboratory/specimen-types/{specimenType}', [LaboratoryController::class, 'updateSpecimenType'])->name('admin.lab.specimen-types.update');
+        Route::delete('laboratory/specimen-types/{specimenType}', [LaboratoryController::class, 'destroySpecimenType'])->name('admin.lab.specimen-types.destroy');
         Route::post('laboratory/units', [LaboratoryController::class, 'storeUnit'])->name('admin.lab.units.store');
+        Route::patch('laboratory/units/{unit}', [LaboratoryController::class, 'updateUnit'])->name('admin.lab.units.update');
+        Route::delete('laboratory/units/{unit}', [LaboratoryController::class, 'destroyUnit'])->name('admin.lab.units.destroy');
         Route::post('laboratory/tests', [LaboratoryController::class, 'storeTest'])->name('admin.lab.tests.store');
+        Route::patch('laboratory/tests/{test}', [LaboratoryController::class, 'updateTest'])->name('admin.lab.tests.update');
+        Route::delete('laboratory/tests/{test}', [LaboratoryController::class, 'destroyTest'])->name('admin.lab.tests.destroy');
         Route::post('laboratory/tests/{test}/components', [LaboratoryController::class, 'storeComponent'])->name('admin.lab.components.store');
         Route::post('laboratory/components/{component}/reference-ranges', [LaboratoryController::class, 'storeReferenceRange'])->name('admin.lab.reference-ranges.store');
         Route::post('laboratory/profiles', [LaboratoryController::class, 'storeProfile'])->name('admin.lab.profiles.store');
+        Route::patch('laboratory/profiles/{profile}', [LaboratoryController::class, 'updateProfile'])->name('admin.lab.profiles.update');
+        Route::delete('laboratory/profiles/{profile}', [LaboratoryController::class, 'destroyProfile'])->name('admin.lab.profiles.destroy');
         Route::get('laboratory/requests', [LaboratoryController::class, 'requests'])->name('admin.lab.requests.index');
         Route::post('laboratory/requests', [LaboratoryController::class, 'storeRequest'])->name('admin.lab.requests.store');
         Route::get('laboratory/requests/{labRequest}', [LaboratoryController::class, 'show'])->name('admin.lab.requests.show');
@@ -238,7 +246,11 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
 
         Route::get('radiology/catalogue', [RadiologyController::class, 'catalogue'])->name('admin.radiology.catalogue');
         Route::post('radiology/modalities', [RadiologyController::class, 'storeModality'])->name('admin.radiology.modalities.store');
+        Route::patch('radiology/modalities/{modality}', [RadiologyController::class, 'updateModality'])->name('admin.radiology.modalities.update');
+        Route::delete('radiology/modalities/{modality}', [RadiologyController::class, 'destroyModality'])->name('admin.radiology.modalities.destroy');
         Route::post('radiology/studies', [RadiologyController::class, 'storeStudy'])->name('admin.radiology.studies.store');
+        Route::patch('radiology/studies/{study}', [RadiologyController::class, 'updateStudy'])->name('admin.radiology.studies.update');
+        Route::delete('radiology/studies/{study}', [RadiologyController::class, 'destroyStudy'])->name('admin.radiology.studies.destroy');
         Route::get('radiology/requests', [RadiologyController::class, 'requests'])->name('admin.radiology.requests.index');
         Route::post('radiology/requests', [RadiologyController::class, 'storeRequest'])->name('admin.radiology.requests.store');
         Route::get('radiology/requests/{radiologyRequest}', [RadiologyController::class, 'show'])->name('admin.radiology.requests.show');

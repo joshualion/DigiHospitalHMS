@@ -55,6 +55,13 @@ class Phase3SecurityBoundaryTest extends TestCase
         $this->assertFalse($user->can('view', $patient));
     }
 
+    public function test_suspended_account_is_signed_out_and_blocked_from_dashboard(): void
+    {
+        $user = User::factory()->create(['status' => 'suspended']);
+        $this->actingAs($user)->get('/dashboard')->assertForbidden();
+        $this->assertGuest();
+    }
+
     public function test_audit_service_redacts_nested_credentials(): void
     {
         $redacted = app(\App\Services\AuditService::class)->redact([

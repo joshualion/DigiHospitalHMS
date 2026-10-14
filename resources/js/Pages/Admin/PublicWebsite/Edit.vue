@@ -322,8 +322,16 @@ function toggleAccent(value) {
                 </div>
             </section>
 
+            <section v-if="pageModel.slug === 'news'" class="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-teal-200 bg-teal-50 p-5 text-teal-950">
+                <div>
+                    <h3 class="font-bold">News articles have their own blog editor</h3>
+                    <p class="mt-1 text-sm">This page controls the News landing-page layout and SEO only. Create articles, choose images, publish posts and moderate comments in News & Blog.</p>
+                </div>
+                <a href="/admin/news" class="rounded-lg bg-teal-800 px-4 py-3 text-sm font-bold text-white">Open News & Blog →</a>
+            </section>
+
             <nav class="flex flex-wrap gap-2 rounded-md border border-slate-200 bg-white p-3" aria-label="Editor areas">
-                <button v-for="[key, label] in [['page', 'Branding & SEO'], ['sections', 'Sections'], ['items', 'Content items'], ['history', 'Publishing history']]" :key="key" class="rounded-md px-3 py-2 text-sm font-bold" :class="activePanel === key ? 'bg-slate-950 text-white' : 'border border-slate-200 text-slate-700'" type="button" @click="activePanel = key">{{ label }}</button>
+                <button v-for="[key, label] in [['page', 'Branding & SEO'], ['sections', 'Sections'], ['items', 'Content items'], ['history', 'Publishing history']].filter(([key]) => pageModel.slug !== 'news' || key !== 'items')" :key="key" class="rounded-md px-3 py-2 text-sm font-bold" :class="activePanel === key ? 'bg-slate-950 text-white' : 'border border-slate-200 text-slate-700'" type="button" @click="activePanel = key">{{ label }}</button>
                 <button v-if="can_view_json" class="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700" type="button" @click="showDiagnostics = !showDiagnostics">Diagnostics</button>
             </nav>
 

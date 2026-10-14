@@ -58,7 +58,7 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::get('/dashboard', function () {
             abort_unless(request()->user()->hasRole('superadmin') || request()->user()->can('hospital.view'), 403);
 
-            return Inertia::render('Admin/Dashboard');
+            return redirect()->route('dashboard');
         })->name('admin.dashboard');
 
         Route::get('hospital', [HospitalProfileController::class, 'edit'])->name('admin.hospital.edit');

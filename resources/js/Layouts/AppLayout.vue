@@ -147,11 +147,11 @@ watch(expandedGroup, (value) => {
 
             <nav class="admin-sidebar-scroll mt-5 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1 text-sm font-bold" aria-label="Admin navigation">
                 <div v-for="group in navGroups" :key="group.label" class="mb-2">
-                    <button type="button" class="admin-nav-link flex w-full items-center justify-between rounded-md px-3 py-2 text-left" :title="sidebarCompact ? group.label : null" :aria-expanded="expandedGroup === group.label" @click="toggleGroup(group.label)">
+                    <button type="button" class="admin-nav-link flex w-full items-center justify-between rounded-md px-3 py-2 text-left" :title="sidebarCompact ? group.label : null" :aria-expanded="expandedGroup === group.label" @click="sidebarCompact ? (collapsed = false, expandedGroup = group.label) : toggleGroup(group.label)">
                         <span class="flex min-w-0 items-center gap-3"><component :is="group.icon" class="h-4 w-4 shrink-0" aria-hidden="true" /><span v-if="!sidebarCompact" class="truncate text-xs font-extrabold uppercase tracking-wide">{{ group.label }}</span></span>
                         <ChevronDown v-if="!sidebarCompact" class="h-4 w-4 shrink-0 transition-transform" :class="{ 'rotate-180': expandedGroup === group.label }" />
                     </button>
-                    <div v-if="expandedGroup === group.label || group.label === 'Overview' && !sidebarCompact" class="space-y-1 pl-2">
+                    <div v-if="!sidebarCompact && (expandedGroup === group.label || group.label === 'Overview')" class="space-y-1 pl-2">
                         <Link v-for="item in group.items" :key="item.href" :href="item.href" class="admin-nav-link rounded-md px-3 py-2" :class="{ 'admin-nav-link-active': isActive(item.href), 'justify-center': sidebarCompact }" :title="sidebarCompact ? item.label : null" @click="mobileOpen = false">
                             <component :is="item.icon" class="h-4 w-4 shrink-0" />
                             <span v-if="!sidebarCompact" class="truncate">{{ item.label }}</span>

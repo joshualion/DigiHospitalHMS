@@ -406,6 +406,7 @@ class PublicSiteController extends Controller
             'title' => $draft ? ($item->draft_title ?? $item->title) : ($item->published_title ?? $item->title),
             'summary' => $draft ? ($item->draft_summary ?? $item->summary) : ($item->published_summary ?? $item->summary),
             'is_featured' => $draft ? ($item->draft_is_featured ?? $item->is_featured) : ($item->published_is_featured ?? $item->is_featured),
+            'published_at' => $item->published_at?->toDateString(),
             'content' => $this->normalizeContentImages($draft ? ($item->draft_content ?? []) : ($item->published_content ?? [])),
         ];
     }

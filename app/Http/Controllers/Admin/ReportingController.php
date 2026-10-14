@@ -26,10 +26,20 @@ class ReportingController extends FoundationController
         $hospital=$this->currentHospital();
         [$from,$to]=$this->range($request);
 
+        $daily = $this->daily($hospital->id, $from, $to);
+
         return Inertia::render('Admin/Reports/Index', [
-            'filters'=>['from'=>$from->toDateString(),'to'=>$to->toDateString()],
-            'summary'=>$this->summary($hospital->id,$from,$to),
-            'daily'=>$this->daily($hospital->id,$from,$to),
+            'filters' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
+            'summary' => $this->summary($hospital->id, $from, $to),
+            'daily' => $daily,
+            'trends' => [
+                'visits' => array_column($daily, 'visits'),
+                'admissions' => array_column($daily, 'admissions'),
+                'lab_requests' => array_column($daily, 'lab_requests'),
+                'radiology_requests' => array_column($daily, 'radiology_requests'),
+                'invoice_minor' => array_column($daily, 'invoice_minor'),
+                'payment_minor' => array_column($daily, 'payment_minor'),
+            ],
         ]);
     }
 
@@ -43,9 +53,9 @@ class ReportingController extends FoundationController
         return response()->streamDownload(function() use($hospital,$from,$to,$type): void {
             $out=fopen('php://output','w');
             if($type==='financial'){
-                fputcsv($out,['Date','Invoices Issued','Invoice Value','Payments Posted','Payment Value','Open Claim Receivable']);
+                fputcsv($out,['Date','Invoices Issued','Invoice Value (minor units)','Payments Posted','Payment Value (minor units)']);
                 foreach($this->daily($hospital->id,$from,$to) as $row){
-                    fputcsv($out,[$row['date'],$row['invoices_count'],$row['invoice_minor'],$row['payments_count'],$row['payment_minor'],$row['claim_receivable_minor']]);
+                    fputcsv($out,[$row['date'],$row['invoices_count'],$row['invoice_minor'],$row['payments_count'],$row['payment_minor']]);
                 }
             } elseif($type==='clinical'){
                 fputcsv($out,['Date','Visits','Admissions','Lab Requests','Radiology Requests','Prescriptions']);
@@ -105,8 +115,7 @@ class ReportingController extends FoundationController
         $days=[];
         for($day=$from->startOfDay();$day->lte($to);$day=$day->addDay()){
             $start=$day->startOfDay(); $end=$day->endOfDay();
-            $claims=PayerClaim::where('hospital_id',$hospitalId)->whereDate('created_at','<=',$end->toDateString())
-                ->whereIn('status',['submitted','approved','partially_approved','partially_paid'])->get();
+
             $days[]=[
                 'date'=>$day->toDateString(),
                 'visits'=>Visit::where('hospital_id',$hospitalId)->whereBetween('created_at',[$start,$end])->count(),
@@ -118,7 +127,7 @@ class ReportingController extends FoundationController
                 'invoice_minor'=>(int)Invoice::where('hospital_id',$hospitalId)->whereBetween('issued_at',[$start,$end])->sum('total_minor'),
                 'payments_count'=>Payment::where('hospital_id',$hospitalId)->whereBetween('posted_at',[$start,$end])->where('status','posted')->count(),
                 'payment_minor'=>(int)Payment::where('hospital_id',$hospitalId)->whereBetween('posted_at',[$start,$end])->where('status','posted')->sum('amount_minor'),
-                'claim_receivable_minor'=>(int)$claims->sum(fn(PayerClaim $claim)=>$claim->outstandingMinor()),
+
             ];
         }
         return $days;

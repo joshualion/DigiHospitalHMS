@@ -16,10 +16,10 @@ const selectedMetric = ref('visits');
 const metricOptions = [
     { value: 'visits', label: 'Visits', mode: 'count', href: '/admin/clinical/worklist' },
     { value: 'admissions', label: 'Admissions', mode: 'count', href: '/admin/admissions' },
-    { value: 'lab_requests', label: 'Laboratory requests', mode: 'count', href: '/admin/laboratory' },
-    { value: 'radiology_requests', label: 'Radiology requests', mode: 'count', href: '/admin/radiology' },
+    { value: 'lab_requests', label: 'Laboratory requests', mode: 'count', href: '/admin/laboratory/requests' },
+    { value: 'radiology_requests', label: 'Radiology requests', mode: 'count', href: '/admin/radiology/requests' },
     { value: 'invoice_minor', label: 'Invoice value', mode: 'money', href: '/admin/billing/invoices' },
-    { value: 'payment_minor', label: 'Payments received', mode: 'money', href: '/admin/payments' },
+    { value: 'payment_minor', label: 'Payments received', mode: 'money', href: '/admin/payments/workbench' },
 ];
 const metric = computed(() => metricOptions.find((option) => option.value === selectedMetric.value) || metricOptions[0]);
 const chartValues = computed(() => props.trends[selectedMetric.value] || []);

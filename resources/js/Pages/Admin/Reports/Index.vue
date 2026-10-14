@@ -2,15 +2,32 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/Admin/PageHeader.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { reactive } from 'vue';
+import { reactive, ref, computed } from 'vue';
 
 const props = defineProps({
     filters: { type: Object, required: true },
     summary: { type: Object, required: true },
     daily: { type: Array, default: () => [] },
+    trends: { type: Object, default: () => ({}) },
+    can_export: { type: Boolean, default: false },
 });
 
 const filters = reactive({ from: props.filters.from, to: props.filters.to });
+const selectedMetric = ref('visits');
+const metricOptions = [
+    { value: 'visits', label: 'Visits', mode: 'count', href: '/admin/clinical/worklist' },
+    { value: 'admissions', label: 'Admissions', mode: 'count', href: '/admin/admissions' },
+    { value: 'lab_requests', label: 'Laboratory requests', mode: 'count', href: '/admin/laboratory/requests' },
+    { value: 'radiology_requests', label: 'Radiology requests', mode: 'count', href: '/admin/radiology/requests' },
+    { value: 'invoice_minor', label: 'Invoice value', mode: 'money', href: '/admin/billing/invoices' },
+    { value: 'payment_minor', label: 'Payments received', mode: 'money', href: '/admin/payments/workbench' },
+];
+const metric = computed(() => metricOptions.find((option) => option.value === selectedMetric.value) || metricOptions[0]);
+const chartValues = computed(() => props.trends[selectedMetric.value] || []);
+const chartMax = computed(() => Math.max(1, ...chartValues.value.map((value) => Number(value) || 0)));
+const chartTotal = computed(() => chartValues.value.reduce((sum, value) => sum + Number(value || 0), 0));
+const chartLabel = computed(() => metric.value.mode === 'money' ? money(chartTotal.value) : chartTotal.value.toLocaleString('en-NG'));
+
 
 function apply() {
     router.get('/admin/reports', filters, { preserveState: true, replace: true });
@@ -49,11 +66,36 @@ const cards = [
                 <label class="grid gap-1 text-sm font-semibold">To<input v-model="filters.to" type="date" class="rounded-md border p-2"></label>
                 <button class="self-end rounded-md border px-4 py-2 font-bold" type="button" @click="apply">Apply</button>
             </div>
-            <div class="mt-3 flex flex-wrap gap-2">
+            <div v-if="can_export" class="mt-3 flex flex-wrap gap-2">
                 <a :href="exportUrl('operations')" class="rounded-md border px-3 py-2 text-sm font-bold">Export operations CSV</a>
                 <a :href="exportUrl('clinical')" class="rounded-md border px-3 py-2 text-sm font-bold">Export clinical CSV</a>
                 <a :href="exportUrl('financial')" class="rounded-md border px-3 py-2 text-sm font-bold">Export financial CSV</a>
             </div>
+        </section>
+
+        <section class="mt-6 rounded-xl border p-5" style="border-color: var(--admin-border); background: var(--admin-surface);">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-black">Operational trends</h2>
+                    <p class="mt-1 text-sm" style="color: var(--admin-text-muted);">Daily recorded events for the selected period. Figures reflect your hospital only.</p>
+                </div>
+                <label class="grid gap-1 text-sm font-bold">Display metric
+                    <select v-model="selectedMetric" class="rounded-lg border p-2" style="background: var(--admin-surface);">
+                        <option v-for="option in metricOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                    </select>
+                </label>
+            </div>
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <p class="text-2xl font-black tabular-nums">{{ chartLabel }} <span class="text-xs font-medium" style="color: var(--admin-text-muted);">period total</span></p>
+                <a :href="metric.href" class="rounded-lg border px-3 py-2 text-sm font-semibold">Open {{ metric.label.toLowerCase() }} module →</a>
+            </div>
+            <div class="mt-6 flex h-52 items-end gap-px overflow-hidden border-b pb-1" role="img" :aria-label="metric.label + ' daily trend chart; total ' + chartLabel">
+                <div v-for="(value, index) in chartValues" :key="index" class="group relative h-full min-w-0 flex-1 flex flex-col justify-end" :title="daily[index]?.date + ': ' + (metric.mode === 'money' ? money(value) : value)">
+                    <div class="min-h-[2px] w-full rounded-t-sm bg-teal-600 transition-colors hover:bg-teal-400" :style="{ height: Math.max(2, Number(value || 0) / chartMax * 190) + 'px' }"></div>
+                </div>
+            </div>
+            <div class="mt-2 flex justify-between text-xs" style="color: var(--admin-text-muted);"><span>{{ daily[0]?.date }}</span><span>{{ daily[daily.length - 1]?.date }}</span></div>
+            <p class="mt-3 text-xs" style="color: var(--admin-text-muted);">Hover or focus on individual days in the daily activity table below for exact figures. Currency charts use minor units internally and display NGN.</p>
         </section>
 
         <section class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">

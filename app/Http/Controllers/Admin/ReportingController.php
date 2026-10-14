@@ -32,6 +32,7 @@ class ReportingController extends FoundationController
             'filters' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
             'summary' => $this->summary($hospital->id, $from, $to),
             'daily' => $daily,
+            'can_export' => $request->user()->can('reports.export') || $request->user()->hasRole('superadmin'),
             'trends' => [
                 'visits' => array_column($daily, 'visits'),
                 'admissions' => array_column($daily, 'admissions'),

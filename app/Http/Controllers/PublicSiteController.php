@@ -273,7 +273,7 @@ class PublicSiteController extends Controller
             ->where('hospital_id', $page->hospital_id)
             ->whereIn($draft ? 'draft_type' : 'published_type', ['testimonial', 'article'])
             ->when(! $draft, fn ($query) => $query->published())
-            ->orderBy($draft ? 'draft_sort_order' : 'published_sort_order')
+            ->when($page->slug === 'news' && ! $draft, fn ($query) => $query->orderByDesc('published_at'), fn ($query) => $query->orderBy($draft ? 'draft_sort_order' : 'published_sort_order'))
             ->get()
             ->map(fn (PublicSiteItem $item) => $this->itemPayload($item, $draft))
             ->groupBy('type')

@@ -9,7 +9,7 @@ class PublicSitePagePolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('website.view') || $user->hasRole('superadmin');
+        return $user->isActive() && ($user->can('website.view') || $user->hasRole('superadmin'));
     }
 
     public function view(User $user, PublicSitePage $page): bool
@@ -19,7 +19,7 @@ class PublicSitePagePolicy
 
     public function update(User $user, PublicSitePage $page): bool
     {
-        return ($user->can('website.edit') || $user->hasRole('superadmin')) && ($user->hasRole('superadmin') || $user->hospitalId() === $page->hospital_id);
+        return $user->isActive() && ($user->can('website.edit') || $user->hasRole('superadmin')) && ($user->hasRole('superadmin') || $user->hospitalId() === $page->hospital_id);
     }
 
     public function publish(User $user, PublicSitePage $page): bool

@@ -9,7 +9,7 @@ class PublicSiteItemPolicy
 {
     public function update(User $user, PublicSiteItem $item): bool
     {
-        return ($user->can('website.edit') || $user->hasRole('superadmin')) && ($user->hasRole('superadmin') || $user->hospitalId() === $item->hospital_id);
+        return $user->isActive() && ($user->can('website.edit') || $user->hasRole('superadmin')) && ($user->hasRole('superadmin') || $user->hospitalId() === $item->hospital_id);
     }
 
     public function publish(User $user, PublicSiteItem $item): bool

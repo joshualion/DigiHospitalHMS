@@ -66,7 +66,7 @@ class PublicWebsiteController extends FoundationController
             'homepage_sources' => $this->homepageSources($page),
             'preview_url' => URL::temporarySignedRoute('public.preview', now()->addMinutes(30), ['page' => $page]),
             'media' => PublicSiteMedia::where('hospital_id', $page->hospital_id)->latest()->get(),
-            'item_types' => ['department', 'clinician', 'testimonial', 'article'],
+            'item_types' => ['department', 'clinician', 'testimonial'],
             'can_manage_media' => request()->user()->can('website.manage_media') || request()->user()->hasRole('superadmin'),
             'can_view_json' => request()->user()->hasRole('superadmin'),
         ]);

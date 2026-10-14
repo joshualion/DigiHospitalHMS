@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class PublicSiteItem extends Model
@@ -75,6 +76,11 @@ class PublicSiteItem extends Model
     public function presentable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(BlogComment::class, 'public_site_item_id');
     }
 
     public function scopePublished($query)

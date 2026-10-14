@@ -6,7 +6,7 @@ import PublicPageHero from '@/Components/Public/PublicPageHero.vue';
 import SectionHeading from '@/Components/Public/SectionHeading.vue';
 import ServicesAccordion from '@/Components/Public/ServicesAccordion.vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Activity, ArrowRight, Building2, Quote, ShieldCheck, Users } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
@@ -16,8 +16,15 @@ const props = defineProps({
     page: { type: Object, required: true },
     sections: { type: Object, default: () => ({}) },
     items: { type: Object, default: () => ({}) },
+    comments: { type: Array, default: () => [] },
 });
 
+const commentForm = useForm({ name: '', email: '', body: '', website: '' });
+function submitComment() {
+    const slug = props.items.article?.[0]?.slug;
+    if (!slug) return;
+    commentForm.post('/news/' + slug + '/comments', { preserveScroll: true, onSuccess: () => commentForm.reset('body') });
+}
 const slideIndex = ref(0);
 const paused = ref(false);
 let timer;
@@ -59,6 +66,14 @@ const articles = computed(() => (props.items.article || []).filter((article) => 
     return ![article.title, article.summary, content.excerpt, content.body]
         .filter(Boolean)
         .some((value) => isPlaceholderCopy(value));
+}));
+const newsSearch = ref('');
+const newsCategory = ref('all');
+const newsCategories = computed(() => [...new Set(articles.value.map((article) => article.content?.category).filter(Boolean))].sort());
+const visibleArticles = computed(() => articles.value.filter((article) => {
+    const categoryMatches = newsCategory.value === 'all' || article.content?.category === newsCategory.value;
+    const searchable = [article.title, article.summary, article.content?.subtitle, article.content?.category, article.content?.tags].join(' ').toLowerCase();
+    return categoryMatches && searchable.includes(newsSearch.value.trim().toLowerCase());
 }));
 const activeSlide = computed(() => slides.value[slideIndex.value] || slides.value[0] || {});
 const trustIcons = [ShieldCheck, Users, Activity];
@@ -354,28 +369,66 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         <article v-for="department in departments" :key="department.slug" class="public-card rounded-3xl p-6"><Building2 class="h-8 w-8 public-accent" /><h2 class="mt-4 text-xl font-black">{{ department.title }}</h2><p class="mt-3 public-prose text-sm">{{ department.summary }}</p></article>
                         <p v-if="departments.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">Department information is being updated. Please contact the hospital if you need assistance.</p>
                     </div>
-                    <div v-else-if="page.slug === 'news'" class="grid gap-5 md:grid-cols-3">
-                        <article v-for="article in articles" :key="article.slug" class="public-card overflow-hidden rounded-3xl">
-                            <Link :href="`/news/${article.slug}`" class="block">
-                                <PublicImage v-if="article.content?.thumbnail || article.content?.image" :src="article.content.thumbnail || article.content.image" :alt="article.content.thumbnail_alt || article.content.alt || article.title" class="aspect-[16/10] w-full overflow-hidden" width="640" height="400" loading="lazy" />
-                            </Link>
-                            <div class="p-7">
-                                <p v-if="article.content?.published_on || article.content?.author" class="text-xs font-bold uppercase tracking-wider public-accent">{{ [article.content?.published_on, article.content?.author].filter(Boolean).join(' · ') }}</p>
-                                <h2 class="mt-3 text-xl font-black">{{ article.title }}</h2>
-                                <p v-if="article.content?.subtitle" class="mt-2 text-base font-semibold" style="color: var(--public-text-secondary);">{{ article.content.subtitle }}</p>
-                                <p class="mt-4 text-sm leading-7" style="color: var(--public-text-secondary);">{{ article.summary || article.content?.excerpt }}</p>
-                                <Link :href="`/news/${article.slug}`" class="public-focus public-link mt-5 inline-flex text-sm font-black">Read article <ArrowRight class="ml-2 h-4 w-4" /></Link>
-                            </div>
-                        </article>
-                        <p v-if="articles.length === 0" class="public-card rounded-3xl p-8 text-center md:col-span-3">Health news and hospital updates will appear here.</p>
+                    <div v-else-if="page.slug === 'news'" class="space-y-8">
+                        <div class="public-card grid gap-4 rounded-2xl p-5 md:grid-cols-[minmax(0,1fr)_15rem]">
+                            <label class="grid gap-2 text-sm font-bold">Search articles
+                                <input v-model="newsSearch" type="search" placeholder="Search health news and updates" class="w-full rounded-lg border-slate-300 text-slate-900" />
+                            </label>
+                            <label class="grid gap-2 text-sm font-bold">Category
+                                <select v-model="newsCategory" class="w-full rounded-lg border-slate-300 text-slate-900">
+                                    <option value="all">All topics</option>
+                                    <option v-for="category in newsCategories" :key="category" :value="category">{{ category }}</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            <article v-for="article in visibleArticles" :key="article.slug" class="public-card overflow-hidden rounded-3xl">
+                                <Link :href="`/news/${article.slug}`" class="block">
+                                    <PublicImage v-if="article.content?.thumbnail || article.content?.image" :src="article.content.thumbnail || article.content.image" :alt="article.content.thumbnail_alt || article.content.alt || article.title" class="aspect-[16/10] w-full overflow-hidden" width="640" height="400" loading="lazy" />
+                                </Link>
+                                <div class="p-7">
+                                    <p v-if="article.content?.category" class="mb-2 text-xs font-black uppercase tracking-wider public-accent">{{ article.content.category }}</p>
+                                    <p v-if="article.content?.published_on || article.published_at || article.content?.author" class="text-xs font-semibold uppercase tracking-wider" style="color: var(--public-text-secondary);">{{ [article.content?.published_on || article.published_at, article.content?.author].filter(Boolean).join(' · ') }}</p>
+                                    <h2 class="mt-3 text-xl font-black"><Link :href="`/news/${article.slug}`" class="public-focus public-link">{{ article.title }}</Link></h2>
+                                    <p v-if="article.content?.subtitle" class="mt-2 text-base font-semibold" style="color: var(--public-text-secondary);">{{ article.content.subtitle }}</p>
+                                    <p class="mt-4 text-sm leading-7" style="color: var(--public-text-secondary);">{{ article.summary || article.content?.excerpt }}</p>
+                                    <Link :href="`/news/${article.slug}`" class="public-focus public-link mt-5 inline-flex text-sm font-black">Read article <ArrowRight class="ml-2 h-4 w-4" /></Link>
+                                </div>
+                            </article>
+                        </div>
+                        <p v-if="visibleArticles.length === 0" class="public-card rounded-3xl p-8 text-center">No articles match your search. Try another topic or keyword.</p>
                     </div>
                     <article v-else-if="page.slug === 'doctor-profile' || page.slug === 'article'" class="public-card mx-auto max-w-4xl rounded-[2rem] p-8">
                         <PublicImage v-if="page.content?.photo || page.content?.image" :src="page.content.photo || page.content.image" :alt="page.content.alt || page.title" class="mb-8 aspect-video w-full overflow-hidden rounded-3xl" width="900" height="520" loading="eager" sizes="(min-width: 1024px) 900px, 100vw" />
+                        <p v-if="page.slug === 'article' && (page.content?.category || page.content?.author)" class="mb-3 text-xs font-bold uppercase tracking-wide public-accent">{{ [page.content.category, page.content.author].filter(Boolean).join(' · ') }}</p>
                         <p v-if="page.content?.subtitle" class="mb-6 text-xl font-semibold" style="color: var(--public-text-secondary);">{{ page.content.subtitle }}</p>
-                        <div v-if="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary" class="public-prose whitespace-pre-line text-lg leading-9">{{ page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary }}</div>
+                        <div v-if="page.slug === 'article' && page.content?.body_html" class="public-prose prose max-w-none text-lg leading-9" v-html="page.content.body_html"></div>
+                        <div v-else-if="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary" class="public-prose whitespace-pre-line text-lg leading-9">{{ page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary }}</div>
                         <p v-else class="text-center text-sm font-bold" style="color: var(--public-text-secondary);">This information is currently being updated. Please contact the hospital if you need assistance.</p>
                         <PublicButton v-if="page.slug === 'doctor-profile' && page.content?.staff_profile_id" class="mt-7" :href="`/appointment/request?doctor=${page.content.staff_profile_id}`">Request appointment with this doctor</PublicButton>
                     </article>
+                    <section v-if="page.slug === 'article' && page.content?.comments_enabled === true" class="mx-auto mt-10 max-w-4xl space-y-7">
+                        <header>
+                            <h2 class="text-2xl font-black">Comments</h2>
+                            <p class="mt-2 text-sm" style="color: var(--public-text-secondary);">All comments are reviewed before they appear publicly.</p>
+                        </header>
+                        <div v-for="comment in comments" :key="comment.id" class="public-card rounded-2xl p-5">
+                            <h3 class="font-bold">{{ comment.name }}</h3>
+                            <p class="mt-2 whitespace-pre-line text-sm leading-7" style="color: var(--public-text-secondary);">{{ comment.body }}</p>
+                        </div>
+                        <p v-if="!comments.length" class="text-sm" style="color: var(--public-text-secondary);">No approved comments yet.</p>
+                        <form class="public-card grid gap-4 rounded-2xl p-6" @submit.prevent="submitComment">
+                            <h3 class="text-xl font-bold">Leave a comment</h3>
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <label class="grid gap-1 text-sm font-semibold">Name<input v-model="commentForm.name" maxlength="120" required class="rounded-lg border-slate-300 text-slate-900" autocomplete="name" /></label>
+                                <label class="grid gap-1 text-sm font-semibold">Email (not public)<input v-model="commentForm.email" type="email" maxlength="255" required class="rounded-lg border-slate-300 text-slate-900" autocomplete="email" /></label>
+                            </div>
+                            <label class="hidden" aria-hidden="true">Website<input v-model="commentForm.website" tabindex="-1" autocomplete="off" /></label>
+                            <label class="grid gap-1 text-sm font-semibold">Comment<textarea v-model="commentForm.body" maxlength="3000" rows="5" required class="rounded-lg border-slate-300 text-slate-900" /></label>
+                            <p v-if="Object.keys(commentForm.errors).length" class="text-sm text-red-700">{{ Object.values(commentForm.errors)[0] }}</p>
+                            <button type="submit" :disabled="commentForm.processing" class="w-fit rounded-lg bg-red-700 px-5 py-3 text-sm font-bold text-white disabled:opacity-50">Submit for review</button>
+                        </form>
+                    </section>
                     <div v-else-if="page.slug === 'about'" class="mx-auto max-w-6xl">
                         <div v-if="standardBody || page.content?.mission || page.content?.vision || page.content?.image" class="grid items-start gap-12 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.85fr)]">
                             <div>

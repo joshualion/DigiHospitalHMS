@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BillableService;
+use App\Models\BlogComment;
 use App\Models\Department;
 use App\Models\Hospital;
 use App\Models\PublicSiteItem;
@@ -101,8 +102,10 @@ class PublicSiteController extends Controller
         $page = [
             'slug' => 'article',
             'title' => $item->published_title ?? $item->title,
-            'content' => $this->normalizeContentImages($item->published_content ?? []),
-            'seo' => ['title' => $item->published_title ?? $item->title, 'description' => $item->published_summary ?? $item->summary],
+            'content' => array_merge($this->normalizeContentImages($item->published_content ?? []), [
+                'body_html' => Str::markdown((string) ($item->published_content['body'] ?? ''), ['html_input' => 'strip', 'allow_unsafe_links' => false]),
+            ]),
+            'seo' => ['title' => ($item->published_content['seo_title'] ?? null) ?: ($item->published_title ?? $item->title), 'description' => ($item->published_content['seo_description'] ?? null) ?: ($item->published_summary ?? $item->summary)],
             'published_at' => $item->published_at?->toISOString(),
         ];
 
@@ -114,6 +117,9 @@ class PublicSiteController extends Controller
             'page' => $page,
             'sections' => [],
             'items' => ['article' => [$this->itemPayload($item)]],
+            'comments' => ($item->published_content['comments_enabled'] ?? false) === true
+                ? BlogComment::where('hospital_id', $hospital->id)->where('public_site_item_id', $item->id)->where('status', 'approved')->oldest()->limit(100)->get(['id', 'name', 'body', 'created_at'])
+                : [],
         ]);
     }
 
@@ -269,7 +275,7 @@ class PublicSiteController extends Controller
             ->where('hospital_id', $page->hospital_id)
             ->whereIn($draft ? 'draft_type' : 'published_type', ['testimonial', 'article'])
             ->when(! $draft, fn ($query) => $query->published())
-            ->orderBy($draft ? 'draft_sort_order' : 'published_sort_order')
+            ->when($page->slug === 'news' && ! $draft, fn ($query) => $query->orderByDesc('published_at'), fn ($query) => $query->orderBy($draft ? 'draft_sort_order' : 'published_sort_order'))
             ->get()
             ->map(fn (PublicSiteItem $item) => $this->itemPayload($item, $draft))
             ->groupBy('type')
@@ -402,6 +408,7 @@ class PublicSiteController extends Controller
             'title' => $draft ? ($item->draft_title ?? $item->title) : ($item->published_title ?? $item->title),
             'summary' => $draft ? ($item->draft_summary ?? $item->summary) : ($item->published_summary ?? $item->summary),
             'is_featured' => $draft ? ($item->draft_is_featured ?? $item->is_featured) : ($item->published_is_featured ?? $item->is_featured),
+            'published_at' => $item->published_at?->toDateString(),
             'content' => $this->normalizeContentImages($draft ? ($item->draft_content ?? []) : ($item->published_content ?? [])),
         ];
     }

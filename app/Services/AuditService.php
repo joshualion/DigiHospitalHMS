@@ -22,6 +22,18 @@ class AuditService
         'session',
         'secret',
         'api_key',
+        'access_token',
+        'refresh_token',
+        'api_token',
+        'password_hash',
+        'client_secret',
+        'private_key',
+        'secret_key',
+        'authorization',
+        'otp',
+        'recovery_codes',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     public function record(

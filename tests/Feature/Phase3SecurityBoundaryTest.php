@@ -75,6 +75,6 @@ class Phase3SecurityBoundaryTest extends TestCase
     {
         $user = User::factory()->create();
         $this->actingAs($user)->get('/profile')
-            ->assertOk()->assertHeader('Cache-Control', 'private, no-store, max-age=0');
+            ->assertOk()->assertHeader('Cache-Control', 'max-age=0, no-store, private');
     }
 }

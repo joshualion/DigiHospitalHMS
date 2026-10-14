@@ -151,7 +151,7 @@ watch(expandedGroup, (value) => {
                         <span class="flex min-w-0 items-center gap-3"><component :is="group.icon" class="h-4 w-4 shrink-0" aria-hidden="true" /><span v-if="!sidebarCompact" class="truncate text-xs font-extrabold uppercase tracking-wide">{{ group.label }}</span></span>
                         <ChevronDown v-if="!sidebarCompact" class="h-4 w-4 shrink-0 transition-transform" :class="{ 'rotate-180': expandedGroup === group.label }" />
                     </button>
-                    <div v-if="!sidebarCompact && (expandedGroup === group.label || group.label === 'Overview')" class="space-y-1 pl-2">
+                    <div v-if="!sidebarCompact && expandedGroup === group.label" class="space-y-1 pl-2">
                         <Link v-for="item in group.items" :key="item.href" :href="item.href" class="admin-nav-link rounded-md px-3 py-2" :class="{ 'admin-nav-link-active': isActive(item.href), 'justify-center': sidebarCompact }" :title="sidebarCompact ? item.label : null" @click="mobileOpen = false">
                             <component :is="item.icon" class="h-4 w-4 shrink-0" />
                             <span v-if="!sidebarCompact" class="truncate">{{ item.label }}</span>

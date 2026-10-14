@@ -25,6 +25,7 @@ class BlogController extends FoundationController
         $hospital = $this->currentHospital();
         $posts = PublicSiteItem::where('hospital_id', $hospital->id)
             ->where(fn ($query) => $query->where('type', 'article')->orWhere('draft_type', 'article')->orWhere('published_type', 'article'))
+            ->withCount(['comments as pending_comments_count' => fn ($query) => $query->where('status', 'pending')])
             ->latest()->get();
 
         return Inertia::render('Admin/Blog/Index', [
@@ -32,7 +33,7 @@ class BlogController extends FoundationController
                 'id' => $post->id, 'title' => $post->draft_title ?? $post->title,
                 'slug' => $post->draft_slug ?? $post->slug,
                 'status' => $post->status, 'published_at' => $post->published_at?->toDateTimeString(),
-                'comments' => BlogComment::where('public_site_item_id', $post->id)->where('status', 'pending')->count(),
+                'comments' => $post->pending_comments_count,
             ]),
         ]);
     }

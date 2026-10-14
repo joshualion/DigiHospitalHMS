@@ -118,7 +118,7 @@ onBeforeUnmount(revokePendingPreview);
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <a :href="page.slug === 'home' ? '/' : `/${page.slug}`" class="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold" target="_blank">View</a>
-                            <Link :href="`/admin/public-website/pages/${page.id}`" class="rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white">Manage</Link>
+                            <Link :href="page.slug === 'news' ? '/admin/news' : `/admin/public-website/pages/${page.id}`" class="rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white">{{ page.slug === 'news' ? 'Manage blog posts' : 'Manage' }}</Link>
                         </div>
                     </div>
                 </div>

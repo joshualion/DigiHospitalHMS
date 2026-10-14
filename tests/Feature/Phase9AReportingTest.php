@@ -61,6 +61,9 @@ class Phase9AReportingTest extends TestCase
         $user->syncRoles(['hospital-admin']);
         StaffProfile::factory()->create(['user_id' => $user->id, 'hospital_id' => $hospital->id]);
 
+        $outsidePatient = Patient::create(['hospital_id' => $other->id, 'registration_facility_id' => $otherFacility->id, 'registered_by' => $user->id, 'hospital_number' => 'OUT-001', 'first_name' => 'Other', 'last_name' => 'Hospital', 'sex' => 'female', 'status' => 'active']);
+        Visit::create(['hospital_id' => $other->id, 'facility_id' => $otherFacility->id, 'patient_id' => $outsidePatient->id, 'source' => 'walk_in', 'status' => 'checked_in', 'checked_in_by' => $user->id, 'checked_in_at' => now()]);
+
         $this->actingAs($user)->get('/admin/reports?from='.today()->toDateString().'&to='.today()->toDateString())
             ->assertOk()->assertInertia(fn (Assert $page) => $page
                 ->component('Admin/Reports/Index')

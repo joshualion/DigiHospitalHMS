@@ -6,7 +6,7 @@ import PublicPageHero from '@/Components/Public/PublicPageHero.vue';
 import SectionHeading from '@/Components/Public/SectionHeading.vue';
 import ServicesAccordion from '@/Components/Public/ServicesAccordion.vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Activity, ArrowRight, Building2, Quote, ShieldCheck, Users } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
@@ -16,8 +16,15 @@ const props = defineProps({
     page: { type: Object, required: true },
     sections: { type: Object, default: () => ({}) },
     items: { type: Object, default: () => ({}) },
+    comments: { type: Array, default: () => [] },
 });
 
+const commentForm = useForm({ name: '', email: '', body: '', website: '' });
+function submitComment() {
+    const slug = props.items.article?.[0]?.slug;
+    if (!slug) return;
+    commentForm.post('/news/' + slug + '/comments', { preserveScroll: true, onSuccess: () => commentForm.reset('body') });
+}
 const slideIndex = ref(0);
 const paused = ref(false);
 let timer;
@@ -376,6 +383,28 @@ onBeforeUnmount(() => window.clearInterval(timer));
                         <p v-else class="text-center text-sm font-bold" style="color: var(--public-text-secondary);">This information is currently being updated. Please contact the hospital if you need assistance.</p>
                         <PublicButton v-if="page.slug === 'doctor-profile' && page.content?.staff_profile_id" class="mt-7" :href="`/appointment/request?doctor=${page.content.staff_profile_id}`">Request appointment with this doctor</PublicButton>
                     </article>
+                    <section v-if="page.slug === 'article' && page.content?.comments_enabled === true" class="mx-auto mt-10 max-w-4xl space-y-7">
+                        <header>
+                            <h2 class="text-2xl font-black">Comments</h2>
+                            <p class="mt-2 text-sm" style="color: var(--public-text-secondary);">All comments are reviewed before they appear publicly.</p>
+                        </header>
+                        <div v-for="comment in comments" :key="comment.id" class="public-card rounded-2xl p-5">
+                            <h3 class="font-bold">{{ comment.name }}</h3>
+                            <p class="mt-2 whitespace-pre-line text-sm leading-7" style="color: var(--public-text-secondary);">{{ comment.body }}</p>
+                        </div>
+                        <p v-if="!comments.length" class="text-sm" style="color: var(--public-text-secondary);">No approved comments yet.</p>
+                        <form class="public-card grid gap-4 rounded-2xl p-6" @submit.prevent="submitComment">
+                            <h3 class="text-xl font-bold">Leave a comment</h3>
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <label class="grid gap-1 text-sm font-semibold">Name<input v-model="commentForm.name" maxlength="120" required class="rounded-lg border-slate-300 text-slate-900" autocomplete="name" /></label>
+                                <label class="grid gap-1 text-sm font-semibold">Email (not public)<input v-model="commentForm.email" type="email" maxlength="255" required class="rounded-lg border-slate-300 text-slate-900" autocomplete="email" /></label>
+                            </div>
+                            <label class="hidden" aria-hidden="true">Website<input v-model="commentForm.website" tabindex="-1" autocomplete="off" /></label>
+                            <label class="grid gap-1 text-sm font-semibold">Comment<textarea v-model="commentForm.body" maxlength="3000" rows="5" required class="rounded-lg border-slate-300 text-slate-900" /></label>
+                            <p v-if="Object.keys(commentForm.errors).length" class="text-sm text-red-700">{{ Object.values(commentForm.errors)[0] }}</p>
+                            <button type="submit" :disabled="commentForm.processing" class="w-fit rounded-lg bg-red-700 px-5 py-3 text-sm font-bold text-white disabled:opacity-50">Submit for review</button>
+                        </form>
+                    </section>
                     <div v-else-if="page.slug === 'about'" class="mx-auto max-w-6xl">
                         <div v-if="standardBody || page.content?.mission || page.content?.vision || page.content?.image" class="grid items-start gap-12 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.85fr)]">
                             <div>

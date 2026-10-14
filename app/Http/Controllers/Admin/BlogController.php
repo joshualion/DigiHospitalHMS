@@ -11,6 +11,7 @@ use App\Services\AuditService;
 use App\Services\PublicSitePublisher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -62,7 +63,9 @@ class BlogController extends FoundationController
             ] : null,
             'media' => PublicSiteMedia::where('hospital_id', $hospital->id)->latest()->get(['id', 'title', 'path', 'disk', 'alt_text']),
             'revisions' => $post ? PublicSiteRevision::where('revisionable_type', PublicSiteItem::class)->where('revisionable_id', $post->id)->latest('id')->limit(25)->get(['id','version','action','created_at']) : [],
-            'comments' => $post ? BlogComment::where('public_site_item_id', $post->id)->latest()->limit(100)->get(['id','name','body','status','created_at','moderation_note']) : [],
+            'comments' => $post ? BlogComment::where('public_site_item_id', $post->id)->latest()->limit(100)->get(['id','name','body','status','created_at','moderation_note'])->map(fn ($comment) => array_merge($comment->toArray(), [
+                'reviews' => DB::table('blog_comment_reviews')->where('blog_comment_id', $comment->id)->orderByDesc('id')->limit(20)->get(['previous_status', 'status', 'note', 'created_at']),
+            ])) : [],
             'can_publish' => request()->user()->hasRole('superadmin') || request()->user()->can('website.publish'),
         ]);
     }
@@ -165,6 +168,15 @@ class BlogController extends FoundationController
         $data = $request->validate(['status' => ['required', Rule::in(['pending','approved','rejected'])], 'note' => ['nullable','string','max:1000']]);
         $before = $comment->only(['status','moderation_note']);
         $comment->update(['status' => $data['status'], 'moderation_note' => $data['note'] ?? '', 'moderated_by' => $request->user()->id, 'moderated_at' => now()]);
+        DB::table('blog_comment_reviews')->insert([
+            'blog_comment_id' => $comment->id,
+            'hospital_id' => $comment->hospital_id,
+            'reviewed_by' => $request->user()->id,
+            'previous_status' => $before['status'],
+            'status' => $data['status'],
+            'note' => $data['note'] ?? null,
+            'created_at' => now(),
+        ]);
         $audit->record('blog.comment_moderated', $comment, $before, $comment->only(['status','moderation_note']));
         return back()->with('success', 'Comment moderation saved.');
     }

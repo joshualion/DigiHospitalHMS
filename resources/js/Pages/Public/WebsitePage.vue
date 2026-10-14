@@ -400,8 +400,10 @@ onBeforeUnmount(() => window.clearInterval(timer));
                     </div>
                     <article v-else-if="page.slug === 'doctor-profile' || page.slug === 'article'" class="public-card mx-auto max-w-4xl rounded-[2rem] p-8">
                         <PublicImage v-if="page.content?.photo || page.content?.image" :src="page.content.photo || page.content.image" :alt="page.content.alt || page.title" class="mb-8 aspect-video w-full overflow-hidden rounded-3xl" width="900" height="520" loading="eager" sizes="(min-width: 1024px) 900px, 100vw" />
+                        <p v-if="page.slug === 'article' && (page.content?.category || page.content?.author)" class="mb-3 text-xs font-bold uppercase tracking-wide public-accent">{{ [page.content.category, page.content.author].filter(Boolean).join(' · ') }}</p>
                         <p v-if="page.content?.subtitle" class="mb-6 text-xl font-semibold" style="color: var(--public-text-secondary);">{{ page.content.subtitle }}</p>
-                        <div v-if="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary" class="public-prose whitespace-pre-line text-lg leading-9">{{ page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary }}</div>
+                        <div v-if="page.slug === 'article' && page.content?.body_html" class="public-prose prose max-w-none text-lg leading-9" v-html="page.content.body_html"></div>
+                        <div v-else-if="page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary" class="public-prose whitespace-pre-line text-lg leading-9">{{ page.content?.bio || page.content?.biography || page.content?.body || page.content?.summary }}</div>
                         <p v-else class="text-center text-sm font-bold" style="color: var(--public-text-secondary);">This information is currently being updated. Please contact the hospital if you need assistance.</p>
                         <PublicButton v-if="page.slug === 'doctor-profile' && page.content?.staff_profile_id" class="mt-7" :href="`/appointment/request?doctor=${page.content.staff_profile_id}`">Request appointment with this doctor</PublicButton>
                     </article>

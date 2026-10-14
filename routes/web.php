@@ -357,9 +357,7 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         })->name('admin.users');
     });
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})
+Route::get('dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 

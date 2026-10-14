@@ -9,6 +9,7 @@ const props = defineProps({
     summary: { type: Object, required: true },
     daily: { type: Array, default: () => [] },
     trends: { type: Object, default: () => ({}) },
+    can_export: { type: Boolean, default: false },
 });
 
 const filters = reactive({ from: props.filters.from, to: props.filters.to });
@@ -65,7 +66,7 @@ const cards = [
                 <label class="grid gap-1 text-sm font-semibold">To<input v-model="filters.to" type="date" class="rounded-md border p-2"></label>
                 <button class="self-end rounded-md border px-4 py-2 font-bold" type="button" @click="apply">Apply</button>
             </div>
-            <div class="mt-3 flex flex-wrap gap-2">
+            <div v-if="can_export" class="mt-3 flex flex-wrap gap-2">
                 <a :href="exportUrl('operations')" class="rounded-md border px-3 py-2 text-sm font-bold">Export operations CSV</a>
                 <a :href="exportUrl('clinical')" class="rounded-md border px-3 py-2 text-sm font-bold">Export clinical CSV</a>
                 <a :href="exportUrl('financial')" class="rounded-md border px-3 py-2 text-sm font-bold">Export financial CSV</a>

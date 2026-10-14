@@ -55,6 +55,22 @@ class Phase3SecurityBoundaryTest extends TestCase
         $this->assertFalse($user->can('view', $patient));
     }
 
+    public function test_audit_service_redacts_nested_credentials(): void
+    {
+        $redacted = app(\\App\\Services\\AuditService::class)->redact([
+            'password' => 'pass',
+            'access_token' => 'token',
+            'nested' => ['client_secret' => 'secret', 'recovery_codes' => ['abc', 'def']],
+            'action' => 'staff_updated',
+        ]);
+
+        $this->assertSame('[REDACTED]', $redacted['password']);
+        $this->assertSame('[REDACTED]', $redacted['access_token']);
+        $this->assertSame('[REDACTED]', $redacted['nested']['client_secret']);
+        $this->assertSame('[REDACTED]', $redacted['nested']['recovery_codes']);
+        $this->assertSame('staff_updated', $redacted['action']);
+    }
+
     public function test_authenticated_hospital_pages_prevent_caching(): void
     {
         $user = User::factory()->create();

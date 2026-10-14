@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BillableService;
+use App\Models\BlogComment;
 use App\Models\Department;
 use App\Models\Hospital;
 use App\Models\PublicSiteItem;
@@ -102,7 +103,7 @@ class PublicSiteController extends Controller
             'slug' => 'article',
             'title' => $item->published_title ?? $item->title,
             'content' => $this->normalizeContentImages($item->published_content ?? []),
-            'seo' => ['title' => $item->published_title ?? $item->title, 'description' => $item->published_summary ?? $item->summary],
+            'seo' => ['title' => ($item->published_content['seo_title'] ?? null) ?: ($item->published_title ?? $item->title), 'description' => ($item->published_content['seo_description'] ?? null) ?: ($item->published_summary ?? $item->summary)],
             'published_at' => $item->published_at?->toISOString(),
         ];
 
@@ -114,6 +115,9 @@ class PublicSiteController extends Controller
             'page' => $page,
             'sections' => [],
             'items' => ['article' => [$this->itemPayload($item)]],
+            'comments' => ($item->published_content['comments_enabled'] ?? false) === true
+                ? BlogComment::where('hospital_id', $hospital->id)->where('public_site_item_id', $item->id)->where('status', 'approved')->oldest()->limit(100)->get(['id', 'name', 'body', 'created_at'])
+                : [],
         ]);
     }
 

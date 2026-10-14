@@ -27,6 +27,14 @@ const uploadTarget = ref('cover');
 const moderationNotes = ref({});
 const availableMedia = computed(() => props.media.map((asset) => ({ ...asset, reference: `/public-site/media/${asset.id}` })));
 const preview = computed(() => props.post?.status === 'published' ? `/news/${props.post?.slug}` : null);
+const editorActions = [
+  { label: 'Heading', markup: '\\n## Section heading\\n' },
+  { label: 'Bold', markup: '**important text**' },
+  { label: 'Bullet list', markup: '\\n- First point\\n- Second point\\n' },
+  { label: 'Numbered list', markup: '\\n1. First step\\n2. Second step\\n' },
+  { label: 'Link', markup: '[descriptive link](https://example.org)' },
+];
+function appendMarkup(markup) { form.body += markup.replaceAll('\\n', '\n'); }
 
 function save() {
   if (props.post) form.patch(`/admin/news/${props.post.id}`, { preserveScroll: true });
@@ -82,8 +90,11 @@ function uploadImage() {
             <label class="block text-sm font-semibold">Post title<input v-model="form.title" maxlength="255" required class="mt-1 w-full rounded-lg border-slate-300" placeholder="Write a clear headline" /></label>
             <label class="block text-sm font-semibold">Subtitle<input v-model="form.subtitle" maxlength="300" class="mt-1 w-full rounded-lg border-slate-300" placeholder="Optional standfirst beneath the title" /></label>
             <label class="block text-sm font-semibold">Short excerpt<textarea v-model="form.summary" maxlength="1000" rows="3" class="mt-1 w-full rounded-lg border-slate-300" placeholder="Shown on the news listing and shared links" /></label>
+            <div class="flex flex-wrap gap-2" aria-label="Article formatting tools">
+              <button v-for="action in editorActions" :key="action.label" type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold" @click="appendMarkup(action.markup)">{{ action.label }}</button>
+            </div>
             <label class="block text-sm font-semibold">Post body<textarea v-model="form.body" required rows="18" class="mt-1 w-full rounded-lg border-slate-300 font-sans leading-relaxed" placeholder="Write the full article. Separate paragraphs with blank lines." /></label>
-            <p class="text-xs text-slate-500">Content is saved safely as text. Paragraph breaks are preserved on the public site.</p>
+            <p class="text-xs text-slate-500">Use the formatting buttons for headings, emphasis, lists and links. Articles render safely formatted Markdown on the public site.</p>
           </section>
           <section class="space-y-4 rounded-xl border bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
             <h3 class="text-lg font-bold">Search engine optimization</h3>
@@ -97,10 +108,12 @@ function uploadImage() {
             <label class="block text-sm font-semibold">Cover image
               <select v-model="form.cover" class="mt-1 w-full rounded-lg border-slate-300"><option value="">No cover image</option><option v-for="asset in availableMedia" :key="asset.id" :value="asset.reference">{{ asset.title || 'Image #' + asset.id }}</option></select>
             </label>
+            <img v-if="form.cover" :src="form.cover" :alt="form.cover_alt || 'Selected cover preview'" class="max-h-56 w-full rounded-xl object-cover" />
             <label class="block text-sm font-semibold">Cover image alternative text<input v-model="form.cover_alt" class="mt-1 w-full rounded-lg border-slate-300" placeholder="Describe the image for screen readers" /></label>
             <label class="block text-sm font-semibold">Listing thumbnail
               <select v-model="form.thumbnail" class="mt-1 w-full rounded-lg border-slate-300"><option value="">Use cover image</option><option v-for="asset in availableMedia" :key="asset.id" :value="asset.reference">{{ asset.title || 'Image #' + asset.id }}</option></select>
             </label>
+            <img v-if="form.thumbnail" :src="form.thumbnail" :alt="form.thumbnail_alt || 'Selected thumbnail preview'" class="max-h-40 w-full rounded-xl object-cover" />
             <label class="block text-sm font-semibold">Thumbnail alternative text<input v-model="form.thumbnail_alt" class="mt-1 w-full rounded-lg border-slate-300" /></label>
             <div class="grid gap-3 rounded-lg border border-dashed p-4">
               <h4 class="font-semibold">Upload an image</h4>

@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AppointmentController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BillingController;
 use App\Http\Controllers\Admin\BloodBankController;
+use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\ClinicalEncounterController;
 use App\Http\Controllers\Admin\CommercialAdminController;
 use App\Http\Controllers\Admin\DepartmentController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicAppointmentRequestController;
 use App\Http\Controllers\PublicSiteController;
+use App\Http\Controllers\BlogCommentController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -43,6 +45,7 @@ Route::get('/doctor', [PublicSiteController::class, 'page'])->defaults('slug', '
 Route::get('/doctors/{slug}', [PublicSiteController::class, 'doctor'])->name('doctors.show');
 Route::get('/news', [PublicSiteController::class, 'page'])->defaults('slug', 'news')->name('news');
 Route::get('/news/{slug}', [PublicSiteController::class, 'article'])->name('news.show');
+Route::post('/news/{slug}/comments', [BlogCommentController::class, 'store'])->middleware('throttle:5,10')->name('news.comments.store');
 Route::get('/blog', [PublicSiteController::class, 'page'])->defaults('slug', 'news')->name('blog');
 Route::get('/contact', [PublicSiteController::class, 'page'])->defaults('slug', 'contact')->name('contact');
 Route::get('/appointment', [PublicSiteController::class, 'page'])->defaults('slug', 'appointment')->name('appointment');
@@ -330,6 +333,16 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('pharmacy/prescription-items/{item}/dispense', [PrescriptionController::class, 'dispense'])->name('admin.prescriptions.dispense');
         Route::post('pharmacy/dispenses/{dispense}/return', [PrescriptionController::class, 'returnDispense'])->name('admin.prescriptions.returns.store');
         Route::post('pharmacy/dispenses/{dispense}/reverse', [PrescriptionController::class, 'reverseDispense'])->name('admin.prescriptions.dispenses.reverse');
+
+        Route::get('news', [BlogController::class, 'index'])->name('admin.news.index');
+        Route::get('news/create', [BlogController::class, 'create'])->name('admin.news.create');
+        Route::post('news', [BlogController::class, 'store'])->name('admin.news.store');
+        Route::get('news/{post}/edit', [BlogController::class, 'edit'])->name('admin.news.edit');
+        Route::patch('news/{post}', [BlogController::class, 'update'])->name('admin.news.update');
+        Route::post('news/{post}/publish', [BlogController::class, 'publish'])->name('admin.news.publish');
+        Route::post('news/{post}/unpublish', [BlogController::class, 'unpublish'])->name('admin.news.unpublish');
+        Route::post('news/{post}/revisions/{revision}/restore', [BlogController::class, 'restore'])->name('admin.news.restore');
+        Route::patch('news/comments/{comment}', [BlogController::class, 'moderate'])->name('admin.news.comments.moderate');
 
         Route::get('public-website', [PublicWebsiteController::class, 'index'])->name('admin.public-website.index');
         Route::get('public-website/pages/{page}', [PublicWebsiteController::class, 'edit'])

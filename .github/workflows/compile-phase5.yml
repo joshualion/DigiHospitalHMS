@@ -1,0 +1,26 @@
+name: Compile Phase 5 Analytics
+on:
+  push:
+    branches: [feature/phase5-reporting-analytics-20261015]
+    paths: ['.github/workflows/compile-phase5.yml']
+permissions:
+  contents: write
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A public/build
+          if ! git diff --cached --quiet; then
+            git commit -m "build: compile Phase 5 analytics assets"
+            git push origin HEAD:feature/phase5-reporting-analytics-20261015
+          fi

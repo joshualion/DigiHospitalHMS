@@ -12,7 +12,7 @@ class ReviewDemoClinicalCatalog extends Command
         {--hospital= : Required hospital ID; never touch another hospital}
         {--apply : Deactivate matching records (default is read-only preview)}';
 
-    protected $description = 'Preview or deactivate identifiable clinical demonstration catalogue entries without deleting historical references.';
+    protected $description = 'Preview or deactivate identifiable clinical and procurement demonstration catalogue entries without deleting historical references.';
 
     public function handle(): int
     {
@@ -73,6 +73,29 @@ class ReviewDemoClinicalCatalog extends Command
                         ->where($nameColumn, $name)
                         ->where('is_active', true)
                         ->update(['is_active' => false]);
+                }
+            }
+        }
+        // Supplier status is a string, unlike clinical catalogues' is_active column.
+        // Only match unmistakably phase-labelled smoke suppliers; never infer from amount or ID.
+        if (Schema::hasTable('suppliers')) {
+            $suppliers = DB::table('suppliers')->where('hospital_id', $hospitalId)
+                ->where('status', 'active')->get(['id', 'code', 'name']);
+            foreach ($suppliers as $supplier) {
+                $code = (string) $supplier->code;
+                $name = (string) $supplier->name;
+                if (preg_match('/^P[0-9]+[A-Z]?[-_]/i', $code) !== 1
+                    || preg_match('/\\bphase\\s+[0-9]+[A-Z]?\\b/i', $name) !== 1
+                    || stripos($name, 'smoke') === false) {
+                    continue;
+                }
+                ++$count;
+                $this->line(sprintf('suppliers #%d [%s] %s', $supplier->id, $code, $name));
+                if ($this->option('apply')) {
+                    DB::table('suppliers')->where('id', $supplier->id)
+                        ->where('hospital_id', $hospitalId)
+                        ->where('code', $code)->where('name', $name)
+                        ->where('status', 'active')->update(['status' => 'inactive']);
                 }
             }
         }

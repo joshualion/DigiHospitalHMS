@@ -26,7 +26,7 @@ class ProcurementController extends FoundationController
         $hospital = $this->currentHospital();
 
         return Inertia::render('Admin/Procurement/Index', $this->shared($hospital->id) + [
-            'suppliers' => Supplier::with('items:id,name,sku')->where('hospital_id', $hospital->id)->latest()->get(),
+            'suppliers' => Supplier::with('items:id,name,sku')->where('hospital_id', $hospital->id)->where('status', 'active')->latest()->get(),
             'requisitions' => PurchaseRequisition::with(['location', 'lines.item', 'purchaseOrder'])->where('hospital_id', $hospital->id)->latest()->get(),
             'purchaseOrders' => PurchaseOrder::with(['supplier', 'lines.item', 'goodsReceipts.lines'])->where('hospital_id', $hospital->id)->latest()->get(),
             'reorderSuggestions' => $workflow->reorderSuggestions($hospital->id),

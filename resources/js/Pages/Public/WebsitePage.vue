@@ -79,7 +79,7 @@ const activeSlide = computed(() => slides.value[slideIndex.value] || slides.valu
 const trustIcons = [ShieldCheck, Users, Activity];
 const hasHeroCopy = computed(() => slides.value.length > 0 || Boolean(pageTitle.value));
 const pageTitle = computed(() => props.page.title || props.site.hospital?.display_name || 'Hospital');
-const hasAboutContent = computed(() => Boolean(about.value.heading || about.value.description || about.value.image || about.value.primary_image || about.value.points?.length));
+const hasAboutContent = computed(() => Boolean(about.value.heading || about.value.intro || about.value.description || about.value.image || about.value.primary_image || about.value.points?.length));
 const hasServicesContent = computed(() => services.value.length > 0 || Boolean(props.sections.services?.content?.heading || props.sections.services?.content?.description));
 const hasDepartmentsContent = computed(() => departments.value.length > 0 || Boolean(departmentsSection.value.heading || departmentsSection.value.description));
 const hasTrustContent = computed(() => whyItems.value.length > 0 || Boolean(trustSection.value.heading || trustSection.value.description));
@@ -201,7 +201,7 @@ onBeforeUnmount(() => window.clearInterval(timer));
 
             <section v-if="hasAboutContent" class="public-section">
                 <div class="public-container">
-                    <SectionHeading :kicker="about.label" :title="about.heading || pageTitle" :description="about.description" />
+                    <SectionHeading :kicker="about.label" :title="about.heading || pageTitle" :description="about.intro" />
                     <div class="mt-12 grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
                         <div class="relative order-2 lg:order-1">
                             <div class="absolute -inset-4 rounded-[2rem]" style="background: var(--public-accent-soft);"></div>

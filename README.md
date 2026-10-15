@@ -171,3 +171,7 @@ Experienced in Laravel, Vue.js, MySQL, REST APIs, SaaS/business systems, applica
 See [docs/production-deployment.md](docs/production-deployment.md) for the deployment runbook and [docs/release-checklist.md](docs/release-checklist.md) for the Phase 10 technical and operational release checklist.
 
 Production releases should pass the permanent GitHub Actions CI gate before deployment. The repository tracks built Vite assets under `public/build`, so installations on shared hosting can deploy verified frontend assets without requiring Node.js on the production server.
+
+## Phase 6 — release operations
+
+For production preflight, installed version reporting, guarded upgrades, backup evidence and failure recovery, see [Phase 6 release operations](docs/phase6-release-operations.md). Run `php artisan hms:preflight --production` before any release. The deploy script intentionally requires human-reviewed backups and explicit confirmation; it does not perform unattended upgrades or database restoration.

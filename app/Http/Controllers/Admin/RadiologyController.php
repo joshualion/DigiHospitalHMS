@@ -32,8 +32,8 @@ class RadiologyController extends FoundationController
         $hospital = $this->currentHospital();
 
         return Inertia::render('Admin/Radiology/Catalogue', array_merge($this->shared($hospital->id), [
-            'modalities' => RadiologyModality::where('hospital_id', $hospital->id)->orderBy('name')->get(),
-            'studies' => RadiologyStudy::with(['modality', 'billableService:id,code,name'])->where('hospital_id', $hospital->id)->orderBy('name')->get(),
+            'modalities' => RadiologyModality::where('hospital_id', $hospital->id)->where('is_active', true)->orderBy('name')->get(),
+            'studies' => RadiologyStudy::with(['modality', 'billableService:id,code,name'])->where('hospital_id', $hospital->id)->where('is_active', true)->orderBy('name')->get(),
         ]));
     }
 

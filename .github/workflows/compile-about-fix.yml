@@ -1,0 +1,26 @@
+name: Compile About Section Fix
+on:
+  push:
+    branches: [fix/home-about-separate-intro-20261015]
+    paths: ['.github/workflows/compile-about-fix.yml']
+permissions:
+  contents: write
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A public/build
+          if ! git diff --cached --quiet; then
+            git commit -m "build: compile About section assets"
+            git push origin HEAD:fix/home-about-separate-intro-20261015
+          fi

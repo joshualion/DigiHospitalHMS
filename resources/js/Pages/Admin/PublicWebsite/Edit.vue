@@ -556,7 +556,8 @@ function toggleAccent(value) {
                         <div class="grid gap-3 md:grid-cols-2">
                             <input v-model="sectionContent(activeSection).label" class="rounded-md border-slate-300 text-sm" type="text" placeholder="Kicker">
                             <input v-model="sectionContent(activeSection).heading" class="rounded-md border-slate-300 text-sm" type="text" placeholder="Heading">
-                            <textarea v-model="sectionContent(activeSection).description" class="rounded-md border-slate-300 text-sm md:col-span-2" rows="4" placeholder="Description"></textarea>
+                            <div class="md:col-span-2"><label class="mb-1 block text-sm font-semibold">Intro text — below About heading</label><textarea v-model="sectionContent(activeSection).intro" class="w-full rounded-md border-slate-300 text-sm" rows="3" placeholder="Short introduction below the About heading"></textarea></div>
+                            <div class="md:col-span-2"><label class="mb-1 block text-sm font-semibold">Detailed text — beside About image</label><textarea v-model="sectionContent(activeSection).description" class="w-full rounded-md border-slate-300 text-sm" rows="4" placeholder="Hospital story displayed beside the image"></textarea></div>
                             <input v-model="sectionContent(activeSection).cta_label" class="rounded-md border-slate-300 text-sm" type="text" placeholder="CTA label">
                             <input v-model="sectionContent(activeSection).cta_url" class="rounded-md border-slate-300 text-sm" type="text" placeholder="CTA URL">
                         </div>

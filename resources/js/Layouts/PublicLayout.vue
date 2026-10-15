@@ -1,6 +1,6 @@
 <script setup>
 import PublicBrandMark from '@/Components/Public/PublicBrandMark.vue';
-import ThemeSwitcher from '@/Components/Public/ThemeSwitcher.vue';
+import PublicAppearanceToggle from '@/Components/Public/PublicAppearanceToggle.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { LogIn, Menu, X } from '@lucide/vue';
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
@@ -31,7 +31,6 @@ const footer = computed(() => shell.value.footer || {});
 const navigation = computed(() => shell.value.navigation || []);
 const contact = computed(() => props.site?.contact || {});
 const themeDefaults = computed(() => shell.value.theme || { appearance: 'system', accent: 'calm', allowedAccents: ['calm', 'healing', 'alert', 'blood', 'seagrass'], switcherVisible: true });
-const showFullThemeSwitcher = computed(() => themeDefaults.value.switcherVisible !== false && themeDefaults.value.show_switcher !== false);
 const hospitalName = computed(() => props.site.hospital?.display_name || 'Hospital');
 const hospitalTagline = computed(() => props.site.hospital?.tagline || props.site.branding?.tagline || '');
 const hospitalLogoPath = computed(() => props.site.hospital?.logo_url || props.site.hospital?.logo_path || '');
@@ -86,12 +85,12 @@ onBeforeUnmount(() => {
                 </nav>
 
                 <div class="hidden items-center gap-3 lg:flex">
-                    <ThemeSwitcher :defaults="themeDefaults" :allow-accent="showFullThemeSwitcher" :label="showFullThemeSwitcher ? 'Open theme settings' : 'Change appearance mode'" />
+                    <PublicAppearanceToggle :defaults="themeDefaults" />
                     <Link :href="user ? '/dashboard' : '/login'" class="public-focus btn-public-secondary"><LogIn class="h-4 w-4" aria-hidden="true" />{{ user ? 'Dashboard' : 'Login' }}</Link>
                 </div>
 
                 <div class="flex items-center gap-2 lg:hidden">
-                    <ThemeSwitcher :defaults="themeDefaults" :allow-accent="showFullThemeSwitcher" :label="showFullThemeSwitcher ? 'Open theme settings' : 'Change appearance mode'" />
+                    <PublicAppearanceToggle :defaults="themeDefaults" />
                     <button class="public-focus grid h-11 w-11 place-items-center rounded-full border" style="border-color: var(--public-border); color: var(--public-text);" type="button" aria-label="Open menu" :aria-expanded="open" @click="open = true">
                         <Menu class="h-5 w-5" aria-hidden="true" />
                     </button>
@@ -110,8 +109,8 @@ onBeforeUnmount(() => {
                 <Link :href="user ? '/dashboard' : '/login'" class="public-focus btn-public-secondary" @click="closeMenu">{{ user ? 'Dashboard' : 'Login' }}</Link>
             </nav>
             <div class="mt-8 border-t pt-6" style="border-color: var(--public-border);">
-                <p class="mb-3 text-sm font-black">{{ showFullThemeSwitcher ? 'Theme' : 'Appearance' }}</p>
-                <ThemeSwitcher :defaults="themeDefaults" :allow-accent="showFullThemeSwitcher" :label="showFullThemeSwitcher ? 'Open theme settings' : 'Change appearance mode'" />
+                <p class="mb-3 text-sm font-black">Appearance</p>
+                <PublicAppearanceToggle :defaults="themeDefaults" />
             </div>
         </aside>
 

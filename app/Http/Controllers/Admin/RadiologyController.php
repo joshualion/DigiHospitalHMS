@@ -59,6 +59,18 @@ class RadiologyController extends FoundationController
         return back()->with('success', 'Study created.');
     }
 
+    public function setStudyStatus(Request $request, RadiologyStudy $study): RedirectResponse
+    {
+        $this->authorize('update', $study);
+        $hospital = $this->currentHospital();
+        abort_unless((int) $study->hospital_id === (int) $hospital->id, 404);
+        $validated = $request->validate(['is_active' => ['required', 'boolean']]);
+        $before = $study->toArray();
+        $study->update(['is_active' => (bool) $validated['is_active']]);
+        app(AuditService::class)->record('radiology.study_status_updated', $study, $before, $study->fresh()->toArray(), actor: $request->user());
+        return back()->with('success', 'Study availability updated. Historical requests are preserved.');
+    }
+
     public function requests(Request $request): Response
     {
         $this->authorize('viewAny', RadiologyRequest::class);

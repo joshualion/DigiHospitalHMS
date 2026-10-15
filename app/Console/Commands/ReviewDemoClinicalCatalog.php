@@ -54,7 +54,7 @@ class ReviewDemoClinicalCatalog extends Command
             foreach ($records as $record) {
                 $code = (string) $record->{$codeColumn};
                 $name = (string) $record->{$nameColumn};
-                $phaseCode = preg_match('/^P(?:HASE)?[0-9]+[A-Z]?(?:[-_]|$)/i', $code) === 1;
+                $phaseCode = preg_match('/^(?:P|B)(?:HASE)?[0-9]+[A-Z]?(?:[-_]|$)/i', $code) === 1;
                 $phaseName = preg_match('/\bphase\s+[0-9]+[A-Z]?\b/i', $name) === 1;
                 $structural = in_array($code, $knownCodes, true)
                     && (stripos($name, 'example') !== false || stripos($name, 'configure') !== false);

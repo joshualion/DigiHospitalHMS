@@ -115,6 +115,18 @@ class LaboratoryController extends FoundationController
         return back()->with('success', 'Panel created.');
     }
 
+    public function setTestStatus(Request $request, LabTest $test): RedirectResponse
+    {
+        $this->authorize('update', $test);
+        $hospital = $this->currentHospital();
+        abort_unless((int) $test->hospital_id === (int) $hospital->id, 404);
+        $validated = $request->validate(['is_active' => ['required', 'boolean']]);
+        $before = $test->toArray();
+        $test->update(['is_active' => (bool) $validated['is_active']]);
+        app(AuditService::class)->record('lab.test_status_updated', $test, $before, $test->fresh()->toArray(), actor: $request->user());
+        return back()->with('success', 'Test availability updated. Historical requests are preserved.');
+    }
+
     public function requests(Request $request): Response
     {
         $this->authorize('viewAny', LabRequest::class);

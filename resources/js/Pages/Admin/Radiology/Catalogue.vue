@@ -5,7 +5,7 @@ import PageHeader from '@/Components/Admin/PageHeader.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 defineProps({
@@ -46,6 +46,10 @@ function saveStudy() {
                 <div class="mt-5 divide-y divide-slate-100 dark:divide-slate-800">
                     <article v-for="item in studies" :key="item.id" class="min-w-0 py-3">
                         <p class="break-words font-bold">{{ item.code }} - {{ item.name }}</p>
+                        <div class="mt-1 flex items-center gap-3">
+                            <span class="text-xs text-slate-500">{{ item.is_active ? 'Available for new orders' : 'Inactive (not orderable)' }}</span>
+                            <button type="button" class="text-sm font-semibold text-blue-700 underline disabled:opacity-50" @click="router.patch('/admin/radiology/studies/' + item.id + '/status', { is_active: !item.is_active }, { preserveScroll: true })">{{ item.is_active ? 'Deactivate' : 'Activate' }}</button>
+                        </div>
                         <p class="break-words text-sm text-slate-500">{{ item.modality?.name || 'No modality' }} - {{ item.billable_service?.name || 'Not billable' }}</p>
                         <p v-if="item.description" class="mt-1 break-words text-sm text-slate-500">{{ item.description }}</p>
                     </article>

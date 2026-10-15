@@ -5,7 +5,7 @@ import PageHeader from '@/Components/Admin/PageHeader.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 defineProps({
@@ -52,6 +52,10 @@ function save(form, url, reset = () => form.reset()) {
                 <div class="mt-5 divide-y divide-slate-100 dark:divide-slate-800">
                     <article v-for="item in tests" :key="item.id" class="min-w-0 py-3">
                         <p class="break-words font-bold">{{ item.code }} - {{ item.name }}</p>
+                        <div class="mt-1 flex items-center gap-3">
+                            <span class="text-xs text-slate-500">{{ item.is_active ? 'Available for new orders' : 'Inactive (not orderable)' }}</span>
+                            <button type="button" class="text-sm font-semibold text-blue-700 underline disabled:opacity-50" @click="router.patch('/admin/laboratory/tests/' + item.id + '/status', { is_active: !item.is_active }, { preserveScroll: true })">{{ item.is_active ? 'Deactivate' : 'Activate' }}</button>
+                        </div>
                         <p class="break-words text-sm text-slate-500">{{ item.specimen_type?.name || 'No specimen' }} - {{ item.billable_service?.name || 'Not billable' }}</p>
                         <p v-for="child in item.components" :key="child.id" class="break-words text-xs text-slate-500">{{ child.code }} - {{ child.name }} - {{ child.result_type }} {{ child.unit?.code || '' }}</p>
                     </article>

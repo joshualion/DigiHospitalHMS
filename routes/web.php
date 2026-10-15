@@ -224,6 +224,7 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::post('laboratory/specimen-types', [LaboratoryController::class, 'storeSpecimenType'])->name('admin.lab.specimen-types.store');
         Route::post('laboratory/units', [LaboratoryController::class, 'storeUnit'])->name('admin.lab.units.store');
         Route::post('laboratory/tests', [LaboratoryController::class, 'storeTest'])->name('admin.lab.tests.store');
+        Route::patch('laboratory/tests/{test}/status', [LaboratoryController::class, 'setTestStatus'])->name('admin.lab.tests.status');
         Route::post('laboratory/tests/{test}/components', [LaboratoryController::class, 'storeComponent'])->name('admin.lab.components.store');
         Route::post('laboratory/components/{component}/reference-ranges', [LaboratoryController::class, 'storeReferenceRange'])->name('admin.lab.reference-ranges.store');
         Route::post('laboratory/profiles', [LaboratoryController::class, 'storeProfile'])->name('admin.lab.profiles.store');
@@ -242,6 +243,7 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::get('radiology/catalogue', [RadiologyController::class, 'catalogue'])->name('admin.radiology.catalogue');
         Route::post('radiology/modalities', [RadiologyController::class, 'storeModality'])->name('admin.radiology.modalities.store');
         Route::post('radiology/studies', [RadiologyController::class, 'storeStudy'])->name('admin.radiology.studies.store');
+        Route::patch('radiology/studies/{study}/status', [RadiologyController::class, 'setStudyStatus'])->name('admin.radiology.studies.status');
         Route::get('radiology/requests', [RadiologyController::class, 'requests'])->name('admin.radiology.requests.index');
         Route::post('radiology/requests', [RadiologyController::class, 'storeRequest'])->name('admin.radiology.requests.store');
         Route::get('radiology/requests/{radiologyRequest}', [RadiologyController::class, 'show'])->name('admin.radiology.requests.show');

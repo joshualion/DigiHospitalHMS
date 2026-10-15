@@ -136,84 +136,9 @@ class HospitalFoundationSeeder extends Seeder
             );
         }
 
-        $blood = LabSpecimenType::firstOrCreate(
-            ['hospital_id' => $hospital->id, 'code' => 'BLOOD'],
-            ['name' => 'Blood specimen - configure professionally', 'collection_notes' => 'Structural example only. Validate collection requirements with laboratory professionals.', 'is_active' => true]
-        );
-        $unit = LabUnit::firstOrCreate(
-            ['hospital_id' => $hospital->id, 'code' => 'CONFIG'],
-            ['name' => 'Configure unit', 'is_active' => true]
-        );
-        $labTest = LabTest::firstOrCreate(
-            ['hospital_id' => $hospital->id, 'code' => 'LAB-CONFIG'],
-            ['default_specimen_type_id' => $blood->id, 'name' => 'Example lab test - configure professionally', 'description' => 'Structural example only. Do not use clinically until validated.', 'requires_approval' => true, 'is_active' => true]
-        );
-        LabTestComponent::firstOrCreate(
-            ['lab_test_id' => $labTest->id, 'code' => 'RESULT'],
-            ['hospital_id' => $hospital->id, 'lab_unit_id' => $unit->id, 'name' => 'Configurable result', 'result_type' => 'text', 'sort_order' => 1, 'is_required' => true, 'is_active' => true]
-        );
-        $profile = LabTestProfile::firstOrCreate(
-            ['hospital_id' => $hospital->id, 'code' => 'LAB-PANEL-CONFIG'],
-            ['name' => 'Example lab panel - configure professionally', 'description' => 'Structural example only.', 'is_active' => true]
-        );
-        $profile->tests()->syncWithoutDetaching([$labTest->id]);
+        // Clinical, pharmacy and blood-bank catalogues must be configured by authorized staff.
+        // Do not prepopulate live installations with structural example items.
 
-        foreach ([['VOL', 'Voluntary donor'], ['REP', 'Replacement donor'], ['OTHER', 'Other configured donor category']] as [$code, $name]) {
-            BloodDonorCategory::firstOrCreate(
-                ['hospital_id' => $hospital->id, 'code' => $code],
-                ['name' => $name, 'description' => 'Structural blood-bank configuration example. Eligibility is always manually decided by authorized staff.', 'is_active' => true]
-            );
-        }
-        foreach ([['WB', 'Whole blood'], ['RBC', 'Red cells'], ['PLASMA', 'Plasma'], ['PLT', 'Platelets']] as [$code, $name]) {
-            BloodComponentType::firstOrCreate(
-                ['hospital_id' => $hospital->id, 'code' => $code],
-                ['name' => $name.' - configure professionally', 'notes' => 'Structural blood-bank configuration example only. Storage, expiry and release rules require professional validation.', 'is_active' => true]
-            );
-        }
-        BloodScreeningTest::firstOrCreate(
-            ['hospital_id' => $hospital->id, 'code' => 'BB-SCREEN-CONFIG'],
-            ['name' => 'Example blood screening test - configure professionally', 'is_required_for_release' => true, 'notes' => 'Structural example only. Do not use as a clinical rule or threshold.', 'is_active' => true]
-        );
-        $modality = RadiologyModality::firstOrCreate(
-            ['hospital_id' => $hospital->id, 'code' => 'XRAY'],
-            [
-                'facility_id' => $facility->id,
-                'name' => 'X-ray modality - configure professionally',
-                'description' => 'Structural example only. Validate equipment, protocols and safety screening with radiology professionals.',
-                'is_active' => true,
-            ]
-        );
-        RadiologyStudy::firstOrCreate(
-            ['hospital_id' => $hospital->id, 'code' => 'XR-CONFIG'],
-            [
-                'radiology_modality_id' => $modality->id,
-                'name' => 'Example X-ray study - configure professionally',
-                'description' => 'Structural example only. Do not use clinically until validated.',
-                'preparation_acknowledgements' => ['Professional configuration required'],
-                'safety_screening_acknowledgements' => ['Radiology safety screening required'],
-                'requires_professional_validation' => true,
-                'is_active' => true,
-            ]
-        );
-
-        $each = InventoryUnit::firstOrCreate(
-            ['hospital_id' => $hospital->id, 'code' => 'EACH'],
-            ['name' => 'Each - pharmacist configuration required', 'base_factor' => 1, 'requires_pharmacist_validation' => true, 'is_active' => true]
-        );
-        InventoryUnit::firstOrCreate(
-            ['hospital_id' => $hospital->id, 'code' => 'PACK'],
-            ['name' => 'Pack - configure conversion', 'base_unit_id' => $each->id, 'base_factor' => 10, 'requires_pharmacist_validation' => true, 'is_active' => true]
-        );
-        foreach ([['MAIN-STORE', 'Main Store', 'main_store'], ['PHARMACY', 'Pharmacy', 'pharmacy'], ['WARD-STORE', 'Ward Store', 'ward_store']] as [$code, $name, $type]) {
-            InventoryLocation::firstOrCreate(
-                ['hospital_id' => $hospital->id, 'code' => $code],
-                ['facility_id' => $facility->id, 'name' => $name.' - configure workflow', 'type' => $type, 'is_active' => true]
-            );
-        }
-        InventoryItem::firstOrCreate(
-            ['hospital_id' => $hospital->id, 'sku' => 'MED-CONFIG'],
-            ['base_unit_id' => $each->id, 'type' => 'medicine', 'generic_name' => 'Example medicine - configure professionally', 'name' => 'Example medicine item - do not dispense until configured', 'dosage_form' => 'Configure', 'strength' => 'Configure', 'route' => 'Configure', 'description' => 'Structural example only. Pharmacist must validate medicine data, units and pack conversions.', 'reorder_level' => 10, 'requires_pharmacist_validation' => true, 'is_active' => true]
-        );
     }
 
     private function sequences(): array

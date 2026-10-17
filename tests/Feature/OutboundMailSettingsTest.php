@@ -57,14 +57,12 @@ class OutboundMailSettingsTest extends TestCase
         $admin = User::factory()->create();
         $admin->syncRoles(['superadmin']);
 
-        $this->actingAs($admin)->withServerVariables(['HTTP_HOST' => 'hospital.example.org'])
-            ->get('/admin/settings/outbound-mail')
+        $this->actingAs($admin)->get('http://hospital.example.org/admin/settings/outbound-mail')
             ->assertOk()
             ->assertInertia(fn ($page) => $page->component('Admin/Settings/OutboundMail')
                 ->where('suggestedDomain', 'hospital.example.org'));
 
-        $this->actingAs($admin)->withServerVariables(['HTTP_HOST' => 'localhost'])
-            ->get('/admin/settings/outbound-mail')
+        $this->actingAs($admin)->get('http://localhost/admin/settings/outbound-mail')
             ->assertInertia(fn ($page) => $page->where('suggestedDomain', null));
     }
 

@@ -23,8 +23,8 @@ class OutboundMailSettingsTest extends TestCase
     {
         return [
             'enabled' => true,
-            'provider' => 'gmail',
-            'host' => 'ignored.example.test',
+            'provider' => 'custom',
+            'host' => 'mail.testimonyhealthcare.com',
             'port' => 2525,
             'encryption' => 'tls',
             'username' => 'hospital@example.test',
@@ -46,8 +46,8 @@ class OutboundMailSettingsTest extends TestCase
             ->assertRedirect()->assertSessionHasNoErrors();
 
         $setting = OutboundMailSetting::firstOrFail();
-        $this->assertSame('smtp.gmail.com', $setting->host);
-        $this->assertSame(587, $setting->port);
+        $this->assertSame('mail.testimonyhealthcare.com', $setting->host);
+        $this->assertSame(2525, $setting->port);
         $this->assertSame('example-app-password', $setting->password);
         $this->assertStringNotContainsString('example-app-password', $setting->getRawOriginal('password'));
     }

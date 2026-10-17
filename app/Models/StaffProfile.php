@@ -33,6 +33,9 @@ class StaffProfile extends Model
         'public_photo_path',
         'public_photo_alt',
         'public_display_order',
+        'invitation_sent_at',
+        'invitation_failed_at',
+        'password_setup_at',
     ];
 
     protected function casts(): array
@@ -44,6 +47,9 @@ class StaffProfile extends Model
             'public_is_visible' => 'boolean',
             'public_is_featured' => 'boolean',
             'public_display_order' => 'integer',
+            'invitation_sent_at' => 'datetime',
+            'invitation_failed_at' => 'datetime',
+            'password_setup_at' => 'datetime',
         ];
     }
 

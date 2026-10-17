@@ -29,6 +29,7 @@ use App\Http\Controllers\Admin\ReportingController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\StaffController;
+use App\Http\Controllers\Admin\OutboundMailSettingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicAppointmentRequestController;
 use App\Http\Controllers\PublicSiteController;
@@ -81,8 +82,13 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
         Route::patch('services/{service}', [ServiceController::class, 'update'])->name('admin.services.update');
         Route::delete('services/{service}', [ServiceController::class, 'destroy'])->name('admin.services.destroy');
 
+        Route::get('settings/outbound-mail', [OutboundMailSettingController::class, 'edit'])->name('admin.settings.outbound-mail');
+        Route::patch('settings/outbound-mail', [OutboundMailSettingController::class, 'update'])->name('admin.settings.outbound-mail.update');
+        Route::post('settings/outbound-mail/test', [OutboundMailSettingController::class, 'test'])->middleware('throttle:3,10')->name('admin.settings.outbound-mail.test');
+
         Route::get('staff', [StaffController::class, 'index'])->name('admin.staff.index');
         Route::post('staff', [StaffController::class, 'store'])->name('admin.staff.store');
+        Route::post('staff/{staffProfile}/resend-invitation', [StaffController::class, 'resendInvitation'])->middleware('throttle:3,10')->name('admin.staff.resend-invitation');
         Route::patch('staff/{staffProfile}', [StaffController::class, 'update'])->name('admin.staff.update');
         Route::patch('staff/{staffProfile}/status', [StaffController::class, 'status'])->name('admin.staff.status');
         Route::delete('staff/{staffProfile}', [StaffController::class, 'destroy'])->name('admin.staff.destroy');

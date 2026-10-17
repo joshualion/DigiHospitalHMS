@@ -88,6 +88,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+        app(\App\Services\OutboundMailConfiguration::class)->apply();
 
         Gate::policy(Admission::class, AdmissionPolicy::class);
         Gate::policy(AuditEvent::class, AuditEventPolicy::class);

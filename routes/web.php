@@ -83,6 +83,7 @@ Route::middleware(['auth', 'role:superadmin|admin|hospital-admin|receptionist|do
 
         Route::get('staff', [StaffController::class, 'index'])->name('admin.staff.index');
         Route::post('staff', [StaffController::class, 'store'])->name('admin.staff.store');
+        Route::post('staff/{staffProfile}/resend-invitation', [StaffController::class, 'resendInvitation'])->middleware('throttle:3,10')->name('admin.staff.resend-invitation');
         Route::patch('staff/{staffProfile}', [StaffController::class, 'update'])->name('admin.staff.update');
         Route::patch('staff/{staffProfile}/status', [StaffController::class, 'status'])->name('admin.staff.status');
         Route::delete('staff/{staffProfile}', [StaffController::class, 'destroy'])->name('admin.staff.destroy');

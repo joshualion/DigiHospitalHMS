@@ -40,6 +40,17 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
+        // Only newly invited staff must complete setup; legacy staff are unaffected.
+        $staff = $request->user()?->staffProfile;
+        if ($staff && $staff->invitation_sent_at && ! $staff->password_setup_at) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            throw ValidationException::withMessages([
+                'email' => 'Please complete the password setup sent to your email before signing in.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey($request));
         $request->session()->regenerate();
 

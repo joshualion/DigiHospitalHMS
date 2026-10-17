@@ -147,7 +147,7 @@ class StaffController extends FoundationController
     {
         try {
             $status = Password::sendResetLink(['email' => $staff->user->email]);
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             report($exception);
             $status = Password::INVALID_USER;
         }

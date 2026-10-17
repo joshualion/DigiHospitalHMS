@@ -52,6 +52,7 @@ class StaffOnboardingTest extends TestCase
         $this->assertNull($staff->password_setup_at);
         $this->assertFalse(Hash::check('password', $staff->user->password));
 
+        $this->travel(61)->seconds(); // Laravel password broker throttles immediate resend.
         $this->actingAs($admin)->post("/admin/staff/{$staff->id}/resend-invitation")
             ->assertRedirect()->assertSessionHasNoErrors();
     }

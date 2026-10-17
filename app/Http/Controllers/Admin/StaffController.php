@@ -118,9 +118,49 @@ class StaffController extends FoundationController
             throw $exception;
         }
 
-        Password::sendResetLink(['email' => $staff->user->email]);
+        $status = $this->sendStaffInvitation($staff, $audit);
 
-        return back()->with('success', 'Staff account created and password setup link queued.');
+        return $status === Password::RESET_LINK_SENT
+            ? back()->with('success', 'Staff created. A password setup link was requested for their email address.')
+            : back()->with('warning', 'Staff created, but the setup email could not be sent. Check mail configuration and use Resend invitation.');
+    }
+
+    public function resendInvitation(Request $request, StaffProfile $staffProfile, AuditService $audit): RedirectResponse
+    {
+        $this->authorize('update', $staffProfile);
+        abort_unless($staffProfile->hospital_id === $this->currentHospital()->id, 404);
+        if ($staffProfile->password_setup_at) {
+            return back()->withErrors(['invitation' => 'This staff member already completed password setup. Use the normal forgot-password workflow.']);
+        }
+        if ($staffProfile->user->status !== 'active') {
+            return back()->withErrors(['invitation' => 'Cannot invite a suspended account.']);
+        }
+
+        $status = $this->sendStaffInvitation($staffProfile, $audit);
+
+        return $status === Password::RESET_LINK_SENT
+            ? back()->with('success', 'Staff password setup invitation requested.')
+            : back()->withErrors(['invitation' => 'Invitation could not be sent. Verify the mail provider and retry later.']);
+    }
+
+    private function sendStaffInvitation(StaffProfile $staff, AuditService $audit): string
+    {
+        try {
+            $status = Password::sendResetLink(['email' => $staff->user->email]);
+        } catch (\\Throwable $exception) {
+            report($exception);
+            $status = Password::INVALID_USER;
+        }
+
+        if ($status === Password::RESET_LINK_SENT) {
+            $staff->forceFill(['invitation_sent_at' => now(), 'invitation_failed_at' => null])->save();
+            $audit->record('staff.invitation_requested', $staff, null, ['email' => $staff->user->email]);
+        } else {
+            $staff->forceFill(['invitation_failed_at' => now()])->save();
+            $audit->record('staff.invitation_failed', $staff, null, ['status' => $status]);
+        }
+
+        return $status;
     }
 
     public function update(Request $request, StaffProfile $staffProfile, AuditService $audit): RedirectResponse

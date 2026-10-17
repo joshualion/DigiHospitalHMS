@@ -19,8 +19,8 @@ class MaintenancePage
 
         return [
             'brand' => [
-                'name' => Arr::get($brand, 'name', 'Testimony'),
-                'tagline' => Arr::get($brand, 'tagline', 'Healthcare & Surgeries'),
+                'name' => Arr::get($brand, 'name', 'Hospital'),
+                'tagline' => Arr::get($brand, 'tagline', 'Hospital Services'),
                 'accent' => Arr::get($brand, 'accent', '#0EA5E9'),
                 'accent_deep' => Arr::get($brand, 'accent_deep', '#0369A1'),
                 'accent_soft' => Arr::get($brand, 'accent_soft', '#E0F2FE'),

@@ -10,11 +10,15 @@ class OutboundMailConfiguration
 {
     public function apply(): void
     {
-        if (! Schema::hasTable('outbound_mail_settings')) {
-            return;
+        // Composer package discovery and first install run before the database exists.
+        try {
+            if (! Schema::hasTable('outbound_mail_settings')) {
+                return;
+            }
+            $setting = OutboundMailSetting::query()->first();
+        } catch (\Illuminate\Database\QueryException $exception) {
+            return; // Preserve the .env mailer until database setup is available.
         }
-
-        $setting = OutboundMailSetting::query()->first();
         if (! $setting || ! $setting->enabled) {
             return; // Fall back to existing server .env credentials.
         }

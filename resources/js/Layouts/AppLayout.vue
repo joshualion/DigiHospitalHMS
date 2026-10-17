@@ -65,6 +65,7 @@ const navItems = computed(() => [
     { label: 'Pharmacy', href: '/admin/pharmacy/prescriptions', icon: Pill, show: can('prescriptions.view') },
     { label: 'Roles', href: '/admin/roles', icon: ShieldCheck, show: can('roles.view') },
     { label: 'Settings', href: '/admin/settings', icon: Settings, show: can('settings.manage') },
+    { label: 'SMTP Settings', href: '/admin/settings/outbound-mail', icon: Bell, show: isSuperadmin.value },
     { label: 'Numbering', href: '/admin/numbering', icon: FileClock, show: can('numbering.manage') },
     { label: 'Reports', href: '/admin/reports', icon: BarChart3, show: can('reports.view') },
     { label: 'Notifications', href: '/admin/notifications', icon: Bell, show: can('notifications.view') },
@@ -84,7 +85,7 @@ const navGroups = computed(() => {
         { label: 'Diagnostics & Treatment', icon: Stethoscope, items: ['Laboratory', 'Radiology', 'Pharmacy', 'Blood Bank'] },
         { label: 'Finance & Insurance', icon: WalletCards, items: ['Billing', 'Payments', 'Insurance / HMO', 'Reports'] },
         { label: 'Supplies & Operations', icon: PackageSearch, items: ['Inventory', 'Procurement', 'Facilities', 'Departments', 'Services'] },
-        { label: 'Administration', icon: Settings, items: ['Hospital', 'Public Website', 'News & Blog', 'Notifications', 'Settings', 'Numbering', 'Commercial', 'Audit Logs', 'Profile'] },
+        { label: 'Administration', icon: Settings, items: ['Hospital', 'Public Website', 'News & Blog', 'Notifications', 'Settings', 'SMTP Settings', 'Numbering', 'Commercial', 'Audit Logs', 'Profile'] },
     ];
     return groups.map((group) => ({
         ...group,

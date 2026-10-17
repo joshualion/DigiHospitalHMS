@@ -45,7 +45,7 @@ class OutboundMailSettingController extends Controller
         $this->authorizeSuperadmin($request);
         $data = $request->validate([
             'enabled' => ['required', 'boolean'],
-            'provider' => ['required', Rule::in(['custom', 'gmail'])],
+            'provider' => ['required', Rule::in(['custom'])],
             'host' => ['required', 'string', 'max:253'],
             'port' => ['required', 'integer', 'between:1,65535'],
             'encryption' => ['required', Rule::in(['tls', 'ssl'])],
@@ -55,16 +55,11 @@ class OutboundMailSettingController extends Controller
             'from_name' => ['required', 'string', 'max:255'],
         ]);
 
-        if ($data['provider'] === 'gmail') {
-            $data['host'] = 'smtp.gmail.com';
-            $data['port'] = $data['encryption'] === 'ssl' ? 465 : 587;
-        }
-
         $setting = OutboundMailSetting::query()->first();
         if (blank($data['password'] ?? null)) {
             unset($data['password']);
             if (! $setting || blank($setting->password)) {
-                return back()->withErrors(['password' => 'Enter the SMTP password or Gmail app password.']);
+                return back()->withErrors(['password' => 'Enter the SMTP mailbox password.']);
             }
         }
 

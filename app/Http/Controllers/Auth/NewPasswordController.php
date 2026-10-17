@@ -34,6 +34,7 @@ class NewPasswordController extends Controller
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user) use ($request): void {
+                $user->staffProfile?->forceFill(['password_setup_at' => now(), 'invitation_failed_at' => null])->save();
                 $user->forceFill([
                     'password' => Hash::make($request->password),
                     'remember_token' => Str::random(60),

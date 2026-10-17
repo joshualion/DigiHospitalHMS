@@ -20,7 +20,7 @@ function sendTest() { testForm.post('/admin/settings/outbound-mail/test', { pres
         <div class="mx-auto max-w-3xl space-y-6">
             <div class="rounded-lg border bg-white p-6 dark:bg-slate-900">
                 <h1 class="text-xl font-bold">Outgoing email settings</h1>
-                <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">For dependable hospital notifications, use a branded mailbox such as noreply@testimonyhealthcare.com or support@testimonyhealthcare.com. Configure it with Kietmail or your cPanel mail provider. Turn the override off to use existing server email settings. Credentials are encrypted.</p>
+                <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">For dependable hospital notifications, use an official mailbox on your organisation's own domain (for example, noreply@yourdomain.com or support@yourdomain.com). Configure it with your preferred SMTP provider. Turn the override off to use existing server email settings. Credentials are encrypted.</p>
                 <form class="mt-5 grid gap-4" @submit.prevent="save">
                     <label class="flex items-center gap-2"><input v-model="form.enabled" type="checkbox"> Use these SMTP settings for hospital emails</label>
                     <p class="rounded bg-teal-50 p-3 text-sm text-teal-950">Recommended: provision an official hospital-domain email address before enabling automated notifications. Verify SPF, DKIM and DMARC with your email provider. Branded email improves identity, but does not guarantee inbox delivery.</p>

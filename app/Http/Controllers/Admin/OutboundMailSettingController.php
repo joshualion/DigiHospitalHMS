@@ -26,6 +26,7 @@ class OutboundMailSettingController extends Controller
         $setting = OutboundMailSetting::query()->first();
 
         return Inertia::render('Admin/Settings/OutboundMail', [
+            'suggestedDomain' => $this->suggestedDomain($request),
             'settings' => $setting ? [
                 'enabled' => $setting->enabled,
                 'provider' => $setting->provider,
@@ -38,6 +39,19 @@ class OutboundMailSettingController extends Controller
                 'has_password' => filled($setting->password),
             ] : null,
         ]);
+    }
+
+    private function suggestedDomain(Request $request): ?string
+    {
+        // Use the actual installation's host, never an example customer's domain.
+        // Ignore localhost and IP hosts, for which a branded mailbox cannot be inferred.
+        $host = strtolower(rtrim($request->getHost(), '.'));
+        if ($host === 'localhost' || ! filter_var($host, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)
+            || filter_var($host, FILTER_VALIDATE_IP) || ! str_contains($host, '.')) {
+            return null;
+        }
+
+        return $host;
     }
 
     public function update(Request $request, OutboundMailConfiguration $configuration): RedirectResponse

@@ -2,8 +2,8 @@
 
 return [
     'brand' => [
-        'name' => env('MAINTENANCE_BRAND_NAME', 'Testimony'),
-        'tagline' => env('MAINTENANCE_BRAND_TAGLINE', 'Healthcare & Surgeries'),
+        'name' => env('MAINTENANCE_BRAND_NAME', 'Hospital'),
+        'tagline' => env('MAINTENANCE_BRAND_TAGLINE', 'Hospital Services'),
         'accent' => env('MAINTENANCE_BRAND_ACCENT', '#0EA5E9'),
         'accent_deep' => env('MAINTENANCE_BRAND_ACCENT_DEEP', '#0369A1'),
         'accent_soft' => env('MAINTENANCE_BRAND_ACCENT_SOFT', '#E0F2FE'),

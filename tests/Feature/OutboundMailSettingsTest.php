@@ -52,6 +52,20 @@ class OutboundMailSettingsTest extends TestCase
         $this->assertStringNotContainsString('example-app-password', $setting->getRawOriginal('password'));
     }
 
+    public function test_smtp_examples_use_active_request_host(): void
+    {
+        $admin = User::factory()->create();
+        $admin->syncRoles(['superadmin']);
+
+        $this->actingAs($admin)->get('http://hospital.example.org/admin/settings/outbound-mail')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Admin/Settings/OutboundMail')
+                ->where('suggestedDomain', 'hospital.example.org'));
+
+        $this->actingAs($admin)->get('http://localhost/admin/settings/outbound-mail')
+            ->assertInertia(fn ($page) => $page->where('suggestedDomain', null));
+    }
+
     public function test_superadmin_can_test_mail_transport_without_exposing_secret(): void
     {
         $admin = User::factory()->create();

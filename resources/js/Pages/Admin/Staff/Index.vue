@@ -136,6 +136,11 @@ function saveStaff() {
         .post(editing.value ? `/admin/staff/${editing.value.id}` : '/admin/staff', options);
 }
 
+function resendInvitation(entry) {
+    if (!confirm(`Send a password setup link to ${entry.user?.email}?`)) return;
+    router.post(`/admin/staff/${entry.id}/resend-invitation`, {}, { preserveScroll: true });
+}
+
 function openStatus(entry) {
     statusTarget.value = entry;
     statusForm.defaults({ status: entry.employment_status === 'active' ? 'suspended' : 'active' });
@@ -199,11 +204,17 @@ function purgeDemoStaff() {
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500 dark:bg-slate-950">
-                        <tr><th class="p-4">Staff</th><th class="p-4">Role</th><th class="p-4">Facilities</th><th class="p-4">Public</th><th class="p-4">Status</th><th class="p-4">Actions</th></tr>
+                        <tr><th class="p-4">Staff</th><th class="p-4">Login setup</th><th class="p-4">Role</th><th class="p-4">Facilities</th><th class="p-4">Public</th><th class="p-4">Status</th><th class="p-4">Actions</th></tr>
                     </thead>
                     <tbody>
                         <tr v-for="entry in staff.data" :key="entry.id" class="border-b border-slate-100 dark:border-slate-800">
                             <td class="p-4"><strong>{{ entry.user.full_name }}</strong><br><span class="text-slate-500">{{ entry.staff_number }} - {{ entry.user.email }}</span></td>
+                            <td class="p-4 text-xs">
+                                <span v-if="entry.password_setup_at" class="text-emerald-700">Password configured</span>
+                                <span v-else-if="entry.invitation_failed_at" class="text-rose-700">Invitation failed</span>
+                                <span v-else-if="entry.invitation_sent_at" class="text-amber-700">Invitation requested</span>
+                                <span v-else class="text-slate-500">Existing / not tracked</span>
+                            </td>
                             <td class="p-4">{{ entry.user.roles.map((role) => role.name).join(', ') || entry.job_title || entry.staff_category }}</td>
                             <td class="p-4">
                                 <div v-for="membership in entry.memberships.filter((membership) => membership.status === 'active')" :key="membership.id">
@@ -215,6 +226,7 @@ function purgeDemoStaff() {
                             <td class="p-4">{{ entry.employment_status }}</td>
                             <td class="p-4">
                                 <ActionToolbar>
+                                    <button v-if="can('staff.update') && !entry.password_setup_at && entry.user.status === 'active'" class="rounded-md border px-3 py-2 text-xs font-bold" type="button" @click="resendInvitation(entry)">Resend setup link</button>
                                     <button v-if="can('staff.update')" class="rounded-md border px-3 py-2 text-xs font-bold" type="button" @click="openEdit(entry)">Edit</button>
                                     <button v-if="can('staff.suspend')" class="rounded-md border px-3 py-2 text-xs font-bold" type="button" @click="openStatus(entry)">{{ entry.employment_status === 'active' ? 'Suspend' : 'Activate' }}</button>
                                     <button v-if="can('staff.delete')" class="rounded-md border border-rose-300 px-3 py-2 text-xs font-bold text-rose-700" type="button" @click="openDelete(entry)">Delete</button>
@@ -222,7 +234,7 @@ function purgeDemoStaff() {
                                 </ActionToolbar>
                             </td>
                         </tr>
-                        <tr v-if="staff.data.length === 0"><td class="p-4 text-slate-500" colspan="6">No staff found.</td></tr>
+                        <tr v-if="staff.data.length === 0"><td class="p-4 text-slate-500" colspan="7">No staff found.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -232,7 +244,10 @@ function purgeDemoStaff() {
             <div class="grid gap-4 sm:grid-cols-2">
                 <TextInput id="staff_firstname" v-model="form.firstname" label="First name" :error="form.errors.firstname" />
                 <TextInput id="staff_lastname" v-model="form.lastname" label="Last name" :error="form.errors.lastname" />
-                <TextInput id="staff_email" v-model="form.email" label="Email" type="email" :error="form.errors.email" />
+                <div>
+                    <TextInput id="staff_email" v-model="form.email" label="Email" type="email" :error="form.errors.email" />
+                    <p v-if="!editing" class="mt-1 text-xs text-slate-500">The staff member receives a secure link to set their own password. Administrators do not choose or share passwords. Delivery requires a configured email service.</p>
+                </div>
                 <TextInput id="staff_number" v-model="form.staff_number" label="Staff number" :error="form.errors.staff_number" />
                 <TextInput id="job_title" v-model="form.job_title" label="Job title" :error="form.errors.job_title" />
                 <label class="grid gap-1 text-sm font-semibold">Staff category

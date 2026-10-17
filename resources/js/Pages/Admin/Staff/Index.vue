@@ -188,6 +188,7 @@ function purgeDemoStaff() {
     <Head title="Staff" />
     <AppLayout title="Staff And Users">
         <PageHeader title="Staff And Users" description="Manage staff identities, roles and facility access.">
+            <a v-if="pageRoles.includes('superadmin')" href="/admin/settings/outbound-mail" class="rounded border px-3 py-2 text-sm font-semibold">Outgoing email settings</a>
             <template #actions>
                 <ActionToolbar align="end">
                     <button v-if="can('staff.invite')" class="rounded-md border border-teal-700 px-4 py-2 text-sm font-bold text-teal-700 dark:border-teal-400 dark:text-teal-300" type="button" @click="openCreateDoctor">Add Doctor</button>
